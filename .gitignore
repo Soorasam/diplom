@@ -1,0 +1,29 @@
+# Системные файлы и логи
+node_modules
+.DS_Store
+*.log
+logs
+*.local
+
+# Сборка (Vite)
+dist
+dist-ssr
+*.local
+
+# Локальные переменные окружения (пароли, ключи)
+.env
+.env.local
+.env.*.local
+
+# Временные файлы редакторов кода
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Специфичное для Vite PWA (сгенерированные воркеры при сборке)
+dev-dist
