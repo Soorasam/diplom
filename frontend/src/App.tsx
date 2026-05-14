@@ -1,10 +1,15 @@
+import React from "react"
+import { RouterProvider } from "react-router-dom"
+
+import "./index.css"
+
+import { router } from "./app/router"
+
 function App() {
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-      <h1 className="text-3xl font-bold text-blue-600">
-        Coop
-      </h1>
-    </div>
+  <React.StrictMode>
+      <RouterProvider router={router} />
+    </React.StrictMode>
   )
 }
 
