@@ -6,8 +6,7 @@
     "module": "esnext",
     "skipLibCheck": true,
 
-    /* Настройка абсолютных путей (добавлено) */
-    "baseUrl": ".",
+    /* Алиасы: без baseUrl (устарел в TS 6 — пути относительно этого tsconfig) */
     "paths": {
       "@/*": ["./src/*"]
     },
