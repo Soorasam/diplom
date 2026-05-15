@@ -15,11 +15,15 @@ export default defineConfig({
         enabled: true,
       },
       manifest: {
-        name: 'Coop',
-        short_name: "Coop",
+        name: 'Коопзакупки — Якутия',
+        short_name: 'КоопЯкутия',
+        description:
+          'Кооперативные закупки и логистика в труднодоступные районы Республики Саха',
+        lang: 'ru',
         theme_color: '#2563EB',
         background_color: '#F8FAFC',
         display: 'standalone',
+        orientation: 'portrait',
         start_url: '/',
         icons: [
           {

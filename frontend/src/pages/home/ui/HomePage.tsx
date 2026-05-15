@@ -1,114 +1,156 @@
 import { Link } from "react-router-dom"
+import {
+  ArrowRight,
+  MapPin,
+  ShoppingBag,
+  Snowflake,
+  Truck,
+} from "lucide-react"
 
-import { ArrowRight, MapPin, Package, Snowflake, Users } from "lucide-react"
+import { useAuthStore } from "@/app/model/auth-store"
+import { useActiveProcurements } from "@/entities/procurement/api/useProcurements"
+import { useOrders } from "@/entities/order/api/useOrders"
+import { useCategories, usePopularProducts } from "@/entities/product/api/useProducts"
+import { routes } from "@/shared/config/routes"
+import { formatShortDate } from "@/shared/lib/format"
+import { orderStatusLabel, orderStatusVariant } from "@/shared/lib/order-status"
+import { Badge } from "@/shared/ui/badge/Badge"
+import { Card } from "@/shared/ui/card/Card"
+import { Spinner } from "@/shared/ui/spinner/Spinner"
+import { ProcurementCard } from "@/widgets/procurement-card/ui/ProcurementCard"
+import { ProductCard } from "@/widgets/product-card/ui/ProductCard"
 
 export const HomePage = () => {
+  const user = useAuthStore((s) => s.user)
+  const { data: procurements, isLoading: loadingProcurements } = useActiveProcurements()
+  const { data: orders } = useOrders(user?.id)
+  const { data: popular, isLoading: loadingPopular } = usePopularProducts()
+  const { data: categories } = useCategories()
+
+  const activeOrder = orders?.find((o) => o.status !== "delivered" && o.status !== "cancelled")
+  const nearestDelivery = procurements?.[0]?.estimatedDelivery
+
   return (
     <div className="flex flex-col gap-5 p-4">
-      <header className="overflow-hidden rounded-2xl bg-gradient-to-br from-teal-800 via-teal-700 to-cyan-900 px-5 py-6 text-white shadow-lg shadow-teal-900/20">
-        <p className="text-xs font-medium uppercase tracking-wider text-teal-200/90">
-          Кооперативные закупки
+      <header className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-blue-900 to-slate-900 px-5 py-6 text-white shadow-lg">
+        <p className="text-xs font-medium uppercase tracking-wider text-blue-200/90">
+          Северные закупки
         </p>
-
         <h1 className="mt-2 text-2xl font-bold leading-tight">
-          Доставка товаров в отдалённые районы Якутии
+          {user ? `Здравствуйте, ${user.name.split(" ")[0]}` : "Кооперативная доставка"}
         </h1>
-
-        <p className="mt-3 max-w-[28ch] text-sm leading-relaxed text-teal-100/95">
-          Объединяем заказы жителей посёлков и сёл: чем больше участников сбора, тем выгоднее
-          логистика и цена для каждого.
+        <p className="mt-2 text-sm text-slate-300">
+          Объединяем заказы жителей отдалённых посёлков Якутии
         </p>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur-sm">
-            <Snowflake size={14} className="shrink-0" />
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
+            <Snowflake size={14} />
             Сезонные маршруты
           </span>
-
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-medium backdrop-blur-sm">
-            <MapPin size={14} className="shrink-0" />
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
+            <MapPin size={14} />
             Пункты выдачи
           </span>
         </div>
       </header>
 
-      <section className="grid grid-cols-3 gap-2">
-        {[
-          { value: "12", label: "активных сборов", icon: Package },
-          { value: "48", label: "населённых пунктов", icon: MapPin },
-          { value: "1.2k", label: "участников", icon: Users },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="flex flex-col items-center rounded-xl border border-teal-100 bg-white/80 px-2 py-3 text-center shadow-sm"
-          >
-            <item.icon className="mb-1 text-teal-600" size={18} />
-
-            <span className="text-lg font-bold tabular-nums text-slate-800">
-              {item.value}
+      {nearestDelivery ? (
+        <Card className="border-blue-100 bg-blue-50/50">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+              <Truck size={20} />
             </span>
-
-            <span className="text-[10px] font-medium leading-tight text-slate-500">
-              {item.label}
-            </span>
+            <div>
+              <p className="text-xs font-medium text-blue-800">Ближайшая доставка</p>
+              <p className="text-sm font-semibold text-slate-900">
+                ориентир — {formatShortDate(nearestDelivery)}
+              </p>
+            </div>
           </div>
-        ))}
+        </Card>
+      ) : null}
+
+      {activeOrder ? (
+        <Link to={routes.order(activeOrder.id)}>
+          <Card className="transition hover:border-blue-200">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-xs text-slate-500">Активный заказ</p>
+                <p className="font-semibold text-slate-900">№ {activeOrder.id}</p>
+              </div>
+              <Badge variant={orderStatusVariant[activeOrder.status]}>
+                {orderStatusLabel[activeOrder.status]}
+              </Badge>
+            </div>
+          </Card>
+        </Link>
+      ) : null}
+
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-800">Активные сборы</h2>
+          <Link to={routes.catalog} className="text-xs font-medium text-blue-600">
+            Все
+          </Link>
+        </div>
+        {loadingProcurements ? (
+          <div className="flex justify-center py-6">
+            <Spinner />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {procurements?.slice(0, 2).map((p) => (
+              <ProcurementCard key={p.id} procurement={p} compact />
+            ))}
+          </div>
+        )}
       </section>
 
-      <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-slate-800">
-          Как это работает
-        </h2>
-
-        <ol className="mt-3 space-y-2.5 text-sm text-slate-600">
-          <li className="flex gap-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-bold text-teal-800">
-              1
-            </span>
-
-            <span>
-              Выбираете товары в каталоге — они попадают в общий сбор по вашему маршруту.
-            </span>
-          </li>
-
-          <li className="flex gap-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-bold text-teal-800">
-              2
-            </span>
-
-            <span>
-              Дожидаетесь закрытия сбора и подтверждения доставки (зимник, река, автодорога — в зависимости от сезона).
-            </span>
-          </li>
-
-          <li className="flex gap-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-bold text-teal-800">
-              3
-            </span>
-
-            <span>
-              Получаете заказ в пункте выдачи или у доверенного координатора в населённом пункте.
-            </span>
-          </li>
-        </ol>
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-slate-800">Популярное</h2>
+          <Link to={routes.catalog} className="text-xs font-medium text-blue-600">
+            Каталог
+          </Link>
+        </div>
+        {loadingPopular ? (
+          <div className="flex justify-center py-6">
+            <Spinner />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {popular?.slice(0, 4).map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </section>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <Link
-          to="/catalog"
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3.5 text-sm font-semibold text-white shadow-md shadow-teal-700/25 transition hover:bg-teal-700"
-        >
-          Перейти в каталог
-          <ArrowRight size={18} />
-        </Link>
+      {categories && categories.length > 0 ? (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-slate-800">Категории</h2>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((cat) => (
+              <Link
+                key={cat.id}
+                to={`${routes.catalog}?category=${cat.id}`}
+                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-blue-50"
+              >
+                {cat.name}
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
-        <Link
-          to="/orders"
-          className="inline-flex flex-1 items-center justify-center rounded-xl border border-teal-200 bg-white px-4 py-3.5 text-sm font-semibold text-teal-800 transition hover:bg-teal-50"
-        >
-          Мои сборы
-        </Link>
-      </div>
+      <Link
+        to={routes.catalog}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700"
+      >
+        <ShoppingBag size={18} />
+        Перейти в каталог
+        <ArrowRight size={18} />
+      </Link>
     </div>
   )
 }

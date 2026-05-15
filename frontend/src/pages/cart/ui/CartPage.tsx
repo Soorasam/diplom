@@ -1,75 +1,147 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import { Minus, Package, Plus, MapPin } from "lucide-react"
 
-import { MapPin, Package, Pencil } from "lucide-react"
+import { useAuthStore } from "@/app/model/auth-store"
+import { useProducts } from "@/entities/product/api/useProducts"
+import { usePickupPoints } from "@/entities/settlement/api/useSettlements"
+import { useCartStore } from "@/features/cart/model/cart-store"
+import { routes } from "@/shared/config/routes"
+import { formatPrice } from "@/shared/lib/format"
+import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { Card } from "@/shared/ui/card/Card"
+import { Input } from "@/shared/ui/input/Input"
+import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 
 export const CartPage = () => {
+  const navigate = useNavigate()
+  const user = useAuthStore((s) => s.user)
+  const items = useCartStore((s) => s.items)
+  const pickupPointId = useCartStore((s) => s.pickupPointId)
+  const comment = useCartStore((s) => s.comment)
+  const setQuantity = useCartStore((s) => s.setQuantity)
+  const setPickupPoint = useCartStore((s) => s.setPickupPoint)
+  const setComment = useCartStore((s) => s.setComment)
+
+  const { data: products } = useProducts()
+  const { data: pickupPoints } = usePickupPoints(user?.settlementId)
+
+  const cartProducts = items
+    .map((item) => {
+      const product = products?.find((p) => p.id === item.productId)
+      return product ? { ...item, product } : null
+    })
+    .filter(Boolean) as { productId: string; quantity: number; product: NonNullable<typeof products>[number] }[]
+
+  const total = cartProducts.reduce(
+    (sum, i) => sum + i.product.price * i.quantity,
+    0,
+  )
+
   return (
-    <div className="flex flex-col gap-5 p-4">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">
-          Корзина сбора
-        </h1>
+    <div className="flex flex-col gap-4 p-4 pb-8">
+      <PageHeader
+        title="Корзина"
+        subtitle="Товары группируются по активному сбору"
+      />
 
-        <p className="mt-1 text-sm text-slate-600">
-          Товары группируются по маршруту. Итоговая стоимость с учётом логистики появится после
-          закрытия сбора и подтверждения перевозчика.
-        </p>
-      </div>
-
-      <section className="rounded-2xl border border-amber-200/80 bg-amber-50/90 p-4">
-        <div className="flex items-start gap-3">
-          <MapPin className="mt-0.5 shrink-0 text-amber-800" size={20} />
-
+      <Card className="border-blue-100 bg-blue-50/40">
+        <div className="flex items-start gap-2">
+          <MapPin size={18} className="mt-0.5 shrink-0 text-blue-700" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-amber-950">
-              Пункт выдачи
-            </p>
-
-            <p className="mt-0.5 text-sm text-amber-900/85">
-              с. Хандыга, Томпонский район — координатор Иванов А. (макет)
-            </p>
-
-            <button
-              type="button"
-              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-amber-900 underline-offset-2 hover:underline"
+            <p className="text-sm font-semibold text-slate-800">Пункт выдачи</p>
+            <select
+              value={pickupPointId ?? ""}
+              onChange={(e) => setPickupPoint(e.target.value)}
+              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
             >
-              <Pencil size={12} />
-              Изменить населённый пункт
-            </button>
+              <option value="">Выберите пункт</option>
+              {pickupPoints?.map((pp) => (
+                <option key={pp.id} value={pp.id}>
+                  {pp.name}
+                </option>
+              ))}
+            </select>
+            <Link
+              to={routes.pickupPoints}
+              className="mt-2 inline-block text-xs font-medium text-blue-600"
+            >
+              Все пункты на карте
+            </Link>
           </div>
         </div>
-      </section>
+      </Card>
 
-      <section className="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-6 text-center">
-        <Package className="mx-auto text-slate-300" size={40} strokeWidth={1.25} />
+      {cartProducts.length === 0 ? (
+        <EmptyState
+          icon={Package}
+          title="Корзина пуста"
+          description="Добавьте товары из каталога"
+          actionLabel="В каталог"
+          onAction={() => navigate(routes.catalog)}
+        />
+      ) : (
+        <>
+          <ul className="flex flex-col gap-3">
+            {cartProducts.map(({ product, quantity, productId }) => (
+              <li key={productId}>
+                <Card>
+                  <p className="text-sm font-semibold text-slate-900">{product.name}</p>
+                  <p className="text-sm text-blue-700">{formatPrice(product.price)}</p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setQuantity(productId, quantity - 1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200"
+                        aria-label="Уменьшить"
+                      >
+                        <Minus size={16} />
+                      </button>
+                      <span className="min-w-8 text-center text-sm font-semibold">{quantity}</span>
+                      <button
+                        type="button"
+                        onClick={() => setQuantity(productId, quantity + 1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200"
+                        aria-label="Увеличить"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                    <span className="text-sm font-bold text-slate-800">
+                      {formatPrice(product.price * quantity)}
+                    </span>
+                  </div>
+                </Card>
+              </li>
+            ))}
+          </ul>
 
-        <p className="mt-3 text-sm font-medium text-slate-700">
-          Корзина пуста
-        </p>
+          <Input
+            label="Комментарий к заказу"
+            placeholder="Пожелания, уточнения…"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          />
 
-        <p className="mt-1 text-xs text-slate-500">
-          Добавьте товары из каталога — они попадут в текущий открытый сбор по вашему маршруту.
-        </p>
+          <Card className="bg-slate-50">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-slate-800">Итого</span>
+              <span className="text-lg font-bold text-blue-700">{formatPrice(total)}</span>
+            </div>
+          </Card>
 
-        <Link
-          to="/catalog"
-          className="mt-4 inline-block rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-700"
-        >
-          Открыть каталог
-        </Link>
-      </section>
-
-      <section className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-xs leading-relaxed text-slate-600">
-        <p className="font-semibold text-slate-800">
-          Важно для отдалённых территорий
-        </p>
-
-        <p className="mt-2">
-          Сроки могут сдвигаться из‑за погоды, пропускной способности зимников и ледовых
-          переправ. Статус заказа и ориентировочная дата прибытия будут отображаться в разделе
-          «Мои сборы».
-        </p>
-      </section>
+          <Link
+            to={routes.checkout}
+            className={`inline-flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-md ${
+              !pickupPointId || cartProducts.length === 0
+                ? "pointer-events-none bg-slate-300"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+          >
+            Оформить заказ
+          </Link>
+        </>
+      )}
     </div>
   )
 }
