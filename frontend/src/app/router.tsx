@@ -85,4 +85,7 @@ export const router = createBrowserRouter([
       { path: "pickup-points", element: <PickupPointsPage /> },
     ],
   },
-])
+],
+{
+  basename: "/diplom",
+})

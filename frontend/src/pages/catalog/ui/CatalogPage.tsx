@@ -42,7 +42,7 @@ export const CatalogPage = () => {
         aria-label="Поиск"
       />
 
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-2 overflow-x-auto pb-1" data-no-swipe>
         <button
           type="button"
           onClick={() => setCategoryId(undefined)}

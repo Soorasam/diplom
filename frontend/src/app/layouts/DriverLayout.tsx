@@ -27,8 +27,8 @@ export const DriverLayout = () => {
         <Outlet />
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 border-t border-slate-200 bg-white safe-bottom">
-        <div className="mx-auto flex h-16 max-w-lg items-center justify-around">
+      <nav className="fixed bottom-0 left-[50vw] z-50 w-screen -translate-x-1/2 border-t border-slate-200 bg-white safe-bottom">
+        <div className="mx-auto flex h-16 w-full max-w-lg items-center justify-around">
           {tabs.map((tab) => {
             const active =
               tab.path === routes.driver.root

@@ -52,8 +52,11 @@ export const BottomNav = () => {
   ]
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 border-t border-slate-200 bg-white/95 shadow-[0_-4px_24px_-8px_rgba(37,99,235,0.12)] backdrop-blur-sm">
-      <div className="mx-auto flex h-16 max-w-[480px] items-center justify-around px-1">
+    <nav
+      data-bottom-nav
+      className="fixed bottom-0 left-[50vw] z-50 w-screen -translate-x-1/2 border-t border-slate-200 bg-white/95 shadow-[0_-4px_24px_-8px_rgba(37,99,235,0.12)] backdrop-blur-sm"
+    >
+      <div className="mx-auto flex h-16 w-full max-w-[480px] items-center justify-around px-1">
         {tabs.map((tab) => {
           const active = tab.match(location.pathname)
           const showBadge = tab.path === routes.cart && itemCount > 0

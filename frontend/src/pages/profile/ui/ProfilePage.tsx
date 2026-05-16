@@ -28,7 +28,7 @@ export const ProfilePage = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   return (
-    <div className="flex flex-col gap-4 p-4 pb-8">
+    <div className="flex flex-col gap-4 p-4">
       <PageHeader title="Профиль" />
 
       <Card className="flex items-center gap-4">
