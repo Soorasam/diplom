@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  resident
+  coordinator
+  admin
+}
+
+enum RoundStatus {
+  open
+  closed
+  fulfilled
+}
+
+enum OrderStatus {
+  submitted
+  confirmed
+  in_transit
+  at_pickup
+  delivered
+  cancelled
+}
+
+enum TransportType {
+  winter_road
+  river
+  highway
+}
+
+model User {
+  id             String   @id @default(uuid()) @db.Uuid
+  email          String   @unique
+  phone          String?  @unique
+  hashedPassword String   @map("hashed_password")
+  fullName       String?  @map("full_name")
+  role           UserRole @default(resident)
+  settlementId   String?  @map("settlement_id") @db.Uuid
+  pickupPointId  String?  @map("pickup_point_id") @db.Uuid
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  settlement  Settlement?  @relation(fields: [settlementId], references: [id])
+  pickupPoint PickupPoint? @relation(fields: [pickupPointId], references: [id])
+  cartItems   CartItem[]
+  orders      Order[]
+
+  @@map("users")
+}
+
+model Settlement {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String
+  district String?
+  ulus     String?
+
+  pickupPoints PickupPoint[]
+  users        User[]
+
+  @@map("settlements")
+}
+
+model PickupPoint {
+  id               String  @id @default(uuid()) @db.Uuid
+  settlementId     String  @map("settlement_id") @db.Uuid
+  coordinatorName  String  @map("coordinator_name")
+  address          String?
+  phone            String?
+
+  settlement Settlement @relation(fields: [settlementId], references: [id])
+  users      User[]
+  orders     Order[]
+
+  @@map("pickup_points")
+}
+
+model Route {
+  id            String        @id @default(uuid()) @db.Uuid
+  title         String
+  description   String?
+  transportType TransportType @default(highway) @map("transport_type")
+  seasonNote    String?       @map("season_note")
+
+  rounds Round[]
+
+  @@map("routes")
+}
+
+model Round {
+  id                 String      @id @default(uuid()) @db.Uuid
+  routeId            String      @map("route_id") @db.Uuid
+  title              String?
+  status             RoundStatus @default(open)
+  closesAt           DateTime    @map("closes_at")
+  minParticipants    Int         @default(10) @map("min_participants")
+  targetParticipants Int         @default(50) @map("target_participants")
+  participantsCount  Int         @default(0) @map("participants_count")
+
+  route     Route      @relation(fields: [routeId], references: [id])
+  cartItems CartItem[]
+  orders    Order[]
+
+  @@map("rounds")
+}
+
+model Category {
+  id        String  @id @default(uuid()) @db.Uuid
+  title     String  @unique
+  hint      String?
+  sortOrder Int     @default(0) @map("sort_order")
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id                   String   @id @default(uuid()) @db.Uuid
+  categoryId           String   @map("category_id") @db.Uuid
+  name                 String
+  description          String?
+  unit                 String   @default("шт")
+  priceEstimate        Decimal  @default(0) @map("price_estimate") @db.Decimal(12, 2)
+  imageUrl             String?  @map("image_url")
+  requiresPrescription Boolean  @default(false) @map("requires_prescription")
+  isActive             Boolean  @default(true) @map("is_active")
+
+  category  Category   @relation(fields: [categoryId], references: [id])
+  cartItems CartItem[]
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+model CartItem {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  roundId   String   @map("round_id") @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  round   Round   @relation(fields: [roundId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@unique([userId, roundId, productId], name: "uq_cart_user_round_product")
+  @@map("cart_items")
+}
+
+model Order {
+  id             String      @id @default(uuid()) @db.Uuid
+  publicNumber   String      @unique @map("public_number")
+  userId         String      @map("user_id") @db.Uuid
+  roundId        String      @map("round_id") @db.Uuid
+  pickupPointId  String?     @map("pickup_point_id") @db.Uuid
+  status         OrderStatus @default(submitted)
+  totalEstimate  Decimal     @default(0) @map("total_estimate") @db.Decimal(12, 2)
+  statusNote     String?     @map("status_note")
+  expectedAt     DateTime?   @map("expected_at")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  round       Round        @relation(fields: [roundId], references: [id])
+  pickupPoint PickupPoint? @relation(fields: [pickupPointId], references: [id])
+  items       OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String  @id @default(uuid()) @db.Uuid
+  orderId       String  @map("order_id") @db.Uuid
+  productId     String  @map("product_id") @db.Uuid
+  productName   String  @map("product_name")
+  quantity      Int
+  unit          String
+  priceSnapshot Decimal @map("price_snapshot") @db.Decimal(12, 2)
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
