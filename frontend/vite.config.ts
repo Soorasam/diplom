@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
 export default defineConfig({
+  base: '/diplom/',
   plugins: [
     react(),
     tailwindcss(),
@@ -15,33 +16,38 @@ export default defineConfig({
         enabled: true,
       },
       manifest: {
-        name: 'Coop',
-        short_name: "Coop",
+        name: 'Коопзакупки — Якутия',
+        short_name: 'КоопЯкутия',
+        description:
+          'Кооперативные закупки и логистика в труднодоступные районы Республики Саха',
+        lang: 'ru',
         theme_color: '#2563EB',
         background_color: '#F8FAFC',
         display: 'standalone',
-        start_url: '/',
+        orientation: 'portrait',
+        start_url: '/diplom/',
+        scope: '/diplom/',
         icons: [
           {
-            src: "/icons/pwa-192x192.png",
+            src: "/diplom/icons/pwa-192x192.png",
             sizes: "192x192",
             type: "image/png",
             purpose: "any"
           },
           {
-            src: "/icons/pwa-512x512.png",
+            src: "/diplom/icons/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "any"
           },
           {
-            src: "/icons/pwa-192x192.png",
+            src: "/diplom/icons/pwa-192x192.png",
             sizes: "192x192",
             type: "image/png",
             purpose: "maskable"
           },
           {
-            src: "/icons/pwa-512x512.png",
+            src: "/diplom/icons/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable"

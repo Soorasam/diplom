@@ -1,1 +1,144 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-900: #1e3a8a;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  overflow: hidden;
+}
+
+main, .swipeable-content-wrapper {
+  height: calc(100vh - 60px - env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(148 163 184 / 0.45) transparent;
+  box-sizing: border-box;
+}
+
+/* Overlay-style scrollbar: thin thumb over content, no reserved gutter */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background-color: rgb(148 163 184 / 0.4);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(148 163 184 / 0.65);
+}
+
+.dark html {
+  scrollbar-color: rgb(113 113 122 / 0.5) transparent;
+}
+
+.dark *::-webkit-scrollbar-thumb {
+  background-color: rgb(113 113 122 / 0.45);
+}
+
+.dark *::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(113 113 122 / 0.65);
+}
+
+.dark body {
+  @apply bg-zinc-950 text-zinc-100;
+}
+
+/* PWA safe areas (notch, home indicator) */
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* App-like page transitions */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-enter {
+  animation: fade-in 0.25s ease-out;
+}
+
+@keyframes page-slide-from-right {
+  from {
+    opacity: 0.7;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes page-slide-from-left {
+  from {
+    opacity: 0.7;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.page-slide-from-right {
+  animation: page-slide-from-right 0.22s ease-out;
+}
+
+.page-slide-from-left {
+  animation: page-slide-from-left 0.22s ease-out;
+}
+
+/* Touch-friendly scroll */
+main {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Dark mode foundations */
+.dark .bg-white {
+  @apply bg-zinc-900;
+}
+
+.dark .border-slate-200 {
+  @apply border-zinc-800;
+}
+
+.dark .text-slate-900 {
+  @apply text-zinc-100;
+}
+
+.dark .text-slate-600 {
+  @apply text-zinc-400;
+}
