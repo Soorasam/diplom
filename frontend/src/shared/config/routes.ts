@@ -9,6 +9,7 @@ export const routes = {
   checkout: "/checkout",
   orders: "/orders",
   order: (id: string) => `/orders/${id}`,
+  activeProcurements: "/active-procurements",
   profile: "/profile",
   notifications: "/notifications",
   support: "/support",
@@ -17,9 +18,19 @@ export const routes = {
 
   driver: {
     root: "/driver",
+    procurements: "/driver/procurements",
     route: "/driver/route",
     orders: "/driver/orders",
     map: "/driver/map",
+  },
+
+  driverApply: "/driver-apply",
+
+  employee: {
+    root: "/employee",
+    procurements: "/employee/procurements",
+    orders: "/employee/orders",
+    scan: "/employee/scan",
   },
 
   admin: {
@@ -28,8 +39,12 @@ export const routes = {
     orders: "/admin/orders",
     products: "/admin/products",
     routes: "/admin/routes",
+    procurements: "/admin/procurements",
     drivers: "/admin/drivers",
     settlements: "/admin/settlements",
     analytics: "/admin/analytics",
+    driverApplications: "/admin/driver-applications",
+    pvz: "/admin/pvz",
+    tickets: "/admin/tickets",
   },
 } as const

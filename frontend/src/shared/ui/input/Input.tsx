@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { forwardRef, type InputHTMLAttributes } from "react"
 
 import { cn } from "@/shared/lib/cn"
@@ -5,10 +6,12 @@ import { cn } from "@/shared/lib/cn"
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
+  leftIcon?: ReactNode
+  rightIcon?: ReactNode
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, id, ...props }, ref) => (
+  ({ className, label, error, id, leftIcon, rightIcon, ...props }, ref) => (
     <label className="block w-full">
       {label ? (
         <span className="mb-1.5 block text-xs font-medium text-slate-600">
@@ -16,18 +19,34 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         </span>
       ) : null}
 
-      <input
-        ref={ref}
-        id={id}
-        className={cn(
-          "w-full min-h-11 rounded-xl border bg-white px-3 py-2.5 text-sm text-slate-900",
-          "placeholder:text-slate-400 outline-none transition-colors",
-          "focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
-          error ? "border-red-400" : "border-slate-200",
-          className,
-        )}
-        {...props}
-      />
+      <div className="relative">
+        {leftIcon ? (
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+            {leftIcon}
+          </span>
+        ) : null}
+
+        <input
+          ref={ref}
+          id={id}
+          className={cn(
+            "w-full min-h-11 rounded-xl border bg-white px-3 py-2.5 text-sm text-slate-900",
+            "placeholder:text-slate-400 outline-none transition-colors",
+            "focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
+            leftIcon ? "pl-10" : "pl-3",
+            rightIcon ? "pr-10" : "pr-3",
+            error ? "border-red-400" : "border-slate-200",
+            className,
+          )}
+          {...props}
+        />
+
+        {rightIcon ? (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+            {rightIcon}
+          </span>
+        ) : null}
+      </div>
 
       {error ? (
         <span className="mt-1 block text-xs text-red-600">{error}</span>

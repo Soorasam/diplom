@@ -1,11 +1,13 @@
-import { Outlet, Link, useLocation } from "react-router-dom"
-import { LayoutDashboard, ListOrdered, Map, Route } from "lucide-react"
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom"
+import { LayoutDashboard, ListOrdered, Map, Route, ShoppingBasket } from "lucide-react"
 
+import { useAuthStore } from "@/app/model/auth-store"
 import { routes } from "@/shared/config/routes"
 import { cn } from "@/shared/lib/cn"
 
 const tabs = [
   { label: "Сводка", path: routes.driver.root, icon: LayoutDashboard },
+  { label: "Сборы", path: routes.driver.procurements, icon: ShoppingBasket },
   { label: "Маршрут", path: routes.driver.route, icon: Route },
   { label: "Заказы", path: routes.driver.orders, icon: ListOrdered },
   { label: "Карта", path: routes.driver.map, icon: Map },
@@ -13,14 +15,31 @@ const tabs = [
 
 export const DriverLayout = () => {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const logout = useAuthStore((s) => s.logout)
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-100">
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-sm safe-top">
-        <p className="text-xs font-medium uppercase tracking-wide text-blue-600">
-          Водитель
-        </p>
-        <h1 className="text-lg font-bold text-slate-900">Логистика маршрутов</h1>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-blue-600">
+              Водитель
+            </p>
+            <h1 className="text-lg font-bold text-slate-900">Логистика маршрутов</h1>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              logout()
+              navigate(routes.home, { replace: true })
+            }}
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Выйти
+          </button>
+        </div>
       </header>
 
       <main className="mx-auto w-full max-w-lg flex-1 overflow-y-auto px-4 py-4 pb-24">

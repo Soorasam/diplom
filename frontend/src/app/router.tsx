@@ -4,12 +4,15 @@ import { AppLayout } from "./layouts/AppLayout"
 import { AdminLayout } from "./layouts/AdminLayout"
 import { DriverLayout } from "./layouts/DriverLayout"
 
+import { RequireRole } from "@/features/auth/ui/RequireRole"
+
 import { HomePage } from "@/pages/home/ui/HomePage"
 import { CatalogPage } from "@/pages/catalog/ui/CatalogPage"
 import { ProductPage } from "@/pages/product/ui/ProductPage"
 import { CartPage } from "@/pages/cart/ui/CartPage"
 import { CheckoutPage } from "@/pages/checkout/ui/CheckoutPage"
 import { OrdersPage } from "@/pages/orders/ui/OrdersPage"
+import { ActiveProcurementsPage } from "@/pages/active-procurements/ui/ActiveProcurementsPage"
 import { OrderDetailsPage } from "@/pages/order-details/ui/OrderDetailsPage"
 import { ProfilePage } from "@/pages/profile/ui/ProfilePage"
 import { NotificationsPage } from "@/pages/notifications/ui/NotificationsPage"
@@ -18,8 +21,10 @@ import { AddressesPage } from "@/pages/addresses/ui/AddressesPage"
 import { PickupPointsPage } from "@/pages/pickup-points/ui/PickupPointsPage"
 import { AuthPage } from "@/pages/auth/ui/AuthPage"
 import { NotFoundPage } from "@/pages/not-found/ui/NotFoundPage"
+import { DriverApplyPage } from "@/pages/driver-apply/ui/DriverApplyPage"
 
 import { DriverDashboardPage } from "@/pages/driver/dashboard/ui/DriverDashboardPage"
+import { DriverProcurementsPage } from "@/pages/driver/procurements/ui/DriverProcurementsPage"
 import { DriverRoutePage } from "@/pages/driver/route/ui/DriverRoutePage"
 import { DriverOrdersPage } from "@/pages/driver/orders/ui/DriverOrdersPage"
 import { DriverMapPage } from "@/pages/driver/map/ui/DriverMapPage"
@@ -29,9 +34,20 @@ import { AdminUsersPage } from "@/pages/admin/users/ui/AdminUsersPage"
 import { AdminOrdersPage } from "@/pages/admin/orders/ui/AdminOrdersPage"
 import { AdminProductsPage } from "@/pages/admin/products/ui/AdminProductsPage"
 import { AdminRoutesPage } from "@/pages/admin/routes/ui/AdminRoutesPage"
+import { AdminProcurementsPage } from "@/pages/admin/procurements/ui/AdminProcurementsPage"
 import { AdminDriversPage } from "@/pages/admin/drivers/ui/AdminDriversPage"
 import { AdminSettlementsPage } from "@/pages/admin/settlements/ui/AdminSettlementsPage"
 import { AdminAnalyticsPage } from "@/pages/admin/analytics/ui/AdminAnalyticsPage"
+
+import { EmployeeLayout } from "./layouts/EmployeeLayout"
+import { EmployeeDashboardPage } from "@/pages/employee/dashboard/ui/EmployeeDashboardPage"
+import { EmployeeOrdersPage } from "@/pages/employee/orders/ui/EmployeeOrdersPage"
+import { EmployeeProcurementsPage } from "@/pages/employee/procurements/ui/EmployeeProcurementsPage"
+import { EmployeeScanPage } from "@/pages/employee/scan/ui/EmployeeScanPage"
+
+import { AdminDriverApplicationsPage } from "@/pages/admin/driver-applications/ui/AdminDriverApplicationsPage"
+import { AdminPvzPage } from "@/pages/admin/pvz/ui/AdminPvzPage"
+import { AdminTicketsPage } from "@/pages/admin/tickets/ui/AdminTicketsPage"
 
 export const router = createBrowserRouter([
   {
@@ -40,10 +56,20 @@ export const router = createBrowserRouter([
   },
 
   {
+    path: "/driver-apply",
+    element: <DriverApplyPage />,
+  },
+
+  {
     path: "/driver",
-    element: <DriverLayout />,
+    element: (
+      <RequireRole roles={["driver"]}>
+        <DriverLayout />
+      </RequireRole>
+    ),
     children: [
       { index: true, element: <DriverDashboardPage /> },
+      { path: "procurements", element: <DriverProcurementsPage /> },
       { path: "route", element: <DriverRoutePage /> },
       { path: "orders", element: <DriverOrdersPage /> },
       { path: "map", element: <DriverMapPage /> },
@@ -51,17 +77,40 @@ export const router = createBrowserRouter([
   },
 
   {
+    path: "/employee",
+    element: (
+      <RequireRole roles={["employee"]}>
+        <EmployeeLayout />
+      </RequireRole>
+    ),
+    children: [
+      { index: true, element: <EmployeeDashboardPage /> },
+      { path: "procurements", element: <EmployeeProcurementsPage /> },
+      { path: "orders", element: <EmployeeOrdersPage /> },
+      { path: "scan", element: <EmployeeScanPage /> },
+    ],
+  },
+
+  {
     path: "/admin",
-    element: <AdminLayout />,
+    element: (
+      <RequireRole roles={["admin"]}>
+        <AdminLayout />
+      </RequireRole>
+    ),
     children: [
       { index: true, element: <AdminDashboardPage /> },
       { path: "users", element: <AdminUsersPage /> },
       { path: "orders", element: <AdminOrdersPage /> },
       { path: "products", element: <AdminProductsPage /> },
       { path: "routes", element: <AdminRoutesPage /> },
+      { path: "procurements", element: <AdminProcurementsPage /> },
       { path: "drivers", element: <AdminDriversPage /> },
       { path: "settlements", element: <AdminSettlementsPage /> },
       { path: "analytics", element: <AdminAnalyticsPage /> },
+      { path: "driver-applications", element: <AdminDriverApplicationsPage /> },
+      { path: "pvz", element: <AdminPvzPage /> },
+      { path: "tickets", element: <AdminTicketsPage /> },
     ],
   },
 
@@ -77,6 +126,7 @@ export const router = createBrowserRouter([
       { path: "cart", element: <CartPage /> },
       { path: "checkout", element: <CheckoutPage /> },
       { path: "orders", element: <OrdersPage /> },
+      { path: "active-procurements", element: <ActiveProcurementsPage /> },
       { path: "orders/:id", element: <OrderDetailsPage /> },
       { path: "profile", element: <ProfilePage /> },
       { path: "notifications", element: <NotificationsPage /> },

@@ -8,7 +8,7 @@ import type { UserRole } from "@/shared/types"
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
-  login: (phone: string, role?: UserRole) => Promise<void>
+  loginByEmail: (email: string, role?: UserRole) => Promise<void>
   logout: () => void
   setSettlement: (settlementId: string) => void
 }
@@ -19,13 +19,13 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
 
-      login: async (phone, role = "client") => {
+      loginByEmail: async (email, role = "client") => {
         await new Promise((r) => setTimeout(r, 500))
-        const normalized = phone.replace(/\D/g, "")
+        const normalized = email.trim().toLowerCase()
         const found =
           users.find(
             (u) =>
-              u.phone.replace(/\D/g, "").includes(normalized.slice(-10)) &&
+              (u.email?.toLowerCase() ?? "") === normalized &&
               (role ? u.role === role : true),
           ) ?? users.find((u) => u.role === role)!
 

@@ -12,12 +12,13 @@ import type { UserRole } from "@/shared/types"
 const roleOptions: { value: UserRole; label: string }[] = [
   { value: "client", label: "Житель" },
   { value: "driver", label: "Водитель" },
+  { value: "employee", label: "ПВЗ" },
   { value: "admin", label: "Администратор" },
 ]
 
 export const LoginForm = () => {
   const navigate = useNavigate()
-  const login = useAuthStore((s) => s.login)
+  const loginByEmail = useAuthStore((s) => s.loginByEmail)
 
   const {
     register,
@@ -27,14 +28,15 @@ export const LoginForm = () => {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { phone: "", role: "client" },
+    defaultValues: { email: "", role: "client" },
   })
 
   const role = watch("role")
 
   const onSubmit = async (data: LoginFormValues) => {
-    await login(data.phone, data.role)
+    await loginByEmail(data.email, data.role)
     if (data.role === "driver") navigate(routes.driver.root)
+    else if (data.role === "employee") navigate(routes.employee.root)
     else if (data.role === "admin") navigate(routes.admin.root)
     else navigate(routes.home)
   }
@@ -42,11 +44,12 @@ export const LoginForm = () => {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <Input
-        label="Телефон"
-        type="tel"
-        placeholder="+7 (914) 123-45-67"
-        error={errors.phone?.message}
-        {...register("phone")}
+        label="Email"
+        type="email"
+        placeholder="name@example.com"
+        autoComplete="email"
+        error={errors.email?.message}
+        {...register("email")}
       />
 
       <fieldset>
@@ -54,7 +57,7 @@ export const LoginForm = () => {
           Роль
         </legend>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {roleOptions.map((opt) => (
             <button
               key={opt.value}

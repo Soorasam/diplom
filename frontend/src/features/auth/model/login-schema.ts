@@ -1,11 +1,11 @@
 import { z } from "zod"
 
 export const loginSchema = z.object({
-  phone: z
+  email: z
     .string()
-    .min(10, "Введите корректный номер телефона")
-    .max(18, "Слишком длинный номер"),
-  role: z.enum(["client", "driver", "admin"]),
+    .trim()
+    .email("Введите корректный email"),
+  role: z.enum(["client", "driver", "employee", "admin"]),
 })
 
 export type LoginFormValues = z.infer<typeof loginSchema>

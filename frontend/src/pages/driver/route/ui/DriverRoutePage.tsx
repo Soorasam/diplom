@@ -1,6 +1,5 @@
-import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { CheckCircle2, MapPin, Snowflake } from "lucide-react"
+import { CheckCircle2, MapPin, Snowflake, Truck } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { routesApi } from "@/entities/route/api/routesApi"
@@ -41,16 +40,6 @@ export const DriverRoutePage = () => {
   const activeRoute =
     driverRoutes?.find((r) => r.status === "active") ?? driverRoutes?.[0]
 
-  const [pointStatuses, setPointStatuses] = useState<Record<number, PointStatus>>({})
-  const [routeStatus, setRouteStatus] = useState<string | null>(null)
-
-  const getPointStatus = (index: number): PointStatus =>
-    pointStatuses[index] ?? (index === 0 ? "arrived" : "pending")
-
-  const updatePoint = (index: number, status: PointStatus) => {
-    setPointStatuses((prev) => ({ ...prev, [index]: status }))
-  }
-
   const settlementName = (id: string) =>
     settlements.find((s) => s.id === id)?.name ?? id
 
@@ -87,12 +76,25 @@ export const DriverRoutePage = () => {
       type: "stop" as const,
     })),
   ]
+  const inferredCurrentStopIndex =
+    activeRoute.status === "completed" ? stops.length : Math.min(1, stops.length - 1)
+
+  const getPointStatus = (index: number): PointStatus => {
+    if (activeRoute.status === "completed") return "done"
+    if (index < inferredCurrentStopIndex) return "done"
+    if (index === inferredCurrentStopIndex) return "arrived"
+    return "pending"
+  }
+
+  const completedStops = stops.filter((_, idx) => getPointStatus(idx) === "done").length
+  const nextStop = stops.find((_, idx) => getPointStatus(idx) !== "done") ?? null
+  const autoCompleted = completedStops === stops.length
 
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
         title={activeRoute.name}
-        subtitle="Управление точками маршрута"
+        subtitle="Водитель видит точки, адрес следующей доставки и текущий статус"
       />
 
       <Card className="border-blue-100 bg-blue-50/40">
@@ -102,14 +104,32 @@ export const DriverRoutePage = () => {
             <Snowflake size={12} className="mr-1 inline" />
             {deliveryModeLabel[activeRoute.deliveryMode]}
           </Badge>
-          {routeStatus ? (
-            <Badge variant="success">{routeStatus}</Badge>
-          ) : null}
+          <Badge variant={autoCompleted ? "success" : "warning"}>
+            {autoCompleted ? "Рейс завершен автоматически" : "В пути"}
+          </Badge>
+          <Badge variant="default">{completedStops}/{stops.length} точек выполнено</Badge>
         </div>
       </Card>
 
+      {nextStop ? (
+        <Card className="border-blue-200 bg-gradient-to-br from-white to-blue-50/60">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
+              <Truck size={20} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-blue-700">Следующая точка</p>
+              <p className="truncate font-semibold text-slate-900">{nextStop.label}</p>
+              <p className="text-xs text-slate-500">
+                {nextStop.coords.lat.toFixed(2)}°, {nextStop.coords.lng.toFixed(2)}°
+              </p>
+            </div>
+          </div>
+        </Card>
+      ) : null}
+
       <div>
-        <p className="mb-2 text-sm font-semibold text-slate-800">Точки маршрута</p>
+        <p className="mb-2 text-sm font-semibold text-slate-800">Точки передачи в ПВЗ</p>
         <ol className="flex flex-col gap-2">
           {stops.map((stop, index) => {
             const status = getPointStatus(index)
@@ -150,25 +170,10 @@ export const DriverRoutePage = () => {
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col gap-1">
-                      {status === "pending" ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => updatePoint(index, "arrived")}
-                        >
-                          Прибыл
-                        </Button>
-                      ) : null}
-                      {status === "arrived" ? (
-                        <Button
-                          size="sm"
-                          onClick={() => updatePoint(index, "done")}
-                        >
-                          Сдано
-                        </Button>
-                      ) : null}
                       {status === "done" ? (
-                        <Badge variant="success">Готово</Badge>
+                        <Badge variant="success">Передано</Badge>
+                      ) : status === "arrived" ? (
+                        <Badge variant="info">Текущая точка</Badge>
                       ) : null}
                     </div>
                   </div>
@@ -178,14 +183,17 @@ export const DriverRoutePage = () => {
           })}
         </ol>
       </div>
-
-      <Button
-        fullWidth
-        variant="secondary"
-        onClick={() => setRouteStatus("Маршрут завершён (демо)")}
-      >
-        Завершить маршрут
-      </Button>
+      {autoCompleted ? (
+        <Card className="border-emerald-200 bg-emerald-50/40">
+          <p className="text-sm font-semibold text-emerald-800">
+            Отличная работа! Рейс завершен автоматически, все точки пройдены.
+          </p>
+        </Card>
+      ) : (
+        <p className="text-xs text-slate-500">
+          Все действия по приемке подтверждает ПВЗ. Водитель видит маршрут и следующую точку.
+        </p>
+      )}
     </div>
   )
 }

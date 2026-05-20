@@ -1,15 +1,19 @@
-import { Link, Outlet, useLocation } from "react-router-dom"
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
 import {
   BarChart3,
   LayoutDashboard,
   Map,
+  MessageSquare,
   Package,
   Route,
   Truck,
   Users,
   MapPin,
+  FileText,
+  LogOut,
 } from "lucide-react"
 
+import { useAuthStore } from "@/app/model/auth-store"
 import { routes } from "@/shared/config/routes"
 import { cn } from "@/shared/lib/cn"
 
@@ -18,7 +22,11 @@ const nav = [
   { label: "Заказы", path: routes.admin.orders, icon: Package },
   { label: "Товары", path: routes.admin.products, icon: Package },
   { label: "Маршруты", path: routes.admin.routes, icon: Route },
+  { label: "Сборы", path: routes.admin.procurements, icon: Package },
   { label: "Водители", path: routes.admin.drivers, icon: Truck },
+  { label: "Заявки", path: routes.admin.driverApplications, icon: FileText },
+  { label: "ПВЗ", path: routes.admin.pvz, icon: MapPin },
+  { label: "Споры", path: routes.admin.tickets, icon: MessageSquare },
   { label: "Насел. пункты", path: routes.admin.settlements, icon: MapPin },
   { label: "Пользователи", path: routes.admin.users, icon: Users },
   { label: "Аналитика", path: routes.admin.analytics, icon: BarChart3 },
@@ -26,6 +34,8 @@ const nav = [
 
 export const AdminLayout = () => {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
+  const logout = useAuthStore((s) => s.logout)
 
   return (
     <div className="flex min-h-screen bg-slate-100">
@@ -60,11 +70,35 @@ export const AdminLayout = () => {
           <Map size={16} />
           К клиенту
         </Link>
+
+        <button
+          type="button"
+          onClick={() => {
+            logout()
+            navigate(routes.home, { replace: true })
+          }}
+          className="m-2 flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+        >
+          <LogOut size={16} />
+          Выйти
+        </button>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="border-b border-slate-200 bg-white px-4 py-3 md:hidden safe-top">
-          <p className="font-bold text-slate-900">Админ-панель</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-bold text-slate-900">Админ-панель</p>
+            <button
+              type="button"
+              onClick={() => {
+                logout()
+                navigate(routes.home, { replace: true })
+              }}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Выйти
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6">

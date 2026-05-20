@@ -89,7 +89,7 @@ export const HomePage = () => {
       <section>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-800">Активные сборы</h2>
-          <Link to={routes.catalog} className="text-xs font-medium text-blue-600">
+          <Link to={routes.activeProcurements} className="text-xs font-medium text-blue-600">
             Все
           </Link>
         </div>
@@ -105,6 +105,15 @@ export const HomePage = () => {
           </div>
         )}
       </section>
+
+      <Link
+        to={routes.activeProcurements}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+      >
+        <Truck size={18} />
+        Перейти к активным сборам
+        <ArrowRight size={18} />
+      </Link>
 
       <section>
         <div className="mb-3 flex items-center justify-between">

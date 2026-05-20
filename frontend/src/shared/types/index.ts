@@ -1,4 +1,6 @@
-export type UserRole = "client" | "driver" | "admin"
+export type UserRole = "client" | "driver" | "employee" | "admin"
+
+export type DriverApplicationStatus = "pending" | "approved" | "rejected"
 
 export type OrderStatus =
   | "draft"
