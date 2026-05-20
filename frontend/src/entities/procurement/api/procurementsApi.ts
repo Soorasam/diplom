@@ -23,14 +23,28 @@ export const procurementsApi = {
     }
   },
 
-  getAll: () => apiCall(() => store),
+  getAll: async () => {
+    try {
+      const rounds = await http.get<BackendRound[]>("/admin/rounds", true)
+      return rounds.map(mapRound)
+    } catch {
+      const rounds = await http.get<BackendRound[]>("/rounds")
+      return rounds.map(mapRound)
+    }
+  },
 
-  getById: (id: string) =>
-    apiCall(() => {
-      const item = store.find((p) => p.id === id)
-      if (!item) throw new Error("Сбор не найден")
-      return item
-    }),
+  getById: async (id: string) => {
+    try {
+      const round = await http.get<BackendRound>(`/rounds/${id}`)
+      return mapRound(round)
+    } catch {
+      return apiCall(() => {
+        const item = store.find((p) => p.id === id)
+        if (!item) throw new Error("Сбор не найден")
+        return item
+      })
+    }
+  },
 
   getRoute: (routeId: string) =>
     apiCall(() => deliveryRoutes.find((r) => r.id === routeId)),
@@ -57,18 +71,24 @@ export const procurementsApi = {
       return item
     }),
 
-  close: (id: string, actorRole: UserRole) =>
-    apiCall(() => {
-      if (actorRole !== "driver") {
-        throw new Error("Закрывать сбор может только водитель")
-      }
-      store = store.map((p) =>
-        p.id === id ? { ...p, status: "closed" as ProcurementStatus } : p,
-      )
-      const item = store.find((p) => p.id === id)
-      if (!item) throw new Error("Сбор не найден")
-      return item
-    }),
+  close: async (id: string, actorRole: UserRole) => {
+    if (actorRole !== "driver" && actorRole !== "admin") {
+      throw new Error("Закрывать сбор может только водитель или админ")
+    }
+    try {
+      await http.patch(`/rounds/${id}/close`, {}, true)
+      return procurementsApi.getById(id)
+    } catch {
+      return apiCall(() => {
+        store = store.map((p) =>
+          p.id === id ? { ...p, status: "closed" as ProcurementStatus } : p,
+        )
+        const item = store.find((p) => p.id === id)
+        if (!item) throw new Error("Сбор не найден")
+        return item
+      })
+    }
+  },
 
   getMemberships: (userId: string) =>
     apiCall(() => membershipsStore[userId] ?? []),
@@ -95,22 +115,26 @@ export const procurementsApi = {
   getReceiptApprovals: (procurementId: string) =>
     apiCall(() => receiptApprovalsStore[procurementId] ?? []),
 
-  approveReceipt: (procurementId: string, actorRole: UserRole) =>
-    apiCall(() => {
-      if (actorRole !== "employee" && actorRole !== "admin") {
-        throw new Error("Подтверждать приемку может только ПВЗ или админ")
-      }
-
+  approveReceipt: async (procurementId: string, actorRole: UserRole) => {
+    if (actorRole !== "employee" && actorRole !== "admin") {
+      throw new Error("Подтверждать приемку может только ПВЗ или админ")
+    }
+    if (actorRole === "admin") {
+      const { adminApi } = await import("@/entities/admin/api/adminApi")
+      await adminApi.fulfillRound(procurementId)
+      return [{ approvedByRole: "admin" as const, approvedAt: new Date().toISOString() }]
+    }
+    return apiCall(() => {
       const existing = receiptApprovalsStore[procurementId] ?? []
       if (existing.some((x) => x.approvedByRole === actorRole)) {
         return existing
       }
-
       const next = [
         ...existing,
         { approvedByRole: actorRole, approvedAt: new Date().toISOString() },
       ]
       receiptApprovalsStore = { ...receiptApprovalsStore, [procurementId]: next }
       return next
-    }),
+    })
+  },
 }

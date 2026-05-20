@@ -1,15 +1,13 @@
 import { Link, useLocation } from "react-router-dom"
 import { Home, LayoutGrid, Package, ShoppingCart, User } from "lucide-react"
 
-import { useCartStore } from "@/features/cart/model/cart-store"
+import { useValidCartItemCount } from "@/features/cart/hooks/useCartSync"
 import { routes } from "@/shared/config/routes"
 import { cn } from "@/shared/lib/cn"
 
 export const BottomNav = () => {
   const location = useLocation()
-  const itemCount = useCartStore((s) =>
-    s.items.reduce((sum, i) => sum + i.quantity, 0),
-  )
+  const itemCount = useValidCartItemCount()
 
   const tabs = [
     {

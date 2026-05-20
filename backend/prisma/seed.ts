@@ -87,6 +87,9 @@ async function main() {
     prisma.settlement.create({
       data: { name: 'с. Вилюйск', district: 'Вилюйский', ulus: 'Вилюйский' },
     }),
+    prisma.settlement.create({
+      data: { name: 'с. Оймякон', district: 'Оймяконский', ulus: 'Оймяконский' },
+    }),
   ]);
 
   const pickupPoints = await Promise.all([
@@ -104,6 +107,14 @@ async function main() {
         coordinatorName: 'Петров С.',
         address: 'пункт выдачи, центр',
         phone: '+7 914 000-00-02',
+      },
+    }),
+    prisma.pickupPoint.create({
+      data: {
+        settlementId: settlements[3].id,
+        coordinatorName: 'Слепцов Н.',
+        address: 'ул. Советская, 5',
+        phone: '+7 914 000-00-03',
       },
     }),
   ]);
@@ -204,23 +215,52 @@ async function main() {
   const passwordAdmin = await bcrypt.hash('admin12345', 10);
   const passwordDemo = await bcrypt.hash('demo12345', 10);
 
-  await prisma.user.createMany({
+  const passwordEmployee = await bcrypt.hash('employee12345', 10);
+
+  const admin = await prisma.user.create({
+    data: {
+      email: 'admin@coop.local',
+      fullName: 'Администратор',
+      hashedPassword: passwordAdmin,
+      role: UserRole.admin,
+      settlementId: settlements[0].id,
+      pickupPointId: pickupPoints[0].id,
+    },
+  });
+
+  const demo = await prisma.user.create({
+    data: {
+      email: 'demo@coop.local',
+      fullName: 'Демо Пользователь',
+      hashedPassword: passwordDemo,
+      role: UserRole.resident,
+      settlementId: settlements[0].id,
+      pickupPointId: pickupPoints[0].id,
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      email: 'employee@coop.local',
+      fullName: 'Сотрудник ПВЗ',
+      hashedPassword: passwordEmployee,
+      role: UserRole.employee,
+      settlementId: settlements[0].id,
+      pickupPointId: pickupPoints[0].id,
+    },
+  });
+
+  await prisma.notification.createMany({
     data: [
       {
-        email: 'admin@coop.local',
-        fullName: 'Администратор',
-        hashedPassword: passwordAdmin,
-        role: UserRole.admin,
-        settlementId: settlements[0].id,
-        pickupPointId: pickupPoints[0].id,
+        userId: demo.id,
+        title: 'Сбор открыт',
+        body: 'Новый сбор по маршруту Якутск — Вилюй принимает заказы.',
       },
       {
-        email: 'demo@coop.local',
-        fullName: 'Демо Пользователь',
-        hashedPassword: passwordDemo,
-        role: UserRole.resident,
-        settlementId: settlements[0].id,
-        pickupPointId: pickupPoints[0].id,
+        userId: admin.id,
+        title: 'Система',
+        body: 'Демо-данные загружены. API готов к работе.',
       },
     ],
   });
@@ -228,6 +268,7 @@ async function main() {
   console.log('Seed выполнен успешно.');
   console.log('  admin@coop.local / admin12345');
   console.log('  demo@coop.local  / demo12345');
+  console.log('  employee@coop.local / employee12345');
   console.log('  MinIO console: http://127.0.0.1:9001 (minioadmin / minioadmin)');
 }
 

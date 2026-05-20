@@ -10,7 +10,23 @@ datasource db {
 enum UserRole {
   resident
   coordinator
+  employee
   admin
+}
+
+enum DriverApplicationStatus {
+  draft
+  pending
+  approved
+  rejected
+}
+
+enum DriverDocumentType {
+  passport
+  license
+  sts
+  vehicle
+  selfie
 }
 
 enum RoundStatus {
@@ -48,8 +64,10 @@ model User {
 
   settlement  Settlement?  @relation(fields: [settlementId], references: [id])
   pickupPoint PickupPoint? @relation(fields: [pickupPointId], references: [id])
-  cartItems   CartItem[]
-  orders      Order[]
+  cartItems          CartItem[]
+  orders             Order[]
+  notifications      Notification[]
+  driverApplications DriverApplication[]
 
   @@map("users")
 }
@@ -174,6 +192,51 @@ model Order {
   items       OrderItem[]
 
   @@map("orders")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model DriverApplication {
+  id               String                  @id @default(uuid()) @db.Uuid
+  userId           String                  @map("user_id") @db.Uuid
+  status           DriverApplicationStatus @default(draft)
+  vehicleSummary   String?                 @map("vehicle_summary")
+  rejectionReason  String?                 @map("rejection_reason")
+  submittedAt      DateTime?               @map("submitted_at")
+  reviewedAt       DateTime?               @map("reviewed_at")
+  createdAt        DateTime                @default(now()) @map("created_at")
+
+  user      User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents DriverApplicationDocument[]
+
+  @@map("driver_applications")
+}
+
+model DriverApplicationDocument {
+  id            String             @id @default(uuid()) @db.Uuid
+  applicationId String             @map("application_id") @db.Uuid
+  type          DriverDocumentType
+  objectKey     String             @map("object_key")
+  fileName      String?            @map("file_name")
+  mimeType      String?            @map("mime_type")
+  url           String
+  createdAt     DateTime           @default(now()) @map("created_at")
+
+  application DriverApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, type])
+  @@map("driver_application_documents")
 }
 
 model OrderItem {

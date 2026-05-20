@@ -1,4 +1,5 @@
 import { IsEmail, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class RegisterDto {
   @IsEmail()
@@ -12,11 +13,13 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   @MaxLength(255)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() || undefined : value))
   fullName?: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(32)
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() || undefined : value))
   phone?: string;
 
   @IsOptional()

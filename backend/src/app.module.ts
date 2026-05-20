@@ -7,16 +7,24 @@ import { HealthController } from './health.controller';
 import { OrdersModule } from './orders/orders.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProfileModule } from './profile/profile.module';
+import { AdminModule } from './admin/admin.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { DriverApplicationsModule } from './driver-applications/driver-applications.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    StorageModule,
     PrismaModule,
     AuthModule,
     CatalogModule,
     CartModule,
     OrdersModule,
     ProfileModule,
+    AdminModule,
+    NotificationsModule,
+    DriverApplicationsModule,
   ],
   controllers: [HealthController],
 })

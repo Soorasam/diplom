@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { queryKeys } from "@/shared/config/query-keys"
+import type { OrderStatus } from "@/shared/types"
 
 import { adminApi } from "./adminApi"
 
@@ -45,3 +46,32 @@ export const useAdminDrivers = () =>
     queryKey: queryKeys.admin.drivers,
     queryFn: () => adminApi.getDrivers(),
   })
+
+export const useAdminPickupPoints = () =>
+  useQuery({
+    queryKey: [...queryKeys.admin.stats, "pickup-points"],
+    queryFn: () => adminApi.getPickupPoints(),
+  })
+
+export const useAdminRounds = () =>
+  useQuery({
+    queryKey: [...queryKeys.admin.stats, "rounds"],
+    queryFn: () => adminApi.getRounds(),
+  })
+
+export const useAdminTickets = () =>
+  useQuery({
+    queryKey: [...queryKeys.admin.stats, "notifications"],
+    queryFn: () => adminApi.getNotifications(),
+  })
+
+export const useUpdateAdminOrderStatus = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ orderId, status }: { orderId: string; status: OrderStatus }) =>
+      adminApi.updateOrderStatus(orderId, status),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [...queryKeys.admin.stats, "orders"] })
+    },
+  })
+}

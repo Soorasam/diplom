@@ -1,5 +1,8 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
-import { RoundStatus } from '@prisma/client';
+import { Controller, Get, Param, ParseUUIDPipe, Patch, Query, UseGuards } from '@nestjs/common';
+import { RoundStatus, UserRole } from '@prisma/client';
+import { Roles } from '../common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import { CatalogService } from './catalog.service';
 
 @Controller()
@@ -21,9 +24,33 @@ export class CatalogController {
     return this.catalog.listPickupPoints(settlementId);
   }
 
+  @Get('routes')
+  routes() {
+    return this.catalog.listRoutes();
+  }
+
   @Get('rounds')
   rounds(@Query('status') status?: RoundStatus) {
-    return this.catalog.listRounds(status ?? RoundStatus.open);
+    return this.catalog.listRounds(status);
+  }
+
+  @Patch('rounds/:id/fulfill')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
+  fulfillRound(@Param('id', ParseUUIDPipe) id: string) {
+    return this.catalog.fulfillRound(id);
+  }
+
+  @Get('rounds/:id')
+  round(@Param('id', ParseUUIDPipe) id: string) {
+    return this.catalog.getRound(id);
+  }
+
+  @Patch('rounds/:id/close')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.coordinator, UserRole.admin)
+  closeRound(@Param('id', ParseUUIDPipe) id: string) {
+    return this.catalog.closeRound(id);
   }
 
   @Get('categories')

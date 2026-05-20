@@ -7,16 +7,20 @@ import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 
-const roleLabel = {
+import type { UserRole } from "@/shared/types"
+
+const roleLabel: Record<UserRole, string> = {
   client: "Клиент",
   driver: "Водитель",
+  employee: "ПВЗ",
   admin: "Администратор",
-} as const
+}
 
-const roleVariant = {
-  client: "default" as const,
-  driver: "info" as const,
-  admin: "warning" as const,
+const roleVariant: Record<UserRole, "default" | "info" | "warning" | "success"> = {
+  client: "default",
+  driver: "info",
+  employee: "success",
+  admin: "warning",
 }
 
 export const AdminUsersPage = () => {

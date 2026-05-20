@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { Prisma, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
-import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -52,25 +52,57 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const email = dto.email.toLowerCase();
+    const phone = dto.phone ?? null;
+
     const exists = await this.prisma.user.findUnique({ where: { email } });
     if (exists) {
       throw new ConflictException('Email уже зарегистрирован');
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        phone: dto.phone,
-        fullName: dto.fullName,
-        hashedPassword,
-        settlementId: dto.settlementId,
-        pickupPointId: dto.pickupPointId,
-      },
-    });
+    if (phone) {
+      const phoneTaken = await this.prisma.user.findUnique({ where: { phone } });
+      if (phoneTaken) {
+        throw new ConflictException('Телефон уже зарегистрирован');
+      }
+    }
 
-    const tokens = this.signTokens(user.id);
-    return { ...tokens, token_type: 'bearer', user: this.toUserRead(user) };
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          email,
+          phone,
+          fullName: dto.fullName,
+          hashedPassword,
+          settlementId: dto.settlementId,
+          pickupPointId: dto.pickupPointId,
+        },
+      });
+
+      const tokens = this.signTokens(user.id);
+      return { ...tokens, token_type: 'bearer', user: this.toUserRead(user) };
+    } catch (error) {
+      this.rethrowUniqueConflict(error);
+    }
+  }
+
+  private rethrowUniqueConflict(error: unknown): never {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      const target = error.meta?.target;
+      const fields = Array.isArray(target) ? target : [];
+      if (fields.includes('email')) {
+        throw new ConflictException('Email уже зарегистрирован');
+      }
+      if (fields.includes('phone')) {
+        throw new ConflictException('Телефон уже зарегистрирован');
+      }
+      throw new ConflictException('Такой пользователь уже существует');
+    }
+    throw error;
   }
 
   async login(dto: LoginDto) {

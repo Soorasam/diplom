@@ -12,6 +12,7 @@ export const queryKeys = {
     active: ["procurements", "active"] as const,
     memberships: (userId?: string) => ["procurements", "memberships", userId] as const,
   },
+  cart: ["cart"] as const,
   orders: {
     all: ["orders"] as const,
     list: (userId?: string) => ["orders", "list", userId] as const,

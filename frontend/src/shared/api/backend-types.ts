@@ -4,7 +4,7 @@ export interface BackendUser {
   email: string
   phone: string | null
   fullName: string | null
-  role: "resident" | "coordinator" | "admin"
+  role: "resident" | "coordinator" | "employee" | "admin"
   settlementId: string | null
   pickupPointId: string | null
 }

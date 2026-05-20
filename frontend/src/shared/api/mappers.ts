@@ -1,24 +1,144 @@
-import type { Category, Product, Procurement, User } from "@/shared/api/mock-db"
+import type {
+  Category,
+  Order,
+  PickupPoint,
+  Product,
+  Procurement,
+  Settlement,
+  User,
+} from "@/shared/api/mock-db"
 import type {
   BackendCategory,
   BackendProduct,
   BackendRound,
   BackendUser,
 } from "@/shared/api/backend-types"
-import type { DeliveryMode, UserRole } from "@/shared/types"
+import type { DeliveryMode, OrderStatus, UserRole } from "@/shared/types"
+
+export const parseApiNumber = (
+  value: number | string | { toNumber(): number } | null | undefined,
+): number => {
+  if (value == null) return 0
+  if (typeof value === "number") return value
+  if (typeof value === "string") return parseFloat(value) || 0
+  return value.toNumber()
+}
 
 export const mapBackendRole = (role: BackendUser["role"]): UserRole => {
   if (role === "admin") return "admin"
+  if (role === "employee") return "employee"
   if (role === "coordinator") return "driver"
   return "client"
 }
+
+const BACKEND_TO_FRONT_STATUS: Record<string, OrderStatus> = {
+  submitted: "pending",
+  confirmed: "confirmed",
+  in_transit: "in_transit",
+  at_pickup: "at_pickup",
+  delivered: "delivered",
+  cancelled: "cancelled",
+}
+
+const FRONT_TO_BACKEND_STATUS: Partial<Record<OrderStatus, string>> = {
+  pending: "submitted",
+  confirmed: "confirmed",
+  in_transit: "in_transit",
+  at_pickup: "at_pickup",
+  delivered: "delivered",
+  cancelled: "cancelled",
+}
+
+export const mapBackendOrderStatus = (status: string): OrderStatus =>
+  BACKEND_TO_FRONT_STATUS[status] ?? "pending"
+
+export const mapFrontOrderStatusToBackend = (status: OrderStatus): string =>
+  FRONT_TO_BACKEND_STATUS[status] ?? status
+
+export const mapBackendOrder = (o: {
+  id: string
+  userId: string
+  roundId?: string
+  procurementId?: string
+  pickupPointId: string | null
+  status: string
+  total?: number
+  totalEstimate?: number
+  comment?: string | null
+  createdAt: string | Date
+  items?: {
+    productId: string
+    productName?: string
+    quantity: number
+    price?: number
+    priceSnapshot?: number
+  }[]
+  publicNumber?: string
+  title?: string
+  timeline?: Order["timeline"]
+}): Order => ({
+  id: o.id,
+  userId: o.userId,
+  procurementId: o.procurementId ?? o.roundId ?? "",
+  pickupPointId: o.pickupPointId ?? "",
+  status: mapBackendOrderStatus(o.status),
+  total: o.total ?? o.totalEstimate ?? 0,
+  comment: o.comment ?? undefined,
+  createdAt: typeof o.createdAt === "string" ? o.createdAt : o.createdAt.toISOString(),
+  items: (o.items ?? []).map((i) => ({
+    productId: i.productId,
+    productName: i.productName,
+    quantity: i.quantity,
+    price: parseApiNumber(i.price ?? i.priceSnapshot),
+  })),
+  timeline:
+    o.timeline ??
+    [
+      {
+        status: mapBackendOrderStatus(o.status),
+        at: typeof o.createdAt === "string" ? o.createdAt : o.createdAt.toISOString(),
+        label: o.status,
+      },
+    ],
+})
+
+export const mapSettlement = (s: {
+  id: string
+  name: string
+  district?: string | null
+  ulus?: string | null
+}): Settlement => ({
+  id: s.id,
+  name: s.name,
+  ulus: s.ulus ?? s.district ?? "",
+  population: 0,
+  coordinates: { lat: 0, lng: 0 },
+})
+
+export const mapPickupPoint = (p: {
+  id: string
+  settlementId: string
+  coordinatorName: string
+  address?: string | null
+  phone?: string | null
+}): PickupPoint => ({
+  id: p.id,
+  settlementId: p.settlementId,
+  name: p.coordinatorName,
+  coordinatorName: p.coordinatorName,
+  address: p.address ?? "",
+  coordinatorPhone: p.phone ?? "",
+  coordinates: { lat: 0, lng: 0 },
+})
 
 export const mapUser = (u: BackendUser): User => ({
   id: u.id,
   name: u.fullName ?? u.email,
   phone: u.phone ?? "",
+  email: u.email,
   role: mapBackendRole(u.role),
   settlementId: u.settlementId ?? "",
+  pickupPointId: u.pickupPointId ?? undefined,
 })
 
 export const mapCategory = (c: BackendCategory): Category => ({
@@ -32,7 +152,7 @@ export const mapProduct = (p: BackendProduct): Product => ({
   id: p.id,
   name: p.name,
   description: p.description ?? "",
-  price: p.priceEstimate,
+  price: parseApiNumber(p.priceEstimate as number | string),
   categoryId: p.categoryId,
   imageUrl: p.imageUrl ?? "",
   weightKg: 0,
@@ -49,7 +169,14 @@ export const mapRound = (r: BackendRound): Procurement => ({
   id: r.id,
   title: r.title ?? r.route.title,
   routeId: r.routeId,
-  status: r.status === "open" ? "open" : "closed",
+  status:
+    r.status === "open"
+      ? "open"
+      : r.status === "fulfilled"
+        ? "shipped"
+        : r.status === "closed"
+          ? "closed"
+          : "closing",
   closesAt: r.closesAt,
   minVolumePercent: Math.max(
     10,

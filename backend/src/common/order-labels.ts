@@ -14,6 +14,11 @@ export function calcProgressPercent(participantsCount: number, targetParticipant
   return Math.min(Math.floor((participantsCount * 100) / targetParticipants), 100);
 }
 
-export function decimalToNumber(value: { toNumber(): number } | number): number {
-  return typeof value === 'number' ? value : value.toNumber();
+export function decimalToNumber(
+  value: { toNumber(): number } | number | string | null | undefined,
+): number {
+  if (value == null) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseFloat(value) || 0;
+  return value.toNumber();
 }

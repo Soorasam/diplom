@@ -13,7 +13,16 @@ export interface User {
   email?: string
   role: UserRole
   settlementId: string
+  pickupPointId?: string
   avatarUrl?: string
+}
+
+export interface DriverApplicationDocument {
+  id: string
+  type: string
+  url: string
+  fileName?: string | null
+  mimeType?: string | null
 }
 
 export interface DriverApplication {
@@ -23,8 +32,8 @@ export interface DriverApplication {
   submittedAt: string
   reviewedAt?: string
   rejectionReason?: string
-  // В реальном API здесь будут ссылки на загруженные документы/метаданные
   vehicleSummary?: string
+  documents?: DriverApplicationDocument[]
 }
 
 export interface PvzEmployeeProfile {
@@ -94,6 +103,7 @@ export interface DeliveryRoute {
 
 export interface OrderItem {
   productId: string
+  productName?: string
   quantity: number
   price: number
 }

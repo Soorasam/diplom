@@ -1,13 +1,6 @@
-import { apiCall } from "@/shared/api/client"
-import {
-  orders,
-  pvzEmployees,
-  users,
-  products,
-  type Order,
-} from "@/shared/api/mock-db"
-
-let ordersStore = [...orders]
+import { http } from "@/shared/api/client"
+import type { Order } from "@/shared/api/mock-db"
+import { mapBackendOrder } from "@/shared/api/mappers"
 
 export interface EmployeeOrderView extends Order {
   userName: string
@@ -16,31 +9,25 @@ export interface EmployeeOrderView extends Order {
 }
 
 export const employeeApi = {
-  getPickupPointIdByEmployee: (userId: string) =>
-    apiCall(() => pvzEmployees.find((x) => x.userId === userId)?.pickupPointId),
+  getPickupPointIdByEmployee: (_userId: string, pickupPointId?: string | null) =>
+    Promise.resolve(pickupPointId ?? null),
 
-  getOrdersByPickupPoint: (pickupPointId: string) =>
-    apiCall(() => {
-      const list = ordersStore
-        .filter((o) => o.pickupPointId === pickupPointId)
-        // Employee работает только с выдачей: показываем то, что уже в ПВЗ / выдано
-        .filter((o) => o.status === "at_pickup" || o.status === "delivered")
+  getOrdersByPickupPoint: async (pickupPointId: string) => {
+    const list = await http.get<Parameters<typeof mapBackendOrder>[0][]>(
+      `/orders/pickup-point/${pickupPointId}`,
+      true,
+    )
 
-      return list.map<EmployeeOrderView>((o) => {
-        const user = users.find((u) => u.id === o.userId)
-        const itemsText = o.items
-          .map((i) => {
-            const p = products.find((x) => x.id === i.productId)
-            return `${p?.name ?? i.productId} × ${i.quantity}`
-          })
-          .join(", ")
-        return {
-          ...o,
-          userName: user?.name ?? o.userId,
-          userPhone: user?.phone ?? "—",
-          itemsText,
-        }
-      })
-    }),
+    return list
+      .map((o) => mapBackendOrder({ ...o, items: o.items ?? [], pickupPointId: o.pickupPointId ?? pickupPointId }))
+      .filter((o) => o.status === "at_pickup" || o.status === "delivered")
+      .map<EmployeeOrderView>((o) => ({
+        ...o,
+        userName: o.userId,
+        userPhone: "—",
+        itemsText: o.items
+          .map((i) => `${i.productId.slice(0, 8)}… × ${i.quantity}`)
+          .join(", "),
+      }))
+  },
 }
-

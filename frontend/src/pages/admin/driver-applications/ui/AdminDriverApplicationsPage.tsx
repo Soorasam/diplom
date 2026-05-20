@@ -24,6 +24,14 @@ const statusVariant = {
   rejected: "danger" as const,
 }
 
+const docTypeLabel: Record<string, string> = {
+  passport: "Паспорт",
+  license: "Водительские права",
+  sts: "СТС",
+  vehicle: "Фото авто",
+  selfie: "Селфи",
+}
+
 export const AdminDriverApplicationsPage = () => {
   const { data } = useAdminDriverApplications()
   const setStatus = useSetDriverApplicationStatus()
@@ -182,29 +190,34 @@ export const AdminDriverApplicationsPage = () => {
                 </div>
 
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    Документы
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    В production: split-screen галерея (паспорт/права/СТС),
-                    zoom/rotate, быстрые проверки, история решений.
-                  </p>
-
-                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {["Паспорт", "Права", "СТС", "Фото авто", "Селфи"].map(
-                      (x) => (
-                        <div
-                          key={x}
-                          className="aspect-[4/3] rounded-xl border border-slate-200 bg-slate-50"
+                  <p className="text-sm font-semibold text-slate-900">Документы</p>
+                  {(selected.a.documents ?? []).length > 0 ? (
+                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {selected.a.documents!.map((doc) => (
+                        <a
+                          key={doc.id}
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
                         >
-                          <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-500">
-                            <FileText size={20} />
-                            <span className="text-xs font-medium">{x}</span>
-                          </div>
-                        </div>
-                      ),
-                    )}
-                  </div>
+                          <img
+                            src={doc.url}
+                            alt={docTypeLabel[doc.type] ?? doc.type}
+                            className="aspect-[4/3] w-full object-contain"
+                          />
+                          <p className="border-t border-slate-100 px-3 py-2 text-xs font-medium text-slate-700">
+                            {docTypeLabel[doc.type] ?? doc.type}
+                            {doc.fileName ? ` · ${doc.fileName}` : ""}
+                          </p>
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-amber-700">
+                      Документы не загружены (заявка подана до включения загрузки в MinIO).
+                    </p>
+                  )}
                 </div>
               </div>
             ) : null}

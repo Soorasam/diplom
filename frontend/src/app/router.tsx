@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router-dom"
 
+import { RootShell } from "./providers/RootShell"
 import { AppLayout } from "./layouts/AppLayout"
 import { AdminLayout } from "./layouts/AdminLayout"
 import { DriverLayout } from "./layouts/DriverLayout"
@@ -50,6 +51,9 @@ import { AdminPvzPage } from "@/pages/admin/pvz/ui/AdminPvzPage"
 import { AdminTicketsPage } from "@/pages/admin/tickets/ui/AdminTicketsPage"
 
 export const router = createBrowserRouter([
+  {
+    element: <RootShell />,
+    children: [
   {
     path: "/auth",
     element: <AuthPage />,
@@ -133,6 +137,8 @@ export const router = createBrowserRouter([
       { path: "support", element: <SupportPage /> },
       { path: "addresses", element: <AddressesPage /> },
       { path: "pickup-points", element: <PickupPointsPage /> },
+    ],
+  },
     ],
   },
 ],

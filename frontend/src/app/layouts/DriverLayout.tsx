@@ -2,6 +2,7 @@ import { Outlet, Link, useLocation, useNavigate } from "react-router-dom"
 import { LayoutDashboard, ListOrdered, Map, Route, ShoppingBasket } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
+import { SwitchToResidentButton } from "@/features/auth/ui/DriverRoleSwitch"
 import { routes } from "@/shared/config/routes"
 import { cn } from "@/shared/lib/cn"
 
@@ -29,16 +30,19 @@ export const DriverLayout = () => {
             <h1 className="text-lg font-bold text-slate-900">Логистика маршрутов</h1>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              logout()
-              navigate(routes.home, { replace: true })
-            }}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            Выйти
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <SwitchToResidentButton />
+            <button
+              type="button"
+              onClick={() => {
+                logout()
+                navigate(routes.home, { replace: true })
+              }}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Выйти
+            </button>
+          </div>
         </div>
       </header>
 

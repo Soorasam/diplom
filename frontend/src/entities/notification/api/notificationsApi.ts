@@ -1,14 +1,14 @@
-import { apiCall } from "@/shared/api/client"
-import { notifications } from "@/shared/api/mock-db"
-
-let store = [...notifications]
+import { http } from "@/shared/api/client"
+import type { Notification } from "@/shared/api/mock-db"
 
 export const notificationsApi = {
-  getByUser: (userId: string) =>
-    apiCall(() => store.filter((n) => n.userId === userId)),
+  getByUser: async (_userId: string) => {
+    const list = await http.get<Notification[]>("/notifications", true)
+    return list.map((n) => ({
+      ...n,
+      createdAt: typeof n.createdAt === "string" ? n.createdAt : String(n.createdAt),
+    }))
+  },
 
-  markRead: (id: string) =>
-    apiCall(() => {
-      store = store.map((n) => (n.id === id ? { ...n, read: true } : n))
-    }),
+  markRead: (id: string) => http.patch<Notification>(`/notifications/${id}/read`, undefined, true),
 }

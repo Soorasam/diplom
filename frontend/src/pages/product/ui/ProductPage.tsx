@@ -3,6 +3,7 @@ import { Plus, Truck } from "lucide-react"
 
 import { useProduct } from "@/entities/product/api/useProducts"
 import { useActiveProcurements } from "@/entities/procurement/api/useProcurements"
+import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { routes } from "@/shared/config/routes"
 import { formatPrice, formatShortDate } from "@/shared/lib/format"
@@ -17,7 +18,7 @@ export const ProductPage = () => {
   const { id = "" } = useParams()
   const { data: product, isLoading } = useProduct(id)
   const { data: procurements } = useActiveProcurements()
-  const addItem = useCartStore((s) => s.addItem)
+  const { addItem } = useCartActions()
   const setProcurement = useCartStore((s) => s.setProcurement)
 
   const procurement = procurements?.[0]
@@ -40,7 +41,7 @@ export const ProductPage = () => {
 
   const handleAdd = () => {
     if (procurement) setProcurement(procurement.id)
-    addItem(product.id)
+    void addItem(product.id)
   }
 
   return (

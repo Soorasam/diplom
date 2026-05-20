@@ -80,6 +80,8 @@ export const useApproveProcurementReceipt = (actorRole: UserRole) => {
     mutationFn: (procurementId: string) =>
       procurementsApi.approveReceipt(procurementId, actorRole),
     onSuccess: (_, procurementId) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.procurements.all })
+      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
       void qc.invalidateQueries({
         queryKey: ["procurements", "receipt-approvals", procurementId],
       })

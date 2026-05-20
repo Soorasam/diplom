@@ -3,8 +3,9 @@ import { Check, ChevronLeft, FileText, Loader2, RefreshCw, Send, Truck } from "l
 import { Link, useNavigate } from "react-router-dom"
 
 import { useAuthStore } from "@/app/model/auth-store"
+import { DriverRoleSwitch } from "@/features/auth/ui/DriverRoleSwitch"
+import { driverApplicationsApi } from "@/features/driver-application/api/driverApplicationsApi"
 import { useMyDriverApplication, useSubmitDriverApplication } from "@/features/driver-application/api/useDriverApplications"
-import { fakeUpload } from "@/features/driver-application/lib/fake-upload"
 import {
   type DriverDocumentDraft,
   type DriverDocumentKey,
@@ -95,13 +96,19 @@ export const DriverApplyPage = () => {
     touchSaved()
 
     try {
-      await fakeUpload((pct) => patchDocument(key, { progress: pct }), undefined)
-      patchDocument(key, { status: "uploaded", progress: 100, error: undefined })
+      patchDocument(key, { progress: 30 })
+      const uploaded = await driverApplicationsApi.uploadDocument(key, file)
+      patchDocument(key, {
+        status: "uploaded",
+        progress: 100,
+        previewUrl: uploaded.url,
+        error: undefined,
+      })
       touchSaved()
     } catch (e) {
       patchDocument(key, {
         status: "failed",
-        error: e instanceof Error ? e.message : "upload error",
+        error: e instanceof Error ? e.message : "Не удалось загрузить",
       })
       touchSaved()
     }
@@ -110,18 +117,14 @@ export const DriverApplyPage = () => {
   const onRetryUpload = async (key: DriverDocumentKey) => {
     const existing = draft.documents[key]
     if (!existing) return
-    patchDocument(key, { status: "uploading", progress: 0, error: undefined })
-    try {
-      await fakeUpload((pct) => patchDocument(key, { progress: pct }), undefined)
-      patchDocument(key, { status: "uploaded", progress: 100 })
-      touchSaved()
-    } catch (e) {
-      patchDocument(key, {
-        status: "failed",
-        error: e instanceof Error ? e.message : "upload error",
-      })
-      touchSaved()
+    const input = document.createElement("input")
+    input.type = "file"
+    input.accept = "image/*"
+    input.onchange = () => {
+      const file = input.files?.[0]
+      if (file) void onPickFile(key, file)
     }
+    input.click()
   }
 
   const onSubmit = async () => {
@@ -151,6 +154,56 @@ export const DriverApplyPage = () => {
     )
   }
 
+  if (myApp?.status === "approved") {
+    return (
+      <div className="flex flex-col gap-4 p-4 pb-8">
+        <PageHeader
+          title="Стать водителем"
+          subtitle="Заявка одобрена — переключайте режим интерфейса"
+          backTo={routes.profile}
+        />
+
+        <Card className="border-emerald-200 bg-emerald-50/40">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Статус заявки</p>
+              <p className="mt-1 text-sm text-slate-600">
+                Одобрено — доступен интерфейс водителя и маршруты.
+              </p>
+            </div>
+            <Badge variant="success">approved</Badge>
+          </div>
+        </Card>
+
+        <DriverRoleSwitch navigateOnSwitch />
+      </div>
+    )
+  }
+
+  if (myApp?.status === "pending") {
+    return (
+      <div className="flex flex-col gap-4 p-4 pb-8">
+        <PageHeader
+          title="Стать водителем"
+          subtitle="Заявка отправлена и ожидает проверки"
+          backTo={routes.profile}
+        />
+
+        <Card className="border-amber-200 bg-amber-50/40">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Статус заявки</p>
+              <p className="mt-1 text-sm text-slate-600">
+                На проверке. После одобрения здесь появится переключатель роли водителя.
+              </p>
+            </div>
+            <Badge variant="warning">pending</Badge>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-4 p-4 pb-8">
       <PageHeader
@@ -168,37 +221,21 @@ export const DriverApplyPage = () => {
         </Card>
       ) : null}
 
-      {myApp ? (
+      {myApp?.status === "rejected" ? (
         <Card className="border-slate-200">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-sm font-semibold text-slate-900">
-                Статус заявки
-              </p>
+              <p className="text-sm font-semibold text-slate-900">Статус заявки</p>
               <p className="mt-1 text-sm text-slate-600">
-                {myApp.status === "pending"
-                  ? "На проверке"
-                  : myApp.status === "approved"
-                    ? "Одобрено — вам доступны driver routes"
-                    : "Отклонено — исправьте и отправьте заново"}
+                Отклонено — исправьте данные и отправьте заново
               </p>
-              {myApp.status === "rejected" && myApp.rejectionReason ? (
+              {myApp.rejectionReason ? (
                 <p className="mt-2 text-sm font-medium text-amber-800">
                   Причина: {myApp.rejectionReason}
                 </p>
               ) : null}
             </div>
-            <Badge
-              variant={
-                myApp.status === "pending"
-                  ? "warning"
-                  : myApp.status === "approved"
-                    ? "success"
-                    : "danger"
-              }
-            >
-              {myApp.status}
-            </Badge>
+            <Badge variant="danger">rejected</Badge>
           </div>
         </Card>
       ) : null}

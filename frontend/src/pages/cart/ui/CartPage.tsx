@@ -4,6 +4,7 @@ import { Minus, Package, Plus, MapPin } from "lucide-react"
 import { useAuthStore } from "@/app/model/auth-store"
 import { useProducts } from "@/entities/product/api/useProducts"
 import { usePickupPoints } from "@/entities/settlement/api/useSettlements"
+import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { routes } from "@/shared/config/routes"
 import { formatPrice } from "@/shared/lib/format"
@@ -18,7 +19,7 @@ export const CartPage = () => {
   const items = useCartStore((s) => s.items)
   const pickupPointId = useCartStore((s) => s.pickupPointId)
   const comment = useCartStore((s) => s.comment)
-  const setQuantity = useCartStore((s) => s.setQuantity)
+  const { setQuantity } = useCartActions()
   const setPickupPoint = useCartStore((s) => s.setPickupPoint)
   const setComment = useCartStore((s) => s.setComment)
 
@@ -91,7 +92,7 @@ export const CartPage = () => {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => setQuantity(productId, quantity - 1)}
+                        onClick={() => void setQuantity(productId, quantity - 1)}
                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200"
                         aria-label="Уменьшить"
                       >
@@ -100,7 +101,7 @@ export const CartPage = () => {
                       <span className="min-w-8 text-center text-sm font-semibold">{quantity}</span>
                       <button
                         type="button"
-                        onClick={() => setQuantity(productId, quantity + 1)}
+                        onClick={() => void setQuantity(productId, quantity + 1)}
                         className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200"
                         aria-label="Увеличить"
                       >

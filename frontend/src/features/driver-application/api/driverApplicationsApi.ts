@@ -1,79 +1,90 @@
-import { apiCall } from "@/shared/api/client"
-import {
-  driverApplications as seed,
-  users,
-  type DriverApplication,
-  type User,
-} from "@/shared/api/mock-db"
-import type { DriverApplicationStatus } from "@/shared/types"
-
-let store: DriverApplication[] = [...seed]
-
-export type DriverApplicationWithUser = DriverApplication & {
-  user: User | null
-}
-
-export const driverApplicationsApi = {
-  getByUser: (userId: string) =>
-    apiCall(() => store.find((a) => a.userId === userId) ?? null),
-
-  list: (): Promise<DriverApplicationWithUser[]> =>
-    apiCall(() =>
-      store
-        .slice()
-        .sort((a, b) => b.submittedAt.localeCompare(a.submittedAt))
-        .map<DriverApplicationWithUser>((a) => ({
-          ...a,
-          user: users.find((u) => u.id === a.userId) ?? null,
-        })),
-    ),
-
-  submitDraft: (payload: {
-    userId: string
-    vehicleSummary: string
-  }) =>
-    apiCall(() => {
-      const existing = store.find((a) => a.userId === payload.userId)
-      const now = new Date().toISOString()
-      if (existing) {
-        store = store.map((a) =>
-          a.userId === payload.userId
-            ? {
-                ...a,
-                status: "pending",
-                submittedAt: now,
-                reviewedAt: undefined,
-                rejectionReason: undefined,
-                vehicleSummary: payload.vehicleSummary,
-              }
-            : a,
-        )
-        return store.find((a) => a.userId === payload.userId)!
-      }
-      const next: DriverApplication = {
-        id: `da-${Date.now()}`,
-        userId: payload.userId,
-        status: "pending",
-        submittedAt: now,
-        vehicleSummary: payload.vehicleSummary,
-      }
-      store = [next, ...store]
-      return next
-    }),
-
-  setStatus: (id: string, status: DriverApplicationStatus, rejectionReason?: string) =>
-    apiCall(() => {
-      store = store.map((a) =>
-        a.id === id
-          ? {
-              ...a,
-              status,
-              reviewedAt: new Date().toISOString(),
-              rejectionReason: status === "rejected" ? rejectionReason : undefined,
-            }
-          : a,
-      )
-      return store.find((a) => a.id === id)!
-    }),
-}
-
+import { http } from "@/shared/api/client"
+import type { DriverApplication, DriverApplicationDocument, User } from "@/shared/api/mock-db"
+import { mapBackendRole } from "@/shared/api/mappers"
+import type { BackendUser } from "@/shared/api/backend-types"
+import type { DriverApplicationStatus, DriverDocumentKey } from "@/shared/types"
+
+export type DriverApplicationWithUser = DriverApplication & {
+  user: User | null
+}
+
+type BackendDoc = {
+  id: string
+  type: string
+  url: string
+  fileName?: string | null
+  mimeType?: string | null
+}
+
+type BackendApp = {
+  id: string
+  userId: string
+  status: DriverApplicationStatus
+  vehicleSummary?: string | null
+  rejectionReason?: string | null
+  submittedAt?: string | null
+  reviewedAt?: string | null
+  createdAt: string
+  documents?: BackendDoc[]
+  user?: BackendUser
+}
+
+const mapDoc = (d: BackendDoc): DriverApplicationDocument => ({
+  id: d.id,
+  type: d.type,
+  url: d.url,
+  fileName: d.fileName,
+  mimeType: d.mimeType,
+})
+
+const mapApp = (a: BackendApp): DriverApplication => ({
+  id: a.id,
+  userId: a.userId,
+  status: a.status,
+  submittedAt: a.submittedAt ?? a.createdAt,
+  reviewedAt: a.reviewedAt ?? undefined,
+  rejectionReason: a.rejectionReason ?? undefined,
+  vehicleSummary: a.vehicleSummary ?? undefined,
+  documents: (a.documents ?? []).map(mapDoc),
+})
+
+export const driverApplicationsApi = {
+  getByUser: async (_userId: string) => {
+    const app = await http.get<BackendApp | null>("/driver-applications/me", true)
+    return app ? mapApp(app) : null
+  },
+
+  uploadDocument: (type: DriverDocumentKey, file: File) =>
+    http.upload<BackendDoc>(`/driver-applications/me/documents/${type}`, file, true).then(mapDoc),
+
+  list: async (): Promise<DriverApplicationWithUser[]> => {
+    const list = await http.get<BackendApp[]>("/driver-applications", true)
+    return list.map((a) => ({
+      ...mapApp(a),
+      user: a.user
+        ? {
+            id: a.user.id,
+            name: a.user.fullName ?? a.user.email,
+            phone: a.user.phone ?? "",
+            email: a.user.email,
+            role: mapBackendRole(a.user.role),
+            settlementId: a.user.settlementId ?? "",
+          }
+        : null,
+    }))
+  },
+
+  submitDraft: (payload: { userId: string; vehicleSummary: string }) =>
+    http
+      .post<BackendApp>("/driver-applications", { vehicleSummary: payload.vehicleSummary }, true)
+      .then(mapApp),
+
+  setStatus: (id: string, status: DriverApplicationStatus, rejectionReason?: string) =>
+    http
+      .patch<BackendApp>(
+        `/driver-applications/${id}`,
+        { status, rejectionReason },
+        true,
+      )
+      .then(mapApp),
+}

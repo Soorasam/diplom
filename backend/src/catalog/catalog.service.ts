@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { RoundStatus } from '@prisma/client';
 import { calcProgressPercent, decimalToNumber } from '../common/order-labels';
 import { PrismaService } from '../prisma/prisma.service';
@@ -30,6 +30,58 @@ export class CatalogService {
       where: settlementId ? { settlementId } : undefined,
       orderBy: { coordinatorName: 'asc' },
     });
+  }
+
+  listRoutes() {
+    return this.prisma.route.findMany({ orderBy: { title: 'asc' } });
+  }
+
+  async getRound(id: string) {
+    const round = await this.prisma.round.findUnique({
+      where: { id },
+      include: { route: true },
+    });
+    if (!round) throw new NotFoundException('Сбор не найден');
+    return {
+      ...round,
+      progressPercent: calcProgressPercent(round.participantsCount, round.targetParticipants),
+    };
+  }
+
+  async closeRound(id: string) {
+    const round = await this.prisma.round.findUnique({ where: { id } });
+    if (!round) throw new NotFoundException('Сбор не найден');
+    if (round.status !== RoundStatus.open) {
+      throw new BadRequestException('Сбор уже закрыт');
+    }
+    return this.prisma.round.update({
+      where: { id },
+      data: { status: RoundStatus.closed },
+      include: { route: true },
+    });
+  }
+
+  async fulfillRound(id: string) {
+    const round = await this.prisma.round.findUnique({ where: { id } });
+    if (!round) throw new NotFoundException('Сбор не найден');
+    if (round.status === RoundStatus.open) {
+      throw new BadRequestException('Сначала закройте сбор');
+    }
+    if (round.status === RoundStatus.fulfilled) {
+      throw new BadRequestException('Приемка уже подтверждена');
+    }
+    const updated = await this.prisma.round.update({
+      where: { id },
+      data: { status: RoundStatus.fulfilled },
+      include: { route: true },
+    });
+    return {
+      ...updated,
+      progressPercent: calcProgressPercent(
+        updated.participantsCount,
+        updated.targetParticipants,
+      ),
+    };
   }
 
   async listRounds(status?: RoundStatus) {

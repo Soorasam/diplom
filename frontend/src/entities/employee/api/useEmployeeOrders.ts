@@ -9,12 +9,12 @@ import { queryKeys } from "@/shared/config/query-keys"
 import type { OrderStatus } from "@/shared/types"
 
 export function useEmployeePickupPointId() {
-  const userId = useAuthStore((s) => s.user?.id)
+  const pickupPointId = useAuthStore((s) => s.user?.pickupPointId)
 
   return useQuery({
-    queryKey: ["employee", "pickupPointId", userId],
-    queryFn: () => employeeApi.getPickupPointIdByEmployee(userId!),
-    enabled: Boolean(userId),
+    queryKey: ["employee", "pickupPointId", pickupPointId],
+    queryFn: () => Promise.resolve(pickupPointId ?? null),
+    enabled: Boolean(pickupPointId),
   })
 }
 

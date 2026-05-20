@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { Link } from "react-router-dom"
 import {
   Bell,
@@ -10,6 +11,7 @@ import {
 } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
+import { DriverRoleSwitch } from "@/features/auth/ui/DriverRoleSwitch"
 import { useMyDriverApplication } from "@/features/driver-application/api/useDriverApplications"
 import { routes } from "@/shared/config/routes"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
@@ -26,8 +28,18 @@ const menuLinks = [
 export const ProfilePage = () => {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
+  const refreshUser = useAuthStore((s) => s.refreshUser)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const { data: myApp } = useMyDriverApplication()
+
+  const isDriverApproved = myApp?.status === "approved"
+  const canSwitchDriverRole = isDriverApproved || user?.role === "driver"
+
+  useEffect(() => {
+    if (isDriverApproved) {
+      void refreshUser()
+    }
+  }, [isDriverApproved, refreshUser])
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -56,7 +68,9 @@ export const ProfilePage = () => {
         </div>
       </Card>
 
-      {isAuthenticated && user?.role === "client" ? (
+      {isAuthenticated && canSwitchDriverRole ? (
+        <DriverRoleSwitch navigateOnSwitch />
+      ) : isAuthenticated && user?.role === "client" ? (
         <Card className="border-blue-100 bg-blue-50/40">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -65,9 +79,7 @@ export const ProfilePage = () => {
                 {myApp
                   ? myApp.status === "pending"
                     ? "Заявка на проверке"
-                    : myApp.status === "approved"
-                      ? "Заявка одобрена"
-                      : "Заявка отклонена — исправьте и отправьте заново"
+                    : "Заявка отклонена — исправьте и отправьте заново"
                   : "Заполните заявку и загрузите документы"}
               </p>
               {myApp?.status === "rejected" && myApp.rejectionReason ? (
@@ -79,12 +91,18 @@ export const ProfilePage = () => {
             <Truck className="text-blue-700" size={22} />
           </div>
           <div className="mt-3">
-            <Link
-              to={routes.driverApply}
-              className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white"
-            >
-              Открыть заявку
-            </Link>
+            {myApp?.status === "pending" ? (
+              <p className="rounded-xl bg-white/80 px-4 py-3 text-sm text-slate-600">
+                Дождитесь решения администратора — после одобрения появится переключатель роли.
+              </p>
+            ) : (
+              <Link
+                to={routes.driverApply}
+                className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white"
+              >
+                {myApp?.status === "rejected" ? "Исправить заявку" : "Открыть заявку"}
+              </Link>
+            )}
           </div>
         </Card>
       ) : null}
@@ -126,6 +144,10 @@ export const ProfilePage = () => {
               <Truck size={16} />
               Интерфейс водителя
             </Link>
+          ) : canSwitchDriverRole ? (
+            <p className="text-xs text-slate-500">
+              Переключитесь в режим водителя выше, чтобы открыть интерфейс.
+            </p>
           ) : null}
           {user?.role === "admin" ? (
             <Link
@@ -146,7 +168,7 @@ export const ProfilePage = () => {
             </Link>
           ) : null}
 
-          {user?.role === "client" ? (
+          {user?.role === "client" && !canSwitchDriverRole ? (
             <p className="text-xs text-slate-500">
               Рольные интерфейсы откроются после одобрения/назначения роли.
             </p>
