@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
+import { useMyDriverApplication } from "@/features/driver-application/api/useDriverApplications"
 import { routes } from "@/shared/config/routes"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { Card } from "@/shared/ui/card/Card"
@@ -26,6 +27,7 @@ export const ProfilePage = () => {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const { data: myApp } = useMyDriverApplication()
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -42,11 +44,50 @@ export const ProfilePage = () => {
           <p className="text-sm text-slate-500">{user?.phone ?? "Не авторизован"}</p>
           {user ? (
             <p className="mt-0.5 text-xs text-blue-600 capitalize">
-              {user.role === "client" ? "Житель" : user.role === "driver" ? "Водитель" : "Админ"}
+              {user.role === "client"
+                ? "Житель"
+                : user.role === "driver"
+                  ? "Водитель"
+                  : user.role === "employee"
+                    ? "ПВЗ"
+                    : "Админ"}
             </p>
           ) : null}
         </div>
       </Card>
+
+      {isAuthenticated && user?.role === "client" ? (
+        <Card className="border-blue-100 bg-blue-50/40">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-slate-900">Стать водителем</p>
+              <p className="mt-1 text-sm text-slate-600">
+                {myApp
+                  ? myApp.status === "pending"
+                    ? "Заявка на проверке"
+                    : myApp.status === "approved"
+                      ? "Заявка одобрена"
+                      : "Заявка отклонена — исправьте и отправьте заново"
+                  : "Заполните заявку и загрузите документы"}
+              </p>
+              {myApp?.status === "rejected" && myApp.rejectionReason ? (
+                <p className="mt-2 text-sm font-medium text-amber-800">
+                  Причина: {myApp.rejectionReason}
+                </p>
+              ) : null}
+            </div>
+            <Truck className="text-blue-700" size={22} />
+          </div>
+          <div className="mt-3">
+            <Link
+              to={routes.driverApply}
+              className="inline-flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white"
+            >
+              Открыть заявку
+            </Link>
+          </div>
+        </Card>
+      ) : null}
 
       {!isAuthenticated ? (
         <Link
@@ -77,20 +118,39 @@ export const ProfilePage = () => {
           Демо-режимы
         </p>
         <div className="mt-2 flex flex-col gap-2">
-          <Link
-            to={routes.driver.root}
-            className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-blue-700"
-          >
-            <Truck size={16} />
-            Интерфейс водителя
-          </Link>
-          <Link
-            to={routes.admin.root}
-            className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-blue-700"
-          >
-            <User size={16} />
-            Панель администратора
-          </Link>
+          {user?.role === "driver" ? (
+            <Link
+              to={routes.driver.root}
+              className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-blue-700"
+            >
+              <Truck size={16} />
+              Интерфейс водителя
+            </Link>
+          ) : null}
+          {user?.role === "admin" ? (
+            <Link
+              to={routes.admin.root}
+              className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-blue-700"
+            >
+              <User size={16} />
+              Панель администратора
+            </Link>
+          ) : null}
+          {user?.role === "employee" ? (
+            <Link
+              to={routes.employee.root}
+              className="flex items-center gap-2 text-sm font-medium text-slate-700 hover:text-blue-700"
+            >
+              <MapPin size={16} />
+              Интерфейс ПВЗ
+            </Link>
+          ) : null}
+
+          {user?.role === "client" ? (
+            <p className="text-xs text-slate-500">
+              Рольные интерфейсы откроются после одобрения/назначения роли.
+            </p>
+          ) : null}
         </div>
       </Card>
 

@@ -1,5 +1,6 @@
 import type {
   DeliveryMode,
+  DriverApplicationStatus,
   OrderStatus,
   ProcurementStatus,
   UserRole,
@@ -9,9 +10,26 @@ export interface User {
   id: string
   name: string
   phone: string
+  email?: string
   role: UserRole
   settlementId: string
   avatarUrl?: string
+}
+
+export interface DriverApplication {
+  id: string
+  userId: string
+  status: DriverApplicationStatus
+  submittedAt: string
+  reviewedAt?: string
+  rejectionReason?: string
+  // В реальном API здесь будут ссылки на загруженные документы/метаданные
+  vehicleSummary?: string
+}
+
+export interface PvzEmployeeProfile {
+  userId: string
+  pickupPointId: string
 }
 
 export interface Settlement {
@@ -334,6 +352,7 @@ export const users: User[] = [
     id: "u1",
     name: "Алексей Семёнов",
     phone: "+7 (914) 123-45-67",
+    email: "alexey@example.com",
     role: "client",
     settlementId: "s1",
   },
@@ -341,16 +360,49 @@ export const users: User[] = [
     id: "d1",
     name: "Михаил Васильев",
     phone: "+7 (914) 987-65-43",
+    email: "driver@example.com",
     role: "driver",
     settlementId: "s3",
+  },
+  {
+    id: "e1",
+    name: "Сотрудник ПВЗ",
+    phone: "+7 (914) 555-55-55",
+    email: "employee@example.com",
+    role: "employee",
+    settlementId: "s1",
   },
   {
     id: "a1",
     name: "Администратор",
     phone: "+7 (4112) 000-00-01",
+    email: "admin@example.com",
     role: "admin",
     settlementId: "s3",
   },
+]
+
+export const driverApplications: DriverApplication[] = [
+  {
+    id: "da-001",
+    userId: "u1",
+    status: "pending",
+    submittedAt: "2026-05-18T09:10:00Z",
+    vehicleSummary: "Toyota HiAce · А123ВС14 · 1.2т",
+  },
+  {
+    id: "da-002",
+    userId: "u1",
+    status: "rejected",
+    submittedAt: "2026-04-03T10:00:00Z",
+    reviewedAt: "2026-04-04T12:30:00Z",
+    rejectionReason: "Нечитаемое фото паспорта. Загрузите заново разворот с фото.",
+    vehicleSummary: "ГАЗель · В456DE14 · 1.5т",
+  },
+]
+
+export const pvzEmployees: PvzEmployeeProfile[] = [
+  { userId: "e1", pickupPointId: "pp1" },
 ]
 
 export const adminStats = {

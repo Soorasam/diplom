@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { forwardRef, type ButtonHTMLAttributes } from "react"
 
 import { cn } from "@/shared/lib/cn"
@@ -10,6 +11,8 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: Size
   fullWidth?: boolean
   loading?: boolean
+  leftIcon?: ReactNode
+  rightIcon?: ReactNode
 }
 
 const variants: Record<Variant, string> = {
@@ -38,6 +41,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       fullWidth,
       loading,
       disabled,
+      leftIcon,
+      rightIcon,
       children,
       ...props
     },
@@ -59,8 +64,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     >
       {loading ? (
         <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+      ) : leftIcon ? (
+        <span className="-ml-0.5">{leftIcon}</span>
       ) : null}
       {children}
+      {rightIcon ? <span className="-mr-0.5">{rightIcon}</span> : null}
     </button>
   ),
 )

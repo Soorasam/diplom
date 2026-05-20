@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import { useState } from "react"
 
 import { useThemeEffect } from "@/features/ui/hooks/useThemeEffect"
+import { OfflineSyncProvider } from "@/features/offline/ui/OfflineSyncProvider"
 
 const ThemeSync = () => {
   useThemeEffect()
@@ -26,6 +27,7 @@ export const AppProviders = ({ children }: { children: ReactNode }) => {
   return (
     <QueryClientProvider client={client}>
       <ThemeSync />
+      <OfflineSyncProvider />
       {children}
     </QueryClientProvider>
   )

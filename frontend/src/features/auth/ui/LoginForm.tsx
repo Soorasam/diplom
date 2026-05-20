@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
@@ -7,7 +8,6 @@ import { loginSchema, type LoginFormValues } from "@/features/auth/model/login-s
 import { ApiError } from "@/shared/api/client"
 import { Button } from "@/shared/ui/button/Button"
 import { Input } from "@/shared/ui/input/Input"
-import { useState } from "react"
 
 export const LoginForm = () => {
   const navigate = useNavigate()
@@ -39,6 +39,7 @@ export const LoginForm = () => {
       <Input
         label="E-mail"
         type="email"
+        placeholder="demo@coop.local"
         autoComplete="email"
         error={errors.email?.message}
         {...register("email")}

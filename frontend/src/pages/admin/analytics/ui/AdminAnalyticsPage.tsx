@@ -1,4 +1,16 @@
 import { BarChart3, Package, TrendingDown, TrendingUp, Users } from "lucide-react"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 import { useAdminStats } from "@/entities/admin/api/useAdmin"
 import { formatPrice } from "@/shared/lib/format"
@@ -67,11 +79,33 @@ export const AdminAnalyticsPage = () => {
     },
   ]
 
+  const ordersSeries = [
+    { name: "Пн", orders: Math.max(1, Math.round(stats.ordersToday * 0.6)) },
+    { name: "Вт", orders: Math.max(1, Math.round(stats.ordersToday * 0.75)) },
+    { name: "Ср", orders: Math.max(1, Math.round(stats.ordersToday * 0.9)) },
+    { name: "Чт", orders: Math.max(1, Math.round(stats.ordersToday * 1.1)) },
+    { name: "Пт", orders: Math.max(1, Math.round(stats.ordersToday * 1.25)) },
+    { name: "Сб", orders: Math.max(1, Math.round(stats.ordersToday * 1.15)) },
+    { name: "Вс", orders: Math.max(1, stats.ordersToday) },
+  ]
+
+  const revenueSeries = ordersSeries.map((x, idx) => ({
+    name: x.name,
+    revenue: Math.round((stats.revenueMonth / 30) * (0.8 + idx * 0.05)),
+  }))
+
+  const ulusSeries = [
+    { name: "Томпонский", orders: 120 },
+    { name: "Верхневилюйский", orders: 180 },
+    { name: "Нерюнгринский", orders: 90 },
+    { name: "Хангаласский", orders: 160 },
+  ]
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Аналитика"
-        subtitle="Ключевые показатели без графиков"
+        subtitle="Ключевые показатели и графики"
       />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -119,6 +153,59 @@ export const AdminAnalyticsPage = () => {
             <p className="text-xs text-slate-500">Активные сборы</p>
             <p className="text-lg font-bold text-slate-900">{stats.activeProcurements}</p>
           </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="border-slate-200">
+          <p className="text-sm font-semibold text-slate-900">Заказы за неделю</p>
+          <div className="mt-4 h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={ordersSeries} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
+                <YAxis stroke="#64748b" fontSize={12} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="orders" stroke="#2563eb" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card className="border-slate-200">
+          <p className="text-sm font-semibold text-slate-900">Выручка (оценка)</p>
+          <div className="mt-4 h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueSeries} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
+                <YAxis stroke="#64748b" fontSize={12} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="revenue" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="border-slate-200">
+        <p className="text-sm font-semibold text-slate-900">Активность улусов</p>
+        <p className="mt-1 text-sm text-slate-600">
+          В production: фильтры по периоду/сегменту, drill-down до населённых пунктов.
+        </p>
+        <div className="mt-4 h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={ulusSeries} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
+              <YAxis stroke="#64748b" fontSize={12} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="orders" fill="#22c55e" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </Card>
     </div>

@@ -16,7 +16,7 @@ export const BottomNav = () => {
       label: "Главная",
       path: routes.home,
       icon: Home,
-      match: (p: string) => p === routes.home,
+      match: (p: string) => p === routes.home || p.startsWith(routes.activeProcurements),
     },
     {
       label: "Каталог",

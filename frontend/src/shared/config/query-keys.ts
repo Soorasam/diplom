@@ -10,6 +10,7 @@ export const queryKeys = {
   procurements: {
     all: ["procurements"] as const,
     active: ["procurements", "active"] as const,
+    memberships: (userId?: string) => ["procurements", "memberships", userId] as const,
   },
   orders: {
     all: ["orders"] as const,
@@ -23,6 +24,10 @@ export const queryKeys = {
   routes: {
     all: ["routes"] as const,
     driver: (driverId: string) => ["routes", "driver", driverId] as const,
+  },
+  employee: {
+    orders: (pickupPointId: string) =>
+      ["employee", "orders", pickupPointId] as const,
   },
   admin: {
     stats: ["admin", "stats"] as const,
