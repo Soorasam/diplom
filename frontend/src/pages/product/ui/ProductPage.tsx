@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom"
-import { Package, Plus, Truck } from "lucide-react"
+import { Plus, Truck } from "lucide-react"
 
 import { useProduct } from "@/entities/product/api/useProducts"
 import { useActiveProcurements } from "@/entities/procurement/api/useProcurements"
@@ -11,6 +11,7 @@ import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 import { Badge } from "@/shared/ui/badge/Badge"
+import { ProductImage } from "@/shared/ui/product-image/ProductImage"
 
 export const ProductPage = () => {
   const { id = "" } = useParams()
@@ -46,14 +47,18 @@ export const ProductPage = () => {
     <div className="flex flex-col gap-4 p-4 pb-8">
       <PageHeader title={product.name} backTo={routes.catalog} />
 
-      <div className="flex aspect-square items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 to-blue-50">
-        <Package className="text-slate-300" size={64} strokeWidth={1} />
-      </div>
+      <ProductImage
+        src={product.imageUrl}
+        alt={product.name}
+        variant="detail"
+        className="shadow-sm"
+      />
 
       <div>
         <p className="text-2xl font-bold text-blue-700">{formatPrice(product.price)}</p>
         <p className="mt-1 text-sm text-slate-500">
-          {product.weightKg} кг · {product.unit}
+          {product.weightKg > 0 ? `${product.weightKg} кг · ` : ""}
+          {product.unit}
         </p>
       </div>
 

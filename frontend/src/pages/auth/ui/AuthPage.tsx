@@ -14,7 +14,7 @@ export const AuthPage = () => {
           </div>
           <h1 className="text-2xl font-bold leading-tight">Вход в сервис</h1>
           <p className="mt-3 text-sm leading-relaxed text-slate-300">
-            Кооперативные закупки для отдалённых населённых пунктов Якутии
+            Вход через API бэкенда. Убедитесь, что сервер запущен на порту 3000.
           </p>
         </div>
 

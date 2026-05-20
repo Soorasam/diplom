@@ -1,9 +1,7 @@
-import { apiCall } from "@/shared/api/client"
-import {
-  categories,
-  products,
-  type Product,
-} from "@/shared/api/mock-db"
+import type { BackendCategory, BackendProduct } from "@/shared/api/backend-types"
+import { http } from "@/shared/api/client"
+import type { Product } from "@/shared/api/mock-db"
+import { mapCategory, mapProduct } from "@/shared/api/mappers"
 
 export interface ProductFilters {
   categoryId?: string
@@ -11,33 +9,42 @@ export interface ProductFilters {
   sort?: "price_asc" | "price_desc" | "name"
 }
 
+function applyFilters(list: Product[], filters?: ProductFilters): Product[] {
+  let result = [...list]
+  if (filters?.categoryId) {
+    result = result.filter((p) => p.categoryId === filters.categoryId)
+  }
+  if (filters?.search) {
+    const q = filters.search.toLowerCase()
+    result = result.filter((p) => p.name.toLowerCase().includes(q))
+  }
+  if (filters?.sort === "price_asc") result.sort((a, b) => a.price - b.price)
+  if (filters?.sort === "price_desc") result.sort((a, b) => b.price - a.price)
+  if (filters?.sort === "name") result.sort((a, b) => a.name.localeCompare(b.name))
+  return result
+}
+
 export const productsApi = {
-  getCategories: () => apiCall(() => categories),
+  getCategories: async () => {
+    const items = await http.get<BackendCategory[]>("/categories")
+    return items.map(mapCategory)
+  },
 
-  getList: (filters?: ProductFilters) =>
-    apiCall(() => {
-      let list = [...products]
-      if (filters?.categoryId) {
-        list = list.filter((p) => p.categoryId === filters.categoryId)
-      }
-      if (filters?.search) {
-        const q = filters.search.toLowerCase()
-        list = list.filter((p) => p.name.toLowerCase().includes(q))
-      }
-      if (filters?.sort === "price_asc") list.sort((a, b) => a.price - b.price)
-      if (filters?.sort === "price_desc") list.sort((a, b) => b.price - a.price)
-      if (filters?.sort === "name") list.sort((a, b) => a.name.localeCompare(b.name))
-      return list
-    }),
+  getList: async (filters?: ProductFilters) => {
+    const query = filters?.categoryId ? `?category_id=${filters.categoryId}` : ""
+    const items = await http.get<BackendProduct[]>(`/products${query}`)
+    return applyFilters(items.map(mapProduct), filters)
+  },
 
-  getById: (id: string) =>
-    apiCall(() => {
-      const item = products.find((p) => p.id === id)
-      if (!item) throw new Error("Товар не найден")
-      return item
-    }),
+  getById: async (id: string) => {
+    const item = await http.get<BackendProduct>(`/products/${id}`)
+    return mapProduct(item)
+  },
 
-  getPopular: () => apiCall(() => products.filter((p) => p.popular)),
+  getPopular: async () => {
+    const items = await http.get<BackendProduct[]>("/products")
+    return items.slice(0, 4).map(mapProduct)
+  },
 }
 
 export type { Product }

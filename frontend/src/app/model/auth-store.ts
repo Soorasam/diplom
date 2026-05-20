@@ -1,14 +1,17 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
+import type { AuthResponse } from "@/shared/api/backend-types"
 import type { User } from "@/shared/api/mock-db"
-import { users } from "@/shared/api/mock-db"
-import type { UserRole } from "@/shared/types"
+import { clearApiSession, http } from "@/shared/api/client"
+import { clearTokens, saveTokens } from "@/shared/api/auth-storage"
+import { mapUser } from "@/shared/api/mappers"
+import { routes } from "@/shared/config/routes"
 
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
-  login: (phone: string, role?: UserRole) => Promise<void>
+  login: (email: string, password: string) => Promise<void>
   logout: () => void
   setSettlement: (settlementId: string) => void
 }
@@ -19,20 +22,21 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
 
-      login: async (phone, role = "client") => {
-        await new Promise((r) => setTimeout(r, 500))
-        const normalized = phone.replace(/\D/g, "")
-        const found =
-          users.find(
-            (u) =>
-              u.phone.replace(/\D/g, "").includes(normalized.slice(-10)) &&
-              (role ? u.role === role : true),
-          ) ?? users.find((u) => u.role === role)!
-
-        set({ user: found, isAuthenticated: true })
+      login: async (email, password) => {
+        const res = await http.post<AuthResponse>("/auth/login", {
+          email: email.trim().toLowerCase(),
+          password,
+        })
+        saveTokens(res.access_token, res.refresh_token)
+        const user = mapUser(res.user)
+        set({ user, isAuthenticated: true })
       },
 
-      logout: () => set({ user: null, isAuthenticated: false }),
+      logout: () => {
+        clearTokens()
+        clearApiSession()
+        set({ user: null, isAuthenticated: false })
+      },
 
       setSettlement: (settlementId) =>
         set((s) =>
@@ -42,3 +46,10 @@ export const useAuthStore = create<AuthState>()(
     { name: "coop-auth" },
   ),
 )
+
+/** Куда редиректить после входа по роли с бэкенда */
+export const homeRouteForRole = (role: User["role"]) => {
+  if (role === "driver") return routes.driver.root
+  if (role === "admin") return routes.admin.root
+  return routes.home
+}

@@ -1,4 +1,4 @@
-﻿-- CreateSchema
+-- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateEnum
@@ -91,7 +91,7 @@ CREATE TABLE "products" (
     "category_id" UUID NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
-    "unit" TEXT NOT NULL DEFAULT '╤И╤В',
+    "unit" TEXT NOT NULL DEFAULT 'pcs',
     "price_estimate" DECIMAL(12,2) NOT NULL DEFAULT 0,
     "image_url" TEXT,
     "requires_prescription" BOOLEAN NOT NULL DEFAULT false,

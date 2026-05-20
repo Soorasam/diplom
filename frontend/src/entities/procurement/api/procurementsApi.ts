@@ -1,11 +1,13 @@
-import { apiCall } from "@/shared/api/client"
+import { apiCall, http } from "@/shared/api/client"
 import { deliveryRoutes, procurements } from "@/shared/api/mock-db"
+import type { BackendRound } from "@/shared/api/backend-types"
+import { mapRound } from "@/shared/api/mappers"
 
 export const procurementsApi = {
-  getActive: () =>
-    apiCall(() =>
-      procurements.filter((p) => p.status === "open" || p.status === "closing"),
-    ),
+  getActive: async () => {
+    const rounds = await http.get<BackendRound[]>("/rounds?status=open")
+    return rounds.map(mapRound)
+  },
 
   getAll: () => apiCall(() => procurements),
 
