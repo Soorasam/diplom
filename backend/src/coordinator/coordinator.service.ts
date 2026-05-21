@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { OrderStatus, RoundStatus } from '@prisma/client';
 import { calcRoundProgressPercent } from '../common/order-labels';
 import { mapOrderDetail, OrderWithRelations } from '../common/order-mapper';
+import {
+  coordsForSettlementName,
+  hubCoordsForRouteTitle,
+} from '../common/settlement-coordinates';
 import { PrismaService } from '../prisma/prisma.service';
 
 const orderInclude = {
@@ -15,15 +19,33 @@ export class CoordinatorService {
   constructor(private prisma: PrismaService) {}
 
   async listRoutes() {
-    const routes = await this.prisma.route.findMany({
-      orderBy: { title: 'asc' },
-      include: {
-        rounds: {
-          orderBy: { closesAt: 'desc' },
-          take: 1,
+    const [routes, pickupPoints, orders] = await Promise.all([
+      this.prisma.route.findMany({
+        orderBy: { title: 'asc' },
+        include: {
+          rounds: {
+            orderBy: { closesAt: 'desc' },
+            take: 1,
+          },
         },
-      },
-    });
+      }),
+      this.prisma.pickupPoint.findMany({
+        include: { settlement: true },
+      }),
+      this.prisma.order.findMany({
+        where: {
+          status: {
+            notIn: [OrderStatus.cancelled, OrderStatus.delivered],
+          },
+          pickupPointId: { not: null },
+        },
+        include: {
+          pickupPoint: { include: { settlement: true } },
+          round: { select: { routeId: true } },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
 
     return routes.map((route) => {
       const latest = route.rounds[0];
@@ -42,14 +64,42 @@ export class CoordinatorService {
             ? 'winter_road'
             : 'mixed';
 
+      const routeOrders = orders.filter((o) => o.round?.routeId === route.id);
+      const seenSettlementIds = new Set<string>();
+      const destinations: { id: string; name: string }[] = [];
+
+      for (const order of routeOrders) {
+        const settlement = order.pickupPoint?.settlement;
+        if (!settlement || seenSettlementIds.has(settlement.id)) continue;
+        seenSettlementIds.add(settlement.id);
+        destinations.push({ id: settlement.id, name: settlement.name });
+      }
+
+      if (destinations.length === 0) {
+        for (const pp of pickupPoints) {
+          if (seenSettlementIds.has(pp.settlementId)) continue;
+          seenSettlementIds.add(pp.settlementId);
+          destinations.push({
+            id: pp.settlementId,
+            name: pp.settlement.name,
+          });
+        }
+      }
+
+      const hub = hubCoordsForRouteTitle(route.title);
+      const points = [
+        hub,
+        ...destinations.map((d) => coordsForSettlementName(d.name)),
+      ];
+
       return {
         id: route.id,
         name: route.title,
         fromSettlementId: '',
-        toSettlementIds: [] as string[],
+        toSettlementIds: destinations.map((d) => d.id),
         deliveryMode,
         status,
-        points: [] as { lat: number; lng: number }[],
+        points,
         activeRoundId: latest?.id ?? null,
       };
     });

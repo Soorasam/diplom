@@ -27,6 +27,20 @@ const routeStatusLabel = {
 
 type PointStatus = "pending" | "arrived" | "done"
 
+type RouteCoords = { lat: number; lng: number }
+
+const hubLabelFromRouteName = (name: string) => {
+  const part = name.split("→")[0]?.trim()
+  return part && part.length > 0 ? part : "Пункт отправления"
+}
+
+const formatCoords = (coords?: RouteCoords) => {
+  if (coords == null || typeof coords.lat !== "number" || typeof coords.lng !== "number") {
+    return "Координаты уточняются"
+  }
+  return `${coords.lat.toFixed(2)}°, ${coords.lng.toFixed(2)}°`
+}
+
 export const DriverRoutePage = () => {
   const user = useAuthStore((s) => s.user)
   const driverId = user?.role === "driver" ? user.id : "d1"
@@ -67,16 +81,34 @@ export const DriverRoutePage = () => {
 
   const stops = [
     {
-      label: settlementName(activeRoute.fromSettlementId),
+      label: hubLabelFromRouteName(activeRoute.name),
       coords: activeRoute.points[0],
       type: "start" as const,
     },
     ...activeRoute.toSettlementIds.map((sid, i) => ({
       label: settlementName(sid),
-      coords: activeRoute.points[i + 1] ?? activeRoute.points[activeRoute.points.length - 1],
+      coords: activeRoute.points[i + 1],
       type: "stop" as const,
     })),
-  ]
+  ].filter(
+    (stop): stop is typeof stop & { coords: RouteCoords } =>
+      stop.coords != null &&
+      typeof stop.coords.lat === "number" &&
+      typeof stop.coords.lng === "number",
+  )
+  if (stops.length === 0) {
+    return (
+      <div className="flex flex-col gap-4">
+        <PageHeader title={activeRoute.name} subtitle="Точки доставки" />
+        <EmptyState
+          icon={MapPin}
+          title="Точки маршрута не заданы"
+          description="Диспетчер добавит пункты выдачи после формирования рейса"
+        />
+      </div>
+    )
+  }
+
   const inferredCurrentStopIndex =
     activeRoute.status === "completed" ? stops.length : Math.min(1, stops.length - 1)
 
@@ -121,9 +153,7 @@ export const DriverRoutePage = () => {
             <div className="min-w-0">
               <p className="text-xs font-medium text-blue-700">Следующая точка</p>
               <p className="truncate font-semibold text-slate-900">{nextStop.label}</p>
-              <p className="text-xs text-slate-500">
-                {nextStop.coords.lat.toFixed(2)}°, {nextStop.coords.lng.toFixed(2)}°
-              </p>
+              <p className="text-xs text-slate-500">{formatCoords(nextStop.coords)}</p>
             </div>
           </div>
         </Card>
@@ -163,9 +193,7 @@ export const DriverRoutePage = () => {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-slate-900">{stop.label}</p>
-                      <p className="text-xs text-slate-500">
-                        {stop.coords.lat.toFixed(2)}°, {stop.coords.lng.toFixed(2)}°
-                      </p>
+                      <p className="text-xs text-slate-500">{formatCoords(stop.coords)}</p>
                       <p className="mt-1 text-xs text-slate-400">
                         {stop.type === "start" ? "Отправление" : "Пункт выдачи"}
                       </p>
