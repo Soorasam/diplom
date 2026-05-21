@@ -15,6 +15,7 @@ frontend/dist/
 
 dev-dist/
 frontend/dev-dist/
+frontend/.vite/
 
 dist-ssr/
 frontend/dist-ssr/
