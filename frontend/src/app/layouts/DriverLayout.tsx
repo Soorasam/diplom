@@ -1,8 +1,6 @@
-import { Outlet, Link, useLocation, useNavigate } from "react-router-dom"
-import { LayoutDashboard, ListOrdered, Map, Route, ShoppingBasket } from "lucide-react"
+import { Link, Outlet, useLocation } from "react-router-dom"
+import { LayoutDashboard, ListOrdered, Map, Route, ShoppingBasket, User } from "lucide-react"
 
-import { useAuthStore } from "@/app/model/auth-store"
-import { SwitchToResidentButton } from "@/features/auth/ui/DriverRoleSwitch"
 import { routes } from "@/shared/config/routes"
 import { cn } from "@/shared/lib/cn"
 
@@ -12,41 +10,15 @@ const tabs = [
   { label: "Маршрут", path: routes.driver.route, icon: Route },
   { label: "Заказы", path: routes.driver.orders, icon: ListOrdered },
   { label: "Карта", path: routes.driver.map, icon: Map },
+  { label: "Профиль", path: routes.driver.profile, icon: User },
 ]
 
 export const DriverLayout = () => {
   const { pathname } = useLocation()
-  const navigate = useNavigate()
-  const logout = useAuthStore((s) => s.logout)
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-100">
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-sm safe-top">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-blue-600">
-              Водитель
-            </p>
-            <h1 className="text-lg font-bold text-slate-900">Логистика маршрутов</h1>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <SwitchToResidentButton />
-            <button
-              type="button"
-              onClick={() => {
-                logout()
-                navigate(routes.home, { replace: true })
-              }}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Выйти
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-lg flex-1 overflow-y-auto px-4 py-4 pb-24">
+      <main className="mx-auto w-full max-w-lg flex-1 overflow-y-auto px-4 py-4 pb-24 safe-top">
         <Outlet />
       </main>
 
@@ -62,7 +34,7 @@ export const DriverLayout = () => {
                 key={tab.path}
                 to={tab.path}
                 className={cn(
-                  "flex min-w-[4rem] flex-col items-center gap-0.5 text-[11px] font-medium",
+                  "flex min-w-[3.25rem] flex-col items-center gap-0.5 text-[10px] font-medium",
                   active ? "text-blue-600" : "text-slate-400",
                 )}
               >

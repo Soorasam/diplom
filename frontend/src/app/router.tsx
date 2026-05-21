@@ -77,6 +77,7 @@ export const router = createBrowserRouter([
       { path: "route", element: <DriverRoutePage /> },
       { path: "orders", element: <DriverOrdersPage /> },
       { path: "map", element: <DriverMapPage /> },
+      { path: "profile", element: <ProfilePage /> },
     ],
   },
 
@@ -92,6 +93,7 @@ export const router = createBrowserRouter([
       { path: "procurements", element: <EmployeeProcurementsPage /> },
       { path: "orders", element: <EmployeeOrdersPage /> },
       { path: "scan", element: <EmployeeScanPage /> },
+      { path: "profile", element: <ProfilePage /> },
     ],
   },
 
@@ -115,6 +117,7 @@ export const router = createBrowserRouter([
       { path: "driver-applications", element: <AdminDriverApplicationsPage /> },
       { path: "pvz", element: <AdminPvzPage /> },
       { path: "tickets", element: <AdminTicketsPage /> },
+      { path: "profile", element: <ProfilePage /> },
     ],
   },
 

@@ -22,6 +22,7 @@ export const routes = {
     route: "/driver/route",
     orders: "/driver/orders",
     map: "/driver/map",
+    profile: "/driver/profile",
   },
 
   driverApply: "/driver-apply",
@@ -31,6 +32,7 @@ export const routes = {
     procurements: "/employee/procurements",
     orders: "/employee/orders",
     scan: "/employee/scan",
+    profile: "/employee/profile",
   },
 
   admin: {
@@ -46,5 +48,6 @@ export const routes = {
     driverApplications: "/admin/driver-applications",
     pvz: "/admin/pvz",
     tickets: "/admin/tickets",
+    profile: "/admin/profile",
   },
 } as const

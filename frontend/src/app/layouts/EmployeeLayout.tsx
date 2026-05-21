@@ -1,7 +1,6 @@
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom"
-import { LayoutDashboard, ListOrdered, PackageSearch, QrCode } from "lucide-react"
+import { Link, Outlet, useLocation } from "react-router-dom"
+import { LayoutDashboard, ListOrdered, PackageSearch, QrCode, User } from "lucide-react"
 
-import { useAuthStore } from "@/app/model/auth-store"
 import { routes } from "@/shared/config/routes"
 import { cn } from "@/shared/lib/cn"
 
@@ -10,38 +9,15 @@ const tabs = [
   { label: "Сборы", path: routes.employee.procurements, icon: PackageSearch },
   { label: "Заказы", path: routes.employee.orders, icon: ListOrdered },
   { label: "Скан", path: routes.employee.scan, icon: QrCode },
+  { label: "Профиль", path: routes.employee.profile, icon: User },
 ]
 
 export const EmployeeLayout = () => {
   const { pathname } = useLocation()
-  const navigate = useNavigate()
-  const logout = useAuthStore((s) => s.logout)
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-100">
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-sm safe-top">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-emerald-700">
-              ПВЗ
-            </p>
-            <h1 className="text-lg font-bold text-slate-900">Выдача заказов</h1>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              logout()
-              navigate(routes.home, { replace: true })
-            }}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            Выйти
-          </button>
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-lg flex-1 overflow-y-auto px-4 py-4 pb-24">
+      <main className="mx-auto w-full max-w-lg flex-1 overflow-y-auto px-4 py-4 pb-24 safe-top">
         <Outlet />
       </main>
 
@@ -57,7 +33,7 @@ export const EmployeeLayout = () => {
                 key={tab.path}
                 to={tab.path}
                 className={cn(
-                  "flex min-w-[4rem] flex-col items-center gap-0.5 text-[11px] font-medium",
+                  "flex min-w-[3.5rem] flex-col items-center gap-0.5 text-[11px] font-medium",
                   active ? "text-emerald-700" : "text-slate-400",
                 )}
               >
@@ -71,4 +47,3 @@ export const EmployeeLayout = () => {
     </div>
   )
 }
-
