@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { OrderStatus, User, UserRole } from '@prisma/client';
+import { assertOrderStatusTransition } from '../common/order-status-transitions';
 import { mapOrderDetail, mapOrderListItem, OrderWithRelations } from '../common/order-mapper';
 import { ORDER_STATUS_LABELS } from '../common/order-labels';
 import { PrismaService } from '../prisma/prisma.service';
@@ -13,19 +14,34 @@ import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 const orderInclude = {
   items: true,
   round: { include: { route: true } },
+  user: { select: { id: true, fullName: true, phone: true, email: true } },
 } as const;
+
+type OrderWithUser = OrderWithRelations & {
+  user?: { id: string; fullName: string | null; phone: string | null; email: string };
+};
 
 @Injectable()
 export class OrdersService {
   constructor(private prisma: PrismaService) {}
 
-  private async findOrderOrThrow(id: string): Promise<OrderWithRelations> {
+  private async findOrderOrThrow(id: string): Promise<OrderWithUser> {
     const order = await this.prisma.order.findUnique({
       where: { id },
       include: orderInclude,
     });
     if (!order) throw new NotFoundException('Заказ не найден');
-    return order as OrderWithRelations;
+    return order as OrderWithUser;
+  }
+
+  private withCustomer(order: OrderWithUser) {
+    const base = mapOrderDetail(order);
+    const user = order.user;
+    return {
+      ...base,
+      customerName: user?.fullName ?? user?.email ?? order.userId,
+      customerPhone: user?.phone ?? null,
+    };
   }
 
   async list(user: User) {
@@ -42,16 +58,26 @@ export class OrdersService {
       include: orderInclude,
       orderBy: { createdAt: 'desc' },
     });
-    return orders.map((o) => mapOrderDetail(o as OrderWithRelations));
+    return orders.map((o) => this.withCustomer(o as OrderWithUser));
   }
 
   async listByPickupPoint(pickupPointId: string) {
     const orders = await this.prisma.order.findMany({
-      where: { pickupPointId },
+      where: {
+        pickupPointId,
+        status: {
+          in: [
+            OrderStatus.confirmed,
+            OrderStatus.in_transit,
+            OrderStatus.at_pickup,
+            OrderStatus.delivered,
+          ],
+        },
+      },
       include: orderInclude,
       orderBy: { createdAt: 'desc' },
     });
-    return orders.map((o) => mapOrderDetail(o as OrderWithRelations));
+    return orders.map((o) => this.withCustomer(o as OrderWithUser));
   }
 
   async getOne(user: User, orderId: string) {
@@ -60,18 +86,19 @@ export class OrdersService {
       include: orderInclude,
     });
     if (!order) throw new NotFoundException('Заказ не найден');
-    return mapOrderDetail(order as OrderWithRelations);
+    return this.withCustomer(order as OrderWithUser);
   }
 
   async getOneForStaff(user: User, orderId: string) {
     const order = await this.findOrderOrThrow(orderId);
     this.assertStaffCanAccessOrder(user, order);
-    return mapOrderDetail(order);
+    return this.withCustomer(order);
   }
 
   async updateStatus(user: User, orderId: string, dto: UpdateOrderStatusDto) {
     const order = await this.findOrderOrThrow(orderId);
     this.assertStaffCanUpdateStatus(user, order);
+    assertOrderStatusTransition(user.role, order.status, dto.status);
 
     const updated = await this.prisma.order.update({
       where: { id: orderId },
@@ -81,7 +108,7 @@ export class OrdersService {
       },
       include: orderInclude,
     });
-    return mapOrderDetail(updated as OrderWithRelations);
+    return this.withCustomer(updated as OrderWithUser);
   }
 
   private assertStaffCanAccessOrder(user: User, order: OrderWithRelations) {
@@ -94,6 +121,7 @@ export class OrdersService {
   private assertStaffCanUpdateStatus(user: User, order: OrderWithRelations) {
     if (user.role === UserRole.admin) return;
     if (user.role === UserRole.employee && user.pickupPointId === order.pickupPointId) return;
+    if (user.role === UserRole.coordinator) return;
     throw new ForbiddenException('Недостаточно прав для смены статуса');
   }
 }

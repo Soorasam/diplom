@@ -155,7 +155,7 @@ export const mapProduct = (p: BackendProduct): Product => ({
   price: parseApiNumber(p.priceEstimate as number | string),
   categoryId: p.categoryId,
   imageUrl: p.imageUrl ?? "",
-  weightKg: 0,
+  weightKg: parseApiNumber(p.weightKg ?? 0),
   unit: p.unit,
 })
 
@@ -183,6 +183,10 @@ export const mapRound = (r: BackendRound): Procurement => ({
     Math.round((r.minParticipants / Math.max(r.targetParticipants, 1)) * 100),
   ),
   currentVolumePercent: r.progressPercent,
+  participantsCount: r.participantsCount,
+  targetParticipants: r.targetParticipants,
+  currentWeightKg: parseApiNumber(r.currentWeightKg ?? r.participantsCount * 10),
+  targetWeightKg: parseApiNumber(r.targetWeightKg ?? r.targetParticipants * 10),
   deliveryMode: mapTransport(r.route.transportType),
   estimatedDelivery: r.closesAt,
 })

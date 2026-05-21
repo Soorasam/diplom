@@ -1,22 +1,45 @@
-import { useMemo, useState } from "react"
-import { useSearchParams } from "react-router-dom"
-import { useActiveProcurements } from "@/entities/procurement/api/useProcurements"
+import { useEffect, useMemo, useState } from "react"
+import { Link, useSearchParams } from "react-router-dom"
+import { Search, ShoppingCart } from "lucide-react"
+
+import { useCartStore } from "@/features/cart/model/cart-store"
+import { useValidCartItemCount } from "@/features/cart/hooks/useCartSync"
+import {
+  useActiveProcurements,
+  useProcurement,
+} from "@/entities/procurement/api/useProcurements"
 import { useCategories, useProducts } from "@/entities/product/api/useProducts"
 import type { ProductFilters } from "@/entities/product/api/productsApi"
+import { routes } from "@/shared/config/routes"
+import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Input } from "@/shared/ui/input/Input"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
+import { Card } from "@/shared/ui/card/Card"
 import { ProductCard } from "@/widgets/product-card/ui/ProductCard"
-import { ProcurementCard } from "@/widgets/procurement-card/ui/ProcurementCard"
-import { Package } from "lucide-react"
+import { ActiveProcurementBanner } from "@/widgets/active-procurement-banner/ui/ActiveProcurementBanner"
 
 export const CatalogPage = () => {
   const [searchParams] = useSearchParams()
-  const categoryFromUrl = searchParams.get("category") ?? undefined
+  const roundFromUrl = searchParams.get("round") ?? undefined
+  const procurementIdFromStore = useCartStore((s) => s.procurementId)
+  const setProcurement = useCartStore((s) => s.setProcurement)
+  const cartCount = useValidCartItemCount()
+
+  const activeRoundId = roundFromUrl ?? procurementIdFromStore ?? ""
+
+  useEffect(() => {
+    if (roundFromUrl) setProcurement(roundFromUrl)
+  }, [roundFromUrl, setProcurement])
+
+  const { data: activeProcurement, isLoading: loadingRound } = useProcurement(activeRoundId)
 
   const [search, setSearch] = useState("")
-  const [categoryId, setCategoryId] = useState<string | undefined>(categoryFromUrl)
+  const [categoryId, setCategoryId] = useState<string | undefined>(
+    searchParams.get("category") ?? undefined,
+  )
   const [sort, setSort] = useState<ProductFilters["sort"]>("name")
 
   const filters = useMemo<ProductFilters>(
@@ -26,93 +49,124 @@ export const CatalogPage = () => {
 
   const { data: categories } = useCategories()
   const { data: products, isLoading } = useProducts(filters)
-  const { data: procurements, isLoading: loadingProcurements } = useActiveProcurements()
+  const { data: procurements } = useActiveProcurements()
 
   return (
-    <div className="flex flex-col gap-5 p-4">
-      <PageHeader
-        title="Каталог"
-        subtitle="Товары привязаны к активным сборам по маршрутам доставки"
-      />
+    <PageShell>
+        {loadingRound && activeRoundId ? (
+          <div className="flex justify-center py-6">
+            <Spinner />
+          </div>
+        ) : activeProcurement ? (
+          <ActiveProcurementBanner procurement={activeProcurement} />
+        ) : null}
 
-      <Input
-        placeholder="Поиск товаров…"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        aria-label="Поиск"
-      />
+        {!activeProcurement && !loadingRound && procurements && procurements.length > 0 ? (
+          <AlertBanner variant="warning" title="Сначала выберите сбор">
+            Перейдите в раздел «Сборы» и нажмите «Участвовать» — откроется каталог с вашим
+            маршрутом.
+          </AlertBanner>
+        ) : null}
 
-      <div className="flex gap-2 overflow-x-auto pb-1" data-no-swipe>
-        <button
-          type="button"
-          onClick={() => setCategoryId(undefined)}
-          className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${
-            !categoryId
-              ? "bg-blue-600 text-white"
-              : "border border-slate-200 bg-white text-slate-600"
-          }`}
-        >
-          Все
-        </button>
-        {categories?.map((cat) => (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => setCategoryId(cat.id)}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${
-              categoryId === cat.id
-                ? "bg-blue-600 text-white"
-                : "border border-slate-200 bg-white text-slate-600"
-            }`}
-          >
-            {cat.name}
-          </button>
-        ))}
-      </div>
-
-      <label className="block text-xs font-medium text-slate-600">
-        Сортировка
-        <select
-          value={sort ?? "name"}
-          onChange={(e) => setSort(e.target.value as ProductFilters["sort"])}
-          className="mt-1 w-full min-h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm"
-        >
-          <option value="name">По названию</option>
-          <option value="price_asc">Цена ↑</option>
-          <option value="price_desc">Цена ↓</option>
-        </select>
-      </label>
-
-      {isLoading ? (
-        <div className="flex justify-center py-10">
-          <Spinner />
-        </div>
-      ) : products && products.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      ) : (
-        <EmptyState
-          icon={Package}
-          title="Товары не найдены"
-          description="Попробуйте изменить фильтры или поисковый запрос"
+        <PageHeader
+          title="Каталог"
+          subtitle={
+            activeProcurement
+              ? "Добавьте товары в корзину, затем оплатите заказ"
+              : "Товары доступны после выбора сбора"
+          }
+          className="!mb-0"
         />
-      )}
 
-      <section>
-        <h2 className="mb-3 text-sm font-semibold text-slate-800">Активные сборы</h2>
-        {loadingProcurements ? (
-          <Spinner />
-        ) : (
-          <div className="flex flex-col gap-3">
-            {procurements?.map((p) => (
-              <ProcurementCard key={p.id} procurement={p} />
+        <Card className="space-y-4 !p-4" padding="none">
+          <div className="px-4 pt-4">
+            <Input
+              placeholder="Поиск товаров…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Поиск"
+            />
+          </div>
+
+          <div
+            className="flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-none"
+            data-no-swipe
+          >
+            <button
+              type="button"
+              onClick={() => setCategoryId(undefined)}
+              className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${
+                !categoryId
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              }`}
+            >
+              Все
+            </button>
+            {categories?.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategoryId(cat.id)}
+                className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${
+                  categoryId === cat.id
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {cat.name}
+              </button>
             ))}
           </div>
-        )}
-      </section>
-    </div>
+
+          <div className="border-t border-slate-100 px-4 py-3">
+            <label className="block text-xs font-medium text-slate-500">
+              Сортировка
+              <select
+                value={sort ?? "name"}
+                onChange={(e) => setSort(e.target.value as ProductFilters["sort"])}
+                className="mt-1.5 w-full min-h-11 rounded-xl border border-slate-200 bg-slate-50/80 px-3 text-sm text-slate-800"
+              >
+                <option value="name">По названию</option>
+                <option value="price_asc">Цена: сначала дешевле</option>
+                <option value="price_desc">Цена: сначала дороже</option>
+              </select>
+            </label>
+          </div>
+        </Card>
+
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-slate-800">
+            {isLoading ? "Загрузка…" : `Товары${products ? ` (${products.length})` : ""}`}
+          </h2>
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Spinner />
+            </div>
+          ) : products && products.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={Search}
+              title="Товары не найдены"
+              description="Измените поиск или категорию"
+            />
+          )}
+        </section>
+
+      {cartCount > 0 ? (
+        <Link
+          to={routes.cart}
+          className="fixed bottom-[5.25rem] right-4 z-30 flex items-center gap-2 rounded-full bg-blue-600 px-3 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-600/30 transition hover:bg-blue-700 active:scale-95 sm:right-[calc(50%-220px)]"
+        >
+          <ShoppingCart size={18} />
+          {cartCount > 9 ? "9+" : cartCount}
+        </Link>
+      ) : null}
+    </PageShell>
   )
 }

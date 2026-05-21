@@ -1,5 +1,4 @@
-import { apiCall, http } from "@/shared/api/client"
-import type { Order } from "@/shared/api/mock-db"
+import { http } from "@/shared/api/client"
 import {
   mapBackendOrder,
   mapFrontOrderStatusToBackend,

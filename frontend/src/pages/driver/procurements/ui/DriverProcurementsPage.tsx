@@ -1,8 +1,13 @@
 import { useMemo, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { CheckCircle2, PlusCircle, Truck } from "lucide-react"
 
-import { useCloseProcurement, useCreateProcurement, useAllProcurements } from "@/entities/procurement/api/useProcurements"
-import { deliveryRoutes } from "@/shared/api/mock-db"
+import {
+  useCloseProcurement,
+  useCreateProcurement,
+  useAllProcurements,
+} from "@/entities/procurement/api/useProcurements"
+import { routesApi } from "@/entities/route/api/routesApi"
 import { formatShortDate } from "@/shared/lib/format"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Button } from "@/shared/ui/button/Button"
@@ -10,22 +15,31 @@ import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { Input } from "@/shared/ui/input/Input"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { Spinner } from "@/shared/ui/spinner/Spinner"
 
 export const DriverProcurementsPage = () => {
   const [title, setTitle] = useState("")
-  const [routeId, setRouteId] = useState(deliveryRoutes[0]?.id ?? "")
+  const [routeId, setRouteId] = useState("")
   const [closesAt, setClosesAt] = useState("")
+
+  const { data: routeList = [], isLoading: loadingRoutes } = useQuery({
+    queryKey: ["routes", "all"],
+    queryFn: () => routesApi.getAll(),
+  })
 
   const create = useCreateProcurement()
   const close = useCloseProcurement("driver")
   const { data: all = [] } = useAllProcurements()
 
+  const effectiveRouteId = routeId || routeList[0]?.id || ""
+
   const route = useMemo(
-    () => deliveryRoutes.find((r) => r.id === routeId) ?? deliveryRoutes[0],
-    [routeId],
+    () => routeList.find((r) => r.id === effectiveRouteId) ?? routeList[0],
+    [routeList, effectiveRouteId],
   )
 
-  const canCreate = title.trim().length > 5 && Boolean(routeId) && Boolean(closesAt)
+  const canCreate =
+    title.trim().length > 5 && Boolean(effectiveRouteId) && Boolean(closesAt)
 
   return (
     <div className="flex flex-col gap-4">
@@ -38,57 +52,63 @@ export const DriverProcurementsPage = () => {
         </p>
       </Card>
 
-      <Card className="border-slate-200">
-        <div className="space-y-3">
-          <Input
-            label="Название сбора"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Например: Якутск → Намцы"
-          />
+      {loadingRoutes ? (
+        <div className="flex justify-center py-6">
+          <Spinner />
+        </div>
+      ) : (
+        <Card className="border-slate-200">
+          <div className="space-y-3">
+            <Input
+              label="Название сбора"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Например: Якутск → Намцы"
+            />
 
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-medium text-slate-600">Маршрут</span>
-            <select
-              value={routeId}
-              onChange={(e) => setRouteId(e.target.value)}
-              className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-medium text-slate-600">Маршрут</span>
+              <select
+                value={effectiveRouteId}
+                onChange={(e) => setRouteId(e.target.value)}
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+              >
+                {routeList.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <Input
+              label="Дедлайн закрытия"
+              type="datetime-local"
+              value={closesAt}
+              onChange={(e) => setClosesAt(e.target.value)}
+            />
+          </div>
+
+          <div className="mt-4">
+            <Button
+              type="button"
+              fullWidth
+              disabled={!canCreate || create.isPending}
+              leftIcon={<PlusCircle size={16} />}
+              onClick={() =>
+                create.mutate({
+                  title: title.trim(),
+                  routeId: effectiveRouteId,
+                  closesAt: new Date(closesAt).toISOString(),
+                  deliveryMode: route?.deliveryMode ?? "mixed",
+                })
+              }
             >
-              {deliveryRoutes.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <Input
-            label="Дедлайн закрытия"
-            type="datetime-local"
-            value={closesAt}
-            onChange={(e) => setClosesAt(e.target.value)}
-          />
-        </div>
-
-        <div className="mt-4">
-          <Button
-            type="button"
-            fullWidth
-            disabled={!canCreate || create.isPending}
-            leftIcon={<PlusCircle size={16} />}
-            onClick={() =>
-              create.mutate({
-                title: title.trim(),
-                routeId,
-                closesAt: new Date(closesAt).toISOString(),
-                deliveryMode: route?.deliveryMode ?? "mixed",
-              })
-            }
-          >
-            Создать сбор
-          </Button>
-        </div>
-      </Card>
+              Создать сбор
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {all.length === 0 ? (
         <EmptyState icon={Truck} title="Сборов пока нет" />
@@ -123,4 +143,3 @@ export const DriverProcurementsPage = () => {
     </div>
   )
 }
-

@@ -19,7 +19,7 @@ export const PageHeader = ({
   action,
   className,
 }: PageHeaderProps) => (
-  <header className={cn("mb-4", className)}>
+  <header className={cn("mb-1", className)}>
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
         {backTo ? (

@@ -1,38 +1,63 @@
-import { apiCall, http } from "@/shared/api/client"
-import { deliveryRoutes, orders, users, type DeliveryRoute } from "@/shared/api/mock-db"
+import { http } from "@/shared/api/client"
+import type { DeliveryRoute } from "@/shared/api/mock-db"
+import type { Order } from "@/shared/api/mock-db"
+import { mapBackendOrder } from "@/shared/api/mappers"
+
+type CoordinatorRoute = DeliveryRoute & { activeRoundId?: string | null }
 
 export const routesApi = {
-  getAll: async () => {
-    try {
-      const list = await http.get<
-        { id: string; title: string; transportType: string; description?: string | null }[]
-      >("/routes")
-      return list.map(
-        (r): DeliveryRoute => ({
-          id: r.id,
-          name: r.title,
-          fromSettlementId: "",
-          toSettlementIds: [],
-          deliveryMode:
-            r.transportType === "river"
-              ? "river"
-              : r.transportType === "winter_road"
-                ? "winter_road"
-                : "mixed",
-          status: "active",
-          points: [],
-        }),
-      )
-    } catch {
-      return apiCall(() => deliveryRoutes)
-    }
+  getAll: async (): Promise<DeliveryRoute[]> => {
+    const list = await http.get<
+      { id: string; title: string; transportType: string; description?: string | null }[]
+    >("/routes")
+    return list.map(
+      (r): DeliveryRoute => ({
+        id: r.id,
+        name: r.title,
+        fromSettlementId: "",
+        toSettlementIds: [],
+        deliveryMode:
+          r.transportType === "river"
+            ? "river"
+            : r.transportType === "winter_road"
+              ? "winter_road"
+              : "mixed",
+        status: "active",
+        points: [],
+      }),
+    )
   },
 
-  getByDriver: (driverId: string) =>
-    apiCall(() => deliveryRoutes.filter((r) => r.driverId === driverId)),
+  getByDriver: async (_driverId: string): Promise<CoordinatorRoute[]> => {
+    return http.get<CoordinatorRoute[]>("/coordinator/routes", true)
+  },
 
-  getDriverOrders: (driverId: string) =>
-    apiCall(() => orders.filter((o) => o.userId === driverId)),
+  getDriverOrders: async (_driverId: string): Promise<Order[]> => {
+    const list = await http.get<
+      Parameters<typeof mapBackendOrder>[0][]
+    >("/coordinator/orders", true)
+    return list.map((o) =>
+      mapBackendOrder({
+        ...o,
+        items: o.items ?? [],
+        pickupPointId: o.pickupPointId ?? "",
+      }),
+    )
+  },
 
-  getDrivers: () => apiCall(() => users.filter((u) => u.role === "driver")),
+  getDrivers: async () => {
+    const users = await http.get<
+      { id: string; fullName: string | null; email: string; role: string }[]
+    >("/admin/users", true)
+    return users
+      .filter((u) => u.role === "coordinator")
+      .map((u) => ({
+        id: u.id,
+        name: u.fullName ?? u.email,
+        phone: "",
+        email: u.email,
+        role: "driver" as const,
+        settlementId: "",
+      }))
+  },
 }

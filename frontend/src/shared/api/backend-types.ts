@@ -30,6 +30,7 @@ export interface BackendProduct {
   description: string | null
   unit: string
   priceEstimate: number
+  weightKg?: number
   imageUrl: string | null
   requiresPrescription: boolean
 }
@@ -49,6 +50,8 @@ export interface BackendRound {
   minParticipants: number
   targetParticipants: number
   participantsCount: number
+  currentWeightKg?: number
+  targetWeightKg?: number
   progressPercent: number
   route: BackendRoute
 }

@@ -18,8 +18,12 @@ export interface BackendCart {
 export const cartApi = {
   get: () => http.get<BackendCart>("/cart", true),
 
-  addItem: (productId: string, quantity = 1) =>
-    http.post<BackendCart>("/cart/items", { productId, quantity }, true),
+  addItem: (productId: string, quantity = 1, roundId?: string) =>
+    http.post<BackendCart>(
+      "/cart/items",
+      { productId, quantity, ...(roundId ? { roundId } : {}) },
+      true,
+    ),
 
   updateItem: (itemId: string, quantity: number) =>
     http.patch<BackendCart>(`/cart/items/${itemId}`, { quantity }, true),

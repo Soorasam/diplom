@@ -1,7 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { RoundStatus } from '@prisma/client';
-import { calcProgressPercent, decimalToNumber } from '../common/order-labels';
+import { RoundStatus, User } from '@prisma/client';
+import {
+  calcRoundProgressPercent,
+  decimalToNumber,
+  roundWeightTotals,
+} from '../common/order-labels';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateRoundDto } from './dto/create-round.dto';
 
 @Injectable()
 export class CatalogService {
@@ -36,16 +41,74 @@ export class CatalogService {
     return this.prisma.route.findMany({ orderBy: { title: 'asc' } });
   }
 
+  async createRound(dto: CreateRoundDto) {
+    const route = await this.prisma.route.findUnique({ where: { id: dto.routeId } });
+    if (!route) throw new NotFoundException('Маршрут не найден');
+
+    const round = await this.prisma.round.create({
+      data: {
+        routeId: dto.routeId,
+        title: dto.title,
+        closesAt: new Date(dto.closesAt),
+        minParticipants: dto.minParticipants ?? 10,
+        targetParticipants: dto.targetParticipants ?? 50,
+        status: RoundStatus.open,
+      },
+      include: { route: true },
+    });
+
+    return this.enrichRound(round);
+  }
+
+  private enrichRound(round: {
+    participantsCount: number;
+    targetParticipants: number;
+    currentWeightKg: { toNumber(): number };
+    targetWeightKg: { toNumber(): number };
+  } & Record<string, unknown>) {
+    const { currentKg, targetKg } = roundWeightTotals(round);
+    return {
+      ...round,
+      currentWeightKg: currentKg,
+      targetWeightKg: targetKg,
+      progressPercent: calcRoundProgressPercent(round),
+    };
+  }
+
+  /** Выбор сбора для оформления заказа — прогресс не меняется до checkout */
+  async joinRound(user: User, roundId: string) {
+    const round = await this.prisma.round.findUnique({ where: { id: roundId } });
+    if (!round) throw new NotFoundException('Сбор не найден');
+    if (round.status !== RoundStatus.open) {
+      throw new BadRequestException('Сбор закрыт для участия');
+    }
+    const { currentKg, targetKg } = roundWeightTotals(round);
+    if (currentKg >= targetKg) {
+      throw new BadRequestException('Достигнут лимит веса сбора');
+    }
+
+    return {
+      roundId,
+      roundIds: await this.listUserRoundIds(user.id),
+    };
+  }
+
+  async listUserRoundIds(userId: string) {
+    const orders = await this.prisma.order.findMany({
+      where: { userId },
+      select: { roundId: true },
+      distinct: ['roundId'],
+    });
+    return orders.map((o) => o.roundId);
+  }
+
   async getRound(id: string) {
     const round = await this.prisma.round.findUnique({
       where: { id },
       include: { route: true },
     });
     if (!round) throw new NotFoundException('Сбор не найден');
-    return {
-      ...round,
-      progressPercent: calcProgressPercent(round.participantsCount, round.targetParticipants),
-    };
+    return this.enrichRound(round);
   }
 
   async closeRound(id: string) {
@@ -75,13 +138,7 @@ export class CatalogService {
       data: { status: RoundStatus.fulfilled },
       include: { route: true },
     });
-    return {
-      ...updated,
-      progressPercent: calcProgressPercent(
-        updated.participantsCount,
-        updated.targetParticipants,
-      ),
-    };
+    return this.enrichRound(updated);
   }
 
   async listRounds(status?: RoundStatus) {
@@ -90,10 +147,7 @@ export class CatalogService {
       include: { route: true },
       orderBy: { closesAt: 'asc' },
     });
-    return rounds.map((r) => ({
-      ...r,
-      progressPercent: calcProgressPercent(r.participantsCount, r.targetParticipants),
-    }));
+    return rounds.map((r) => this.enrichRound(r));
   }
 
   listCategories() {
@@ -117,10 +171,16 @@ export class CatalogService {
     return product;
   }
 
-  mapProduct(product: { priceEstimate: { toNumber(): number } } & Record<string, unknown>) {
+  mapProduct(
+    product: {
+      priceEstimate: { toNumber(): number };
+      weightKg?: { toNumber(): number };
+    } & Record<string, unknown>,
+  ) {
     return {
       ...product,
       priceEstimate: decimalToNumber(product.priceEstimate),
+      weightKg: decimalToNumber(product.weightKg),
     };
   }
 }

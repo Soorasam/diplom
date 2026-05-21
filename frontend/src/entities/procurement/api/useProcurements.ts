@@ -61,8 +61,7 @@ export const useJoinProcurement = (userId?: string) => {
       return procurementsApi.join(userId, procurementId)
     },
     onSuccess: () => {
-      if (!userId) return
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.memberships(userId) })
+      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
     },
   })
 }

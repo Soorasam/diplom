@@ -5,7 +5,6 @@ import {
   useMarkNotificationRead,
   useNotifications,
 } from "@/entities/notification/api/useNotifications"
-import { routes } from "@/shared/config/routes"
 import { formatShortDate } from "@/shared/lib/format"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { Card } from "@/shared/ui/card/Card"
@@ -20,7 +19,7 @@ export const NotificationsPage = () => {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <PageHeader title="Уведомления" backTo={routes.profile} />
+      <PageHeader title="Уведомления" />
 
       {isLoading ? (
         <div className="flex justify-center py-10">

@@ -100,7 +100,9 @@ export const HomePage = () => {
         ) : (
           <div className="flex flex-col gap-3">
             {procurements?.slice(0, 2).map((p) => (
-              <ProcurementCard key={p.id} procurement={p} compact />
+              <Link key={p.id} to={routes.procurement(p.id)}>
+                <ProcurementCard procurement={p} compact />
+              </Link>
             ))}
           </div>
         )}

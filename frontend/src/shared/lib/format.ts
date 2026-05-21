@@ -17,3 +17,10 @@ export const formatShortDate = (iso: string) =>
     day: "numeric",
     month: "short",
   }).format(new Date(iso))
+
+export const formatWeightKg = (kg: number) => {
+  if (kg >= 1000) return `${(kg / 1000).toFixed(1)} т`
+  if (kg >= 10) return `${kg.toFixed(0)} кг`
+  if (kg >= 1) return `${kg.toFixed(1)} кг`
+  return `${kg.toFixed(2)} кг`
+}

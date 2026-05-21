@@ -4,7 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { OrderStatus, RoundStatus, User } from '@prisma/client';
-import { calcProgressPercent, decimalToNumber, ORDER_STATUS_LABELS } from '../common/order-labels';
+import {
+  calcLineWeightKg,
+  calcRoundProgressPercent,
+  decimalToNumber,
+  ORDER_STATUS_LABELS,
+  roundWeightTotals,
+} from '../common/order-labels';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCartItemDto } from './dto/cart-item.dto';
 
@@ -21,10 +27,20 @@ export class CartService {
     return `${prefix}-${String(count + 1).padStart(2, '0')}`;
   }
 
-  private mapRound(round: { participantsCount: number; targetParticipants: number } & Record<string, unknown>) {
+  private mapRound(
+    round: {
+      participantsCount: number;
+      targetParticipants: number;
+      currentWeightKg: { toNumber(): number };
+      targetWeightKg: { toNumber(): number };
+    } & Record<string, unknown>,
+  ) {
+    const { currentKg, targetKg } = roundWeightTotals(round);
     return {
       ...round,
-      progressPercent: calcProgressPercent(round.participantsCount, round.targetParticipants),
+      currentWeightKg: currentKg,
+      targetWeightKg: targetKg,
+      progressPercent: calcRoundProgressPercent(round),
     };
   }
 
@@ -185,9 +201,16 @@ export class CartService {
     }
 
     let totalEstimate = 0;
+    let orderWeightKg = 0;
     const orderItemsData = items.map((item) => {
       const price = decimalToNumber(item.product.priceEstimate);
+      const lineWeight = calcLineWeightKg(
+        decimalToNumber(item.product.weightKg),
+        item.quantity,
+        item.product.unit,
+      );
       totalEstimate += price * item.quantity;
+      orderWeightKg += lineWeight;
       return {
         productId: item.productId,
         productName: item.product.name,
@@ -196,6 +219,18 @@ export class CartService {
         priceSnapshot: item.product.priceEstimate,
       };
     });
+
+    if (orderWeightKg <= 0) {
+      throw new BadRequestException('Не удалось рассчитать вес заказа');
+    }
+
+    const { currentKg, targetKg } = roundWeightTotals(round);
+    if (currentKg + orderWeightKg > targetKg + 0.001) {
+      const left = Math.max(targetKg - currentKg, 0);
+      throw new BadRequestException(
+        `Превышен лимит сбора: доступно ещё ${left.toFixed(1)} кг`,
+      );
+    }
 
     const publicNumber = await this.generatePublicNumber();
 
@@ -216,7 +251,10 @@ export class CartService {
       await tx.cartItem.deleteMany({ where: { userId: user.id } });
       await tx.round.update({
         where: { id: round.id },
-        data: { participantsCount: { increment: 1 } },
+        data: {
+          currentWeightKg: { increment: orderWeightKg },
+          participantsCount: { increment: 1 },
+        },
       });
       return created;
     });

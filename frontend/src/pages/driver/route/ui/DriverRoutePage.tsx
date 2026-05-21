@@ -3,11 +3,10 @@ import { CheckCircle2, MapPin, Snowflake, Truck } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { routesApi } from "@/entities/route/api/routesApi"
-import { settlements } from "@/shared/api/mock-db"
+import { useSettlements } from "@/entities/settlement/api/useSettlements"
 import type { DeliveryMode } from "@/shared/types"
 import { queryKeys } from "@/shared/config/query-keys"
 import { Badge } from "@/shared/ui/badge/Badge"
-import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
@@ -32,6 +31,8 @@ export const DriverRoutePage = () => {
   const user = useAuthStore((s) => s.user)
   const driverId = user?.role === "driver" ? user.id : "d1"
 
+  const { data: settlements } = useSettlements()
+
   const { data: driverRoutes, isLoading } = useQuery({
     queryKey: queryKeys.routes.driver(driverId),
     queryFn: () => routesApi.getByDriver(driverId),
@@ -41,7 +42,7 @@ export const DriverRoutePage = () => {
     driverRoutes?.find((r) => r.status === "active") ?? driverRoutes?.[0]
 
   const settlementName = (id: string) =>
-    settlements.find((s) => s.id === id)?.name ?? id
+    settlements?.find((s) => s.id === id)?.name ?? id
 
   if (isLoading) {
     return (

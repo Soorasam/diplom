@@ -4,6 +4,7 @@ import { useState } from "react"
 
 import { useThemeEffect } from "@/features/ui/hooks/useThemeEffect"
 import { useCartSync } from "@/features/cart/hooks/useCartSync"
+import { AuthHydrator } from "@/app/providers/AuthHydrator"
 import { OfflineSyncProvider } from "@/features/offline/ui/OfflineSyncProvider"
 import { logEvent } from "@/shared/lib/event-log"
 
@@ -24,11 +25,11 @@ export const AppProviders = ({ children }: { children: ReactNode }) => {
         mutationCache: new MutationCache({
           onMutate: (_variables, mutation) => {
             const key = mutation.options.mutationKey?.join("/") ?? mutation.options.mutationFn?.name ?? "unknown"
-            logEvent(`mutation:${key}`, _variables)
+            logEvent(`mutation:${key}`, { variables: _variables })
           },
           onSuccess: (_data, _variables, _context, mutation) => {
             const key = mutation.options.mutationKey?.join("/") ?? "unknown"
-            logEvent(`mutation:ok:${key}`, _data)
+            logEvent(`mutation:ok:${key}`, { data: _data })
           },
           onError: (error, _variables, _context, mutation) => {
             const key = mutation.options.mutationKey?.join("/") ?? "unknown"
@@ -48,6 +49,7 @@ export const AppProviders = ({ children }: { children: ReactNode }) => {
   return (
     <QueryClientProvider client={client}>
       <ThemeSync />
+      <AuthHydrator />
       <CartSync />
       <OfflineSyncProvider />
       {children}

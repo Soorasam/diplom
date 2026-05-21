@@ -1,140 +1,98 @@
-import { apiCall, http } from "@/shared/api/client"
-import { deliveryRoutes, procurements } from "@/shared/api/mock-db"
+import { http } from "@/shared/api/client"
 import type { BackendRound } from "@/shared/api/backend-types"
 import { mapRound } from "@/shared/api/mappers"
-import type { DeliveryMode, ProcurementStatus, UserRole } from "@/shared/types"
-
-let store = [...procurements]
-let membershipsStore: Record<string, string[]> = {
-  u1: ["pr1"],
-}
-let receiptApprovalsStore: Record<string, { approvedByRole: "employee" | "admin"; approvedAt: string }[]> = {}
+import type { DeliveryMode, UserRole } from "@/shared/types"
 
 export const procurementsApi = {
-  /** Активные сборы — с бэкенда; при ошибке API — mock */
   getActive: async () => {
-    try {
-      const rounds = await http.get<BackendRound[]>("/rounds?status=open")
-      return rounds.map(mapRound)
-    } catch {
-      return apiCall(() =>
-        store.filter((p) => p.status === "open" || p.status === "closing"),
-      )
-    }
+    const rounds = await http.get<BackendRound[]>("/rounds?status=open")
+    return rounds.map(mapRound)
   },
 
   getAll: async () => {
-    try {
-      const rounds = await http.get<BackendRound[]>("/admin/rounds", true)
-      return rounds.map(mapRound)
-    } catch {
-      const rounds = await http.get<BackendRound[]>("/rounds")
-      return rounds.map(mapRound)
-    }
+    const rounds = await http.get<BackendRound[]>("/rounds")
+    return rounds.map(mapRound)
   },
 
   getById: async (id: string) => {
-    try {
-      const round = await http.get<BackendRound>(`/rounds/${id}`)
-      return mapRound(round)
-    } catch {
-      return apiCall(() => {
-        const item = store.find((p) => p.id === id)
-        if (!item) throw new Error("Сбор не найден")
-        return item
-      })
+    const round = await http.get<BackendRound>(`/rounds/${id}`)
+    return mapRound(round)
+  },
+
+  getRoute: async (routeId: string) => {
+    const routes = await http.get<{ id: string; title: string; transportType: string }[]>(
+      "/routes",
+    )
+    const r = routes.find((x) => x.id === routeId)
+    if (!r) throw new Error("Маршрут не найден")
+    return {
+      id: r.id,
+      name: r.title,
+      fromSettlementId: "",
+      toSettlementIds: [],
+      deliveryMode:
+        r.transportType === "river"
+          ? "river"
+          : r.transportType === "winter_road"
+            ? "winter_road"
+            : "mixed",
+      status: "active" as const,
+      points: [],
     }
   },
 
-  getRoute: (routeId: string) =>
-    apiCall(() => deliveryRoutes.find((r) => r.id === routeId)),
-
-  create: (payload: {
+  create: async (payload: {
     title: string
     routeId: string
     closesAt: string
     deliveryMode: DeliveryMode
-  }) =>
-    apiCall(() => {
-      const item = {
-        id: `pr-${Date.now()}`,
-        title: payload.title,
+  }) => {
+    const round = await http.post<BackendRound>(
+      "/rounds",
+      {
         routeId: payload.routeId,
-        status: "open" as ProcurementStatus,
+        title: payload.title,
         closesAt: payload.closesAt,
-        minVolumePercent: 100,
-        currentVolumePercent: 0,
-        deliveryMode: payload.deliveryMode,
-        estimatedDelivery: payload.closesAt,
-      }
-      store = [item, ...store]
-      return item
-    }),
+      },
+      true,
+    )
+    return mapRound(round)
+  },
 
   close: async (id: string, actorRole: UserRole) => {
     if (actorRole !== "driver" && actorRole !== "admin") {
       throw new Error("Закрывать сбор может только водитель или админ")
     }
-    try {
-      await http.patch(`/rounds/${id}/close`, {}, true)
-      return procurementsApi.getById(id)
-    } catch {
-      return apiCall(() => {
-        store = store.map((p) =>
-          p.id === id ? { ...p, status: "closed" as ProcurementStatus } : p,
-        )
-        const item = store.find((p) => p.id === id)
-        if (!item) throw new Error("Сбор не найден")
-        return item
-      })
-    }
+    await http.patch(`/rounds/${id}/close`, {}, true)
+    return procurementsApi.getById(id)
   },
 
-  getMemberships: (userId: string) =>
-    apiCall(() => membershipsStore[userId] ?? []),
+  getMemberships: async (_userId: string) => {
+    return http.get<string[]>("/rounds/memberships/me", true)
+  },
 
-  join: (userId: string, procurementId: string) =>
-    apiCall(() => {
-      const target = store.find((p) => p.id === procurementId)
-      if (!target) throw new Error("Сбор не найден")
-      if (target.status !== "open" && target.status !== "closing") {
-        throw new Error("Нельзя присоединиться к закрытому сбору")
-      }
+  join: async (_userId: string, procurementId: string) => {
+    const res = await http.post<{ roundIds: string[] }>(
+      `/rounds/${procurementId}/join`,
+      {},
+      true,
+    )
+    return res.roundIds
+  },
 
-      const existing = membershipsStore[userId] ?? []
-      if (existing.includes(procurementId)) return existing
-
-      membershipsStore = {
-        ...membershipsStore,
-        [userId]: [procurementId, ...existing],
-      }
-
-      return membershipsStore[userId]
-    }),
-
-  getReceiptApprovals: (procurementId: string) =>
-    apiCall(() => receiptApprovalsStore[procurementId] ?? []),
+  getReceiptApprovals: async (procurementId: string) => {
+    const round = await http.get<BackendRound>(`/rounds/${procurementId}`)
+    if (round.status === "fulfilled") {
+      return [{ approvedByRole: "admin" as const, approvedAt: round.closesAt }]
+    }
+    return []
+  },
 
   approveReceipt: async (procurementId: string, actorRole: UserRole) => {
     if (actorRole !== "employee" && actorRole !== "admin") {
       throw new Error("Подтверждать приемку может только ПВЗ или админ")
     }
-    if (actorRole === "admin") {
-      const { adminApi } = await import("@/entities/admin/api/adminApi")
-      await adminApi.fulfillRound(procurementId)
-      return [{ approvedByRole: "admin" as const, approvedAt: new Date().toISOString() }]
-    }
-    return apiCall(() => {
-      const existing = receiptApprovalsStore[procurementId] ?? []
-      if (existing.some((x) => x.approvedByRole === actorRole)) {
-        return existing
-      }
-      const next = [
-        ...existing,
-        { approvedByRole: actorRole, approvedAt: new Date().toISOString() },
-      ]
-      receiptApprovalsStore = { ...receiptApprovalsStore, [procurementId]: next }
-      return next
-    })
+    await http.patch(`/rounds/${procurementId}/fulfill`, {}, true)
+    return [{ approvedByRole: actorRole, approvedAt: new Date().toISOString() }]
   },
 }

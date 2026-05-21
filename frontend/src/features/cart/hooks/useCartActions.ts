@@ -26,11 +26,12 @@ export const useCartActions = () => {
 
   const addItem = useCallback(
     async (productId: string, qty = 1) => {
+      const roundId = useCartStore.getState().procurementId ?? undefined
       if (!isAuthenticated) {
         localAdd(productId, qty)
         return
       }
-      const cart = await cartApi.addItem(productId, qty)
+      const cart = await cartApi.addItem(productId, qty, roundId)
       await applyServerCart(cart)
     },
     [isAuthenticated, localAdd, applyServerCart],

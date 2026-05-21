@@ -26,7 +26,7 @@ export const EmployeeOrdersPage = () => {
 
   const { data: pickupPointId } = useEmployeePickupPointId()
   const { data: orders, isLoading } = useEmployeeOrders()
-  const actions = useEmployeeOrderStatusActions(pickupPointId)
+  const actions = useEmployeeOrderStatusActions(pickupPointId ?? undefined)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()

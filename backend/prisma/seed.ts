@@ -15,6 +15,7 @@ const PRODUCT_DEFS = [
     description: 'Крупа в вакуумной упаковке',
     unit: 'шт',
     priceEstimate: 189,
+    weightKg: 1,
     imageIndex: 0,
   },
   {
@@ -22,6 +23,7 @@ const PRODUCT_DEFS = [
     name: 'Сгущённое молоко, 380 г',
     unit: 'бан',
     priceEstimate: 145,
+    weightKg: 0.38,
     imageIndex: 1,
   },
   {
@@ -29,6 +31,7 @@ const PRODUCT_DEFS = [
     name: 'Стиральный порошок, 3 кг',
     unit: 'уп',
     priceEstimate: 520,
+    weightKg: 3,
     imageIndex: 2,
   },
   {
@@ -37,6 +40,7 @@ const PRODUCT_DEFS = [
     description: 'Без рецепта',
     unit: 'уп',
     priceEstimate: 95,
+    weightKg: 0.15,
     imageIndex: 3,
   },
   {
@@ -44,6 +48,7 @@ const PRODUCT_DEFS = [
     name: 'Герметик морозостойкий',
     unit: 'шт',
     priceEstimate: 410,
+    weightKg: 0.3,
     imageIndex: 4,
   },
 ] as const;
@@ -152,7 +157,9 @@ async function main() {
         closesAt: closesIn14,
         minParticipants: 10,
         targetParticipants: 50,
-        participantsCount: 28,
+        participantsCount: 0,
+        currentWeightKg: 280,
+        targetWeightKg: 500,
       },
       {
         routeId: routes[1].id,
@@ -161,7 +168,9 @@ async function main() {
         closesAt: closesIn20,
         minParticipants: 8,
         targetParticipants: 40,
-        participantsCount: 16,
+        participantsCount: 0,
+        currentWeightKg: 160,
+        targetWeightKg: 400,
       },
     ],
   });
@@ -205,6 +214,7 @@ async function main() {
         description: 'description' in def ? def.description : undefined,
         unit: def.unit,
         priceEstimate: def.priceEstimate,
+        weightKg: def.weightKg,
       },
     });
   }

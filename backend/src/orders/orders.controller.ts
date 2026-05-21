@@ -40,7 +40,7 @@ export class OrdersController {
 
   @Patch(':id/status')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.employee, UserRole.admin)
+  @Roles(UserRole.employee, UserRole.admin, UserRole.coordinator)
   updateStatus(
     @CurrentUser() user: User,
     @Param('id', ParseUUIDPipe) id: string,

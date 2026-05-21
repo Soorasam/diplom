@@ -2,6 +2,11 @@ import { http } from "@/shared/api/client"
 import type { Order } from "@/shared/api/mock-db"
 import { mapBackendOrder } from "@/shared/api/mappers"
 
+type PickupOrderDto = Parameters<typeof mapBackendOrder>[0] & {
+  customerName?: string
+  customerPhone?: string | null
+}
+
 export interface EmployeeOrderView extends Order {
   userName: string
   userPhone: string
@@ -13,21 +18,25 @@ export const employeeApi = {
     Promise.resolve(pickupPointId ?? null),
 
   getOrdersByPickupPoint: async (pickupPointId: string) => {
-    const list = await http.get<Parameters<typeof mapBackendOrder>[0][]>(
+    const list = await http.get<PickupOrderDto[]>(
       `/orders/pickup-point/${pickupPointId}`,
       true,
     )
 
-    return list
-      .map((o) => mapBackendOrder({ ...o, items: o.items ?? [], pickupPointId: o.pickupPointId ?? pickupPointId }))
-      .filter((o) => o.status === "at_pickup" || o.status === "delivered")
-      .map<EmployeeOrderView>((o) => ({
+    return list.map<EmployeeOrderView>((raw) => {
+      const o = mapBackendOrder({
+        ...raw,
+        items: raw.items ?? [],
+        pickupPointId: raw.pickupPointId ?? pickupPointId,
+      })
+      return {
         ...o,
-        userName: o.userId,
-        userPhone: "—",
+        userName: raw.customerName ?? o.userId,
+        userPhone: raw.customerPhone ?? "—",
         itemsText: o.items
-          .map((i) => `${i.productId.slice(0, 8)}… × ${i.quantity}`)
+          .map((i) => `${i.productName ?? i.productId} × ${i.quantity}`)
           .join(", "),
-      }))
+      }
+    })
   },
 }

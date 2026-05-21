@@ -1,4 +1,5 @@
-import { clearTokens, getAccessToken } from "@/shared/api/auth-storage"
+import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from "@/shared/api/auth-storage"
+import type { AuthResponse } from "@/shared/api/backend-types"
 import { logEvent, logEventError } from "@/shared/lib/event-log"
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1"
@@ -24,10 +25,37 @@ async function parseErrorMessage(res: Response): Promise<string> {
   return res.statusText || "Ошибка запроса"
 }
 
-type RequestOptions = RequestInit & { auth?: boolean }
+let refreshPromise: Promise<string | null> | null = null
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refresh = getRefreshToken()
+  if (!refresh) return null
+
+  if (!refreshPromise) {
+    refreshPromise = fetch(`${API_URL}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken: refresh }),
+    })
+      .then(async (res) => {
+        if (!res.ok) return null
+        const data = (await res.json()) as AuthResponse
+        saveTokens(data.access_token, data.refresh_token)
+        return data.access_token
+      })
+      .catch(() => null)
+      .finally(() => {
+        refreshPromise = null
+      })
+  }
+
+  return refreshPromise
+}
+
+type RequestOptions = RequestInit & { auth?: boolean; _retried?: boolean }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { auth, headers: initHeaders, ...init } = options
+  const { auth, headers: initHeaders, _retried, ...init } = options
   const method = init.method ?? "GET"
   const headers = new Headers(initHeaders)
 
@@ -54,6 +82,14 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   try {
     const res = await fetch(`${API_URL}${path}`, { ...init, headers })
 
+    if (res.status === 401 && auth && !_retried) {
+      const newToken = await refreshAccessToken()
+      if (newToken) {
+        return request<T>(path, { ...options, _retried: true })
+      }
+      clearTokens()
+    }
+
     if (!res.ok) {
       const message = await parseErrorMessage(res)
       logEventError(`api:error ${method} ${path}`, message, {
@@ -75,7 +111,6 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     logEvent(`api:ok ${method} ${path}`, {
       status: res.status,
       ms: Math.round(performance.now() - started),
-      data,
     })
     return data
   } catch (err) {
@@ -127,16 +162,6 @@ export const http = {
       },
     )
   },
-}
-
-/** Обёртка mock API (задержка) — для экранов, ещё не переведённых на бэкенд */
-export async function apiCall<T>(fn: () => T | Promise<T>, ms = 350): Promise<T> {
-  logEvent("mock:apiCall", { delayMs: ms })
-  const { delay } = await import("@/shared/lib/delay")
-  await delay(ms)
-  const result = await fn()
-  logEvent("mock:apiCall:done", { delayMs: ms })
-  return result
 }
 
 export const clearApiSession = () => clearTokens()

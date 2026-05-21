@@ -1,96 +1,217 @@
-import { Link } from "react-router-dom"
-import { ArrowRight, CheckCircle2, Lock, Package } from "lucide-react"
+import { useMemo, useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import {
+  ArrowRight,
+  CheckCircle2,
+  ChevronRight,
+  List,
+  Lock,
+  Map,
+  Package,
+} from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
+import { useCartStore } from "@/features/cart/model/cart-store"
+import { participateInProcurement } from "@/features/procurement/lib/participate-in-procurement"
 import {
   useActiveProcurements,
   useJoinProcurement,
   useMyProcurementMemberships,
 } from "@/entities/procurement/api/useProcurements"
+import type { Procurement } from "@/shared/api/mock-db"
 import { routes } from "@/shared/config/routes"
+import type { DeliveryMode } from "@/shared/types"
+import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
+import { MapView } from "@/shared/ui/map/MapView"
 import { ProcurementCard } from "@/widgets/procurement-card/ui/ProcurementCard"
+import { cn } from "@/shared/lib/cn"
+
+type SortKey = "closesAt" | "progress"
 
 export const ActiveProcurementsPage = () => {
+  const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   const { data: procurements, isLoading } = useActiveProcurements()
   const { data: memberships = [] } = useMyProcurementMemberships(user?.id)
   const join = useJoinProcurement(user?.id)
+  const setProcurement = useCartStore((s) => s.setProcurement)
+
+  const [viewMode, setViewMode] = useState<"list" | "map">("list")
+  const [deliveryFilter, setDeliveryFilter] = useState<DeliveryMode | "all">("all")
+  const [sort, setSort] = useState<SortKey>("closesAt")
+  const [limitMessage, setLimitMessage] = useState<string | null>(null)
+
+  const filtered = useMemo(() => {
+    let list = [...(procurements ?? [])]
+    if (deliveryFilter !== "all") {
+      list = list.filter((p) => p.deliveryMode === deliveryFilter)
+    }
+    list.sort((a, b) => {
+      if (sort === "progress") {
+        return b.currentVolumePercent - a.currentVolumePercent
+      }
+      return new Date(a.closesAt).getTime() - new Date(b.closesAt).getTime()
+    })
+    return list
+  }, [procurements, deliveryFilter, sort])
+
+  const mapMarkers = filtered.map((p) => ({
+    id: p.id,
+    title: p.title,
+    coordinates: { lat: 62.03 + filtered.indexOf(p) * 0.4, lng: 129.73 },
+    type: "route" as const,
+  }))
+
+  const handleParticipate = async (p: Procurement) => {
+    if (p.currentWeightKg >= p.targetWeightKg) {
+      setLimitMessage("Лимит веса сбора достигнут")
+      return
+    }
+    setLimitMessage(null)
+    try {
+      if (isAuthenticated) await join.mutateAsync(p.id)
+      participateInProcurement(navigate, setProcurement, p.id)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Не удалось выбрать сбор"
+      setLimitMessage(msg)
+    }
+  }
+
+  const chipClass = (active: boolean) =>
+    cn(
+      "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition",
+      active
+        ? "bg-blue-600 text-white shadow-sm"
+        : "bg-white text-slate-600 ring-1 ring-slate-200/80 hover:bg-slate-50",
+    )
 
   return (
-    <div className="flex flex-col gap-4 p-4 pb-8">
+    <PageShell>
       <PageHeader
         title="Активные сборы"
-        subtitle="Присоединяйтесь к ближайшему сбору и следите за прогрессом"
+        subtitle="Участвуйте в сборе — выберите товары в каталоге и оплатите заказ"
         backTo={routes.home}
+        className="!mb-0"
       />
 
       {!isAuthenticated ? (
-        <Card className="border-amber-200 bg-amber-50/40">
-          <p className="text-sm font-semibold text-slate-900">Нужен вход</p>
-          <p className="mt-1 text-sm text-slate-600">
-            Войдите по email, чтобы присоединиться к сбору.
-          </p>
-          <div className="mt-3">
-            <Link to={routes.auth} className="text-sm font-semibold text-blue-700">
-              Перейти ко входу
-            </Link>
-          </div>
-        </Card>
+        <AlertBanner variant="info" title="Войдите в аккаунт">
+          <Link to={routes.auth} className="font-semibold text-blue-700 underline">
+            Авторизация
+          </Link>{" "}
+          нужна для участия в сборе и оформления заказа.
+        </AlertBanner>
+      ) : null}
+
+      <Card className="!p-3" data-no-swipe>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={() => setViewMode("list")} className={chipClass(viewMode === "list")}>
+            <List size={14} />
+            Список
+          </button>
+          <button type="button" onClick={() => setViewMode("map")} className={chipClass(viewMode === "map")}>
+            <Map size={14} />
+            Карта
+          </button>
+          <select
+            value={deliveryFilter}
+            onChange={(e) => setDeliveryFilter(e.target.value as DeliveryMode | "all")}
+            className="min-h-[2.25rem] rounded-full border-0 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200/80"
+          >
+            <option value="all">Все маршруты</option>
+            <option value="winter_road">Зимник</option>
+            <option value="river">Река</option>
+            <option value="mixed">Смешанный</option>
+          </select>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            className="min-h-[2.25rem] rounded-full border-0 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200/80"
+          >
+            <option value="closesAt">По дате закрытия</option>
+            <option value="progress">По заполнению</option>
+          </select>
+        </div>
+      </Card>
+
+      {limitMessage ? (
+        <AlertBanner variant="warning">{limitMessage}</AlertBanner>
       ) : null}
 
       {isLoading ? (
-        <div className="flex justify-center py-10">
+        <div className="flex justify-center py-16">
           <Spinner />
         </div>
-      ) : procurements && procurements.length > 0 ? (
-        <ul className="flex flex-col gap-3">
-          {procurements.map((p) => {
-            const joined = memberships.includes(p.id)
-            return (
-              <li key={p.id}>
-                <Card padding="none" className="overflow-hidden border-slate-200">
-                  <div className="p-3">
-                    <ProcurementCard procurement={p} />
-                  </div>
-                  <div className="border-t border-slate-100 bg-slate-50 px-3 py-3">
-                    {joined ? (
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">
-                          <CheckCircle2 size={16} />
-                          Вы уже участвуете в этом сборе
-                        </p>
-                        <Link
-                          to={routes.catalog}
-                          className="inline-flex items-center gap-1 text-sm font-semibold text-blue-700"
+      ) : filtered.length > 0 ? (
+        viewMode === "map" ? (
+          <Card padding="none" className="overflow-hidden">
+            <MapView markers={mapMarkers} className="h-72" />
+            <p className="px-4 py-3 text-center text-xs text-slate-500">
+              {filtered.length} активных сборов
+            </p>
+          </Card>
+        ) : (
+          <ul className="flex flex-col gap-4">
+            {filtered.map((p) => {
+              const hasOrder = memberships.includes(p.id)
+              const atLimit = p.currentWeightKg >= p.targetWeightKg
+              return (
+                <li key={p.id}>
+                  <Card className="overflow-hidden !p-0">
+                    <Link
+                      to={routes.procurement(p.id)}
+                      className="group block px-4 py-4 transition hover:bg-slate-50/80"
+                    >
+                      <ProcurementCard procurement={p} embedded />
+                      <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 group-hover:underline">
+                        Подробнее о сборе
+                        <ChevronRight size={14} />
+                      </span>
+                    </Link>
+                    <div className="border-t border-slate-100 bg-slate-50/80 px-4 py-3.5">
+                      {hasOrder ? (
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                            <CheckCircle2 size={18} />
+                            Заказ оформлен
+                          </p>
+                          <Link
+                            to={routes.orders}
+                            className="inline-flex items-center gap-1 text-sm font-semibold text-blue-700"
+                          >
+                            Мои заказы
+                            <ArrowRight size={16} />
+                          </Link>
+                        </div>
+                      ) : (
+                        <Button
+                          type="button"
+                          fullWidth
+                          size="lg"
+                          disabled={!isAuthenticated || atLimit || join.isPending}
+                          leftIcon={
+                            !isAuthenticated ? <Lock size={18} /> : <Package size={18} />
+                          }
+                          onClick={() => void handleParticipate(p)}
                         >
-                          В каталог
-                          <ArrowRight size={16} />
-                        </Link>
-                      </div>
-                    ) : (
-                      <Button
-                        type="button"
-                        fullWidth
-                        disabled={!isAuthenticated || join.isPending}
-                        leftIcon={!isAuthenticated ? <Lock size={16} /> : <Package size={16} />}
-                        onClick={() => join.mutate(p.id)}
-                      >
-                        Присоединиться к сбору
-                      </Button>
-                    )}
-                  </div>
-                </Card>
-              </li>
-            )
-          })}
-        </ul>
+                          {atLimit ? "Лимит веса достигнут" : "Участвовать в сборе"}
+                        </Button>
+                      )}
+                    </div>
+                  </Card>
+                </li>
+              )
+            })}
+          </ul>
+        )
       ) : (
         <EmptyState
           icon={Package}
@@ -98,7 +219,6 @@ export const ActiveProcurementsPage = () => {
           description="Новые сборы появятся здесь"
         />
       )}
-    </div>
+    </PageShell>
   )
 }
-

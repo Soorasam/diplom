@@ -7,6 +7,8 @@ import {
   LayoutDashboard,
   LogOut,
   MapPin,
+  MessageSquare,
+  Pencil,
   Truck,
   User,
 } from "lucide-react"
@@ -21,6 +23,8 @@ import { Card } from "@/shared/ui/card/Card"
 import { Button } from "@/shared/ui/button/Button"
 
 const menuLinks = [
+  { to: routes.profileEdit, label: "Редактировать данные", icon: Pencil },
+  { to: routes.disputes, label: "Мои споры", icon: MessageSquare },
   { to: routes.addresses, label: "Населённый пункт", icon: MapPin },
   { to: routes.notifications, label: "Уведомления", icon: Bell },
   { to: routes.support, label: "Поддержка", icon: Headphones },

@@ -10,6 +10,7 @@ import { ProfileModule } from './profile/profile.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DriverApplicationsModule } from './driver-applications/driver-applications.module';
+import { CoordinatorModule } from './coordinator/coordinator.module';
 import { StorageModule } from './storage/storage.module';
 
 @Module({
@@ -25,6 +26,7 @@ import { StorageModule } from './storage/storage.module';
     AdminModule,
     NotificationsModule,
     DriverApplicationsModule,
+    CoordinatorModule,
   ],
   controllers: [HealthController],
 })

@@ -119,6 +119,8 @@ model Round {
   minParticipants    Int         @default(10) @map("min_participants")
   targetParticipants Int         @default(50) @map("target_participants")
   participantsCount  Int         @default(0) @map("participants_count")
+  currentWeightKg    Decimal     @default(0) @map("current_weight_kg") @db.Decimal(10, 2)
+  targetWeightKg     Decimal     @default(500) @map("target_weight_kg") @db.Decimal(10, 2)
 
   route     Route      @relation(fields: [routeId], references: [id])
   cartItems CartItem[]
@@ -145,6 +147,7 @@ model Product {
   description          String?
   unit                 String   @default("шт")
   priceEstimate        Decimal  @default(0) @map("price_estimate") @db.Decimal(12, 2)
+  weightKg             Decimal  @default(1) @map("weight_kg") @db.Decimal(8, 3)
   imageUrl             String?  @map("image_url")
   requiresPrescription Boolean  @default(false) @map("requires_prescription")
   isActive             Boolean  @default(true) @map("is_active")

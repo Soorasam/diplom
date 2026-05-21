@@ -31,7 +31,8 @@ interface AuthState {
   refreshUser: () => Promise<void>
   switchRole: (role: Extract<UserRole, "client" | "driver">) => Promise<void>
   logout: () => void
-  setSettlement: (settlementId: string) => void
+  updateSettlement: (settlementId: string) => Promise<void>
+  updateProfile: (payload: { fullName?: string; phone?: string }) => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -94,11 +95,22 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, isAuthenticated: false })
       },
 
-      setSettlement: (settlementId) => {
-        logEvent("auth:setSettlement", { settlementId })
-        set((s) =>
-          s.user ? { user: { ...s.user, settlementId } } : s,
+      updateSettlement: async (settlementId) => {
+        logEvent("auth:updateSettlement", { settlementId })
+        const res = await http.patch<BackendUser>(
+          "/profile",
+          { settlementId },
+          true,
         )
+        const user = mapUser(res)
+        set({ user })
+      },
+
+      updateProfile: async (payload) => {
+        logEvent("auth:updateProfile")
+        const res = await http.patch<BackendUser>("/profile", payload, true)
+        const user = mapUser(res)
+        set({ user })
       },
     }),
     {

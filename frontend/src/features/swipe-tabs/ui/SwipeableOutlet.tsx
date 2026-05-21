@@ -21,7 +21,7 @@ export const SwipeableOutlet = () => {
       data-swipe-root
       className="flex min-h-dvh w-full touch-pan-y"
     >
-      <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col pb-20 safe-bottom">
+      <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col">
         <div
           key={pathname}
           className={cn(

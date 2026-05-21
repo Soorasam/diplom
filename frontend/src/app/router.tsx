@@ -14,7 +14,12 @@ import { CartPage } from "@/pages/cart/ui/CartPage"
 import { CheckoutPage } from "@/pages/checkout/ui/CheckoutPage"
 import { OrdersPage } from "@/pages/orders/ui/OrdersPage"
 import { ActiveProcurementsPage } from "@/pages/active-procurements/ui/ActiveProcurementsPage"
+import { ProcurementDetailPage } from "@/pages/procurement-detail/ui/ProcurementDetailPage"
+import { PaymentPage } from "@/pages/payment/ui/PaymentPage"
 import { OrderDetailsPage } from "@/pages/order-details/ui/OrderDetailsPage"
+import { MyDisputesPage } from "@/pages/disputes/ui/MyDisputesPage"
+import { CreateDisputePage } from "@/pages/disputes/ui/CreateDisputePage"
+import { EditProfilePage } from "@/pages/profile-edit/ui/EditProfilePage"
 import { ProfilePage } from "@/pages/profile/ui/ProfilePage"
 import { NotificationsPage } from "@/pages/notifications/ui/NotificationsPage"
 import { SupportPage } from "@/pages/support/ui/SupportPage"
@@ -132,8 +137,13 @@ export const router = createBrowserRouter([
       { path: "product/:id", element: <ProductPage /> },
       { path: "cart", element: <CartPage /> },
       { path: "checkout", element: <CheckoutPage /> },
+      { path: "payment", element: <PaymentPage /> },
       { path: "orders", element: <OrdersPage /> },
       { path: "active-procurements", element: <ActiveProcurementsPage /> },
+      { path: "procurements/:id", element: <ProcurementDetailPage /> },
+      { path: "disputes", element: <MyDisputesPage /> },
+      { path: "disputes/new", element: <CreateDisputePage /> },
+      { path: "profile/edit", element: <EditProfilePage /> },
       { path: "orders/:id", element: <OrderDetailsPage /> },
       { path: "profile", element: <ProfilePage /> },
       { path: "notifications", element: <NotificationsPage /> },

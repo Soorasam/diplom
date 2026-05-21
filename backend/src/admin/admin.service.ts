@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { CatalogService } from '../catalog/catalog.service';
-import { calcProgressPercent, decimalToNumber } from '../common/order-labels';
+import { calcRoundProgressPercent, decimalToNumber } from '../common/order-labels';
 import { mapOrderDetail, OrderWithRelations } from '../common/order-mapper';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -121,7 +121,7 @@ export class AdminService {
     });
     return rounds.map((r) => ({
       ...r,
-      progressPercent: calcProgressPercent(r.participantsCount, r.targetParticipants),
+      progressPercent: calcRoundProgressPercent(r),
     }));
   }
 

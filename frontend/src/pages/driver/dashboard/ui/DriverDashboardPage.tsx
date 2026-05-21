@@ -4,7 +4,7 @@ import { MapPin, Package, Route, Truck } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { routesApi } from "@/entities/route/api/routesApi"
-import { settlements } from "@/shared/api/mock-db"
+import { useSettlements } from "@/entities/settlement/api/useSettlements"
 import { queryKeys } from "@/shared/config/query-keys"
 import { routes } from "@/shared/config/routes"
 import { formatShortDate } from "@/shared/lib/format"
@@ -41,6 +41,8 @@ export const DriverDashboardPage = () => {
     queryFn: () => routesApi.getByDriver(driverId),
   })
 
+  const { data: settlements } = useSettlements()
+
   const { data: driverOrders, isLoading: loadingOrders } = useQuery({
     queryKey: [...queryKeys.routes.driver(driverId), "orders"],
     queryFn: () => routesApi.getDriverOrders(driverId),
@@ -49,7 +51,7 @@ export const DriverDashboardPage = () => {
   const activeRoute = driverRoutes?.find((r) => r.status === "active")
   const todayRoutes = driverRoutes?.filter((r) => r.status !== "completed") ?? []
   const nextSettlementId = activeRoute?.toSettlementIds[0]
-  const nextStop = settlements.find((s) => s.id === nextSettlementId)
+  const nextStop = settlements?.find((s) => s.id === nextSettlementId)
   const inTransitCount =
     driverOrders?.filter((o) => o.status === "in_transit" || o.status === "at_pickup")
       .length ?? 0

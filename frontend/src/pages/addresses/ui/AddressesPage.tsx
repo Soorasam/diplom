@@ -10,7 +10,7 @@ import { cn } from "@/shared/lib/cn"
 
 export const AddressesPage = () => {
   const user = useAuthStore((s) => s.user)
-  const setSettlement = useAuthStore((s) => s.setSettlement)
+  const updateSettlement = useAuthStore((s) => s.updateSettlement)
   const { data: settlements, isLoading } = useSettlements()
 
   return (
@@ -33,7 +33,7 @@ export const AddressesPage = () => {
               <li key={s.id}>
                 <button
                   type="button"
-                  onClick={() => setSettlement(s.id)}
+                  onClick={() => void updateSettlement(s.id)}
                   className="w-full text-left"
                 >
                   <Card

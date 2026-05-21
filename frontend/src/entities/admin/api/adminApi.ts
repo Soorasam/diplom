@@ -9,7 +9,6 @@ import {
   mapRound,
   mapSettlement,
   mapFrontOrderStatusToBackend,
-  mapUser,
 } from "@/shared/api/mappers"
 import type { BackendProduct } from "@/shared/api/backend-types"
 import type { OrderStatus } from "@/shared/types"

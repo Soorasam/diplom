@@ -86,6 +86,10 @@ export interface Procurement {
   closesAt: string
   minVolumePercent: number
   currentVolumePercent: number
+  participantsCount: number
+  targetParticipants: number
+  currentWeightKg: number
+  targetWeightKg: number
   deliveryMode: DeliveryMode
   estimatedDelivery: string
 }
@@ -286,6 +290,10 @@ export const procurements: Procurement[] = [
     closesAt: "2026-05-22T18:00:00Z",
     minVolumePercent: 100,
     currentVolumePercent: 73,
+    participantsCount: 0,
+    targetParticipants: 50,
+    currentWeightKg: 280,
+    targetWeightKg: 500,
     deliveryMode: "winter_road",
     estimatedDelivery: "2026-05-28T12:00:00Z",
   },
@@ -297,6 +305,10 @@ export const procurements: Procurement[] = [
     closesAt: "2026-05-28T18:00:00Z",
     minVolumePercent: 100,
     currentVolumePercent: 41,
+    participantsCount: 0,
+    targetParticipants: 50,
+    currentWeightKg: 160,
+    targetWeightKg: 400,
     deliveryMode: "mixed",
     estimatedDelivery: "2026-06-05T12:00:00Z",
   },

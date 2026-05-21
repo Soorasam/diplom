@@ -1,9 +1,11 @@
-import { Controller, Get, Param, ParseUUIDPipe, Patch, Query, UseGuards } from '@nestjs/common';
-import { RoundStatus, UserRole } from '@prisma/client';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { RoundStatus, User, UserRole } from '@prisma/client';
+import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { CatalogService } from './catalog.service';
+import { CreateRoundDto } from './dto/create-round.dto';
 
 @Controller()
 export class CatalogController {
@@ -34,9 +36,28 @@ export class CatalogController {
     return this.catalog.listRounds(status);
   }
 
+  @Post('rounds')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.coordinator, UserRole.admin)
+  createRound(@Body() dto: CreateRoundDto) {
+    return this.catalog.createRound(dto);
+  }
+
+  @Post('rounds/:id/join')
+  @UseGuards(JwtAuthGuard)
+  joinRound(@CurrentUser() user: User, @Param('id', ParseUUIDPipe) id: string) {
+    return this.catalog.joinRound(user, id);
+  }
+
+  @Get('rounds/memberships/me')
+  @UseGuards(JwtAuthGuard)
+  myMemberships(@CurrentUser() user: User) {
+    return this.catalog.listUserRoundIds(user.id);
+  }
+
   @Patch('rounds/:id/fulfill')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.admin)
+  @Roles(UserRole.admin, UserRole.employee)
   fulfillRound(@Param('id', ParseUUIDPipe) id: string) {
     return this.catalog.fulfillRound(id);
   }

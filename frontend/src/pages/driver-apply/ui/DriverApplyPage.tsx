@@ -22,5 +22,5 @@ export const DriverApplyPage = () => {
     return <DriverApplyPending />
   }
 
-  return <DriverApplyWizard myApp={myApp} />
+  return <DriverApplyWizard myApp={myApp ?? undefined} />
 }

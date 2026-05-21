@@ -1,13 +1,15 @@
-import { useParams, Link } from "react-router-dom"
+import { useParams, Link, useSearchParams } from "react-router-dom"
 import { Plus, Truck } from "lucide-react"
 
 import { useProduct } from "@/entities/product/api/useProducts"
-import { useActiveProcurements } from "@/entities/procurement/api/useProcurements"
+import { useProcurement } from "@/entities/procurement/api/useProcurements"
+import { ActiveProcurementBanner } from "@/widgets/active-procurement-banner/ui/ActiveProcurementBanner"
 import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { routes } from "@/shared/config/routes"
 import { formatPrice, formatShortDate } from "@/shared/lib/format"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
@@ -17,11 +19,13 @@ import { ProductImage } from "@/shared/ui/product-image/ProductImage"
 export const ProductPage = () => {
   const { id = "" } = useParams()
   const { data: product, isLoading } = useProduct(id)
-  const { data: procurements } = useActiveProcurements()
+  const [searchParams] = useSearchParams()
+  const roundFromUrl = searchParams.get("round") ?? undefined
+  const procurementIdFromStore = useCartStore((s) => s.procurementId)
+  const activeRoundId = roundFromUrl ?? procurementIdFromStore ?? ""
+  const { data: procurement } = useProcurement(activeRoundId)
   const { addItem } = useCartActions()
   const setProcurement = useCartStore((s) => s.setProcurement)
-
-  const procurement = procurements?.[0]
 
   if (isLoading) {
     return (
@@ -45,8 +49,9 @@ export const ProductPage = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 pb-8">
-      <PageHeader title={product.name} backTo={routes.catalog} />
+    <PageShell>
+      {procurement ? <ActiveProcurementBanner procurement={procurement} /> : null}
+      <PageHeader title={product.name} backTo={routes.catalog} className="!mb-0" />
 
       <ProductImage
         src={product.imageUrl}
@@ -107,6 +112,6 @@ export const ProductPage = () => {
       >
         Перейти в корзину
       </Link>
-    </div>
+    </PageShell>
   )
 }
