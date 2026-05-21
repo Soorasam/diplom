@@ -12,7 +12,7 @@ import {
   roundWeightTotals,
 } from '../common/order-labels';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCartItemDto } from './dto/cart-item.dto';
+import { CheckoutCartDto, CreateCartItemDto } from './dto/cart-item.dto';
 
 @Injectable()
 export class CartService {
@@ -112,18 +112,17 @@ export class CartService {
     });
     if (!product) throw new NotFoundException('Товар не найден');
 
-    const round = await this.resolveOpenRound(dto.roundId);
-    const quantity = dto.quantity ?? 1;
-
-    const existingRoundId = await this.prisma.cartItem.findFirst({
+    const existingRoundRef = await this.prisma.cartItem.findFirst({
       where: { userId: user.id },
       select: { roundId: true },
     });
-    if (existingRoundId && existingRoundId.roundId !== round.id) {
-      throw new BadRequestException(
-        'В корзине уже есть товары из другого сбора. Очистите корзину или завершите заказ.',
-      );
-    }
+
+    const round = existingRoundRef
+      ? await this.resolveOpenRound(existingRoundRef.roundId).catch(() =>
+          this.resolveOpenRound(dto.roundId),
+        )
+      : await this.resolveOpenRound(dto.roundId);
+    const quantity = dto.quantity ?? 1;
 
     await this.prisma.cartItem.upsert({
       where: {
@@ -168,7 +167,7 @@ export class CartService {
     return this.getCart(user);
   }
 
-  async checkout(user: User) {
+  async checkout(user: User, dto?: CheckoutCartDto) {
     if (!user.pickupPointId) {
       throw new BadRequestException('Укажите пункт выдачи в профиле перед оформлением');
     }
@@ -179,25 +178,15 @@ export class CartService {
     });
     if (!items.length) throw new BadRequestException('Корзина пуста');
 
-    const roundIds = new Set(items.map((i) => i.roundId));
-    if (roundIds.size > 1) {
-      throw new BadRequestException('В корзине товары из разных сборов');
+    const selectedRound = dto?.roundId
+      ? await this.prisma.round.findUnique({ where: { id: dto.roundId } })
+      : null;
+    const round = selectedRound ?? items[0].round;
+    if (!round) {
+      throw new BadRequestException('Не выбран сбор для оформления');
     }
-
-    const round = items[0].round;
     if (round.status !== RoundStatus.open) {
       throw new BadRequestException('Сбор уже закрыт');
-    }
-
-    const existing = await this.prisma.order.findFirst({
-      where: {
-        userId: user.id,
-        roundId: round.id,
-        status: { not: OrderStatus.cancelled },
-      },
-    });
-    if (existing) {
-      throw new BadRequestException('Вы уже участвуете в этом сборе');
     }
 
     let totalEstimate = 0;
@@ -235,6 +224,14 @@ export class CartService {
     const publicNumber = await this.generatePublicNumber();
 
     const order = await this.prisma.$transaction(async (tx) => {
+      const existingParticipant = await tx.order.findFirst({
+        where: {
+          userId: user.id,
+          roundId: round.id,
+          status: { not: OrderStatus.cancelled },
+        },
+        select: { id: true },
+      });
       const created = await tx.order.create({
         data: {
           publicNumber,
@@ -253,7 +250,7 @@ export class CartService {
         where: { id: round.id },
         data: {
           currentWeightKg: { increment: orderWeightKg },
-          participantsCount: { increment: 1 },
+          ...(existingParticipant ? {} : { participantsCount: { increment: 1 } }),
         },
       });
       return created;

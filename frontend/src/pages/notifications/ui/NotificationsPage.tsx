@@ -11,6 +11,7 @@ import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { cn } from "@/shared/lib/cn"
+import { routes } from "@/shared/config/routes"
 
 export const NotificationsPage = () => {
   const user = useAuthStore((s) => s.user)
@@ -19,7 +20,7 @@ export const NotificationsPage = () => {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <PageHeader title="Уведомления" />
+      <PageHeader title="Уведомления" backTo={routes.profile} />
 
       {isLoading ? (
         <div className="flex justify-center py-10">

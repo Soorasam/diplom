@@ -1,14 +1,23 @@
 import { z } from "zod"
+import { isValidFullName, normalizeRuPhone } from "@/shared/lib/validation"
 
 export const registerSchema = z
   .object({
-    fullName: z.string().trim().min(2, "Минимум 2 символа").max(255),
+    fullName: z
+      .string()
+      .trim()
+      .min(2, "Минимум 2 символа")
+      .max(255)
+      .refine(
+        (v) => isValidFullName(v),
+        "ФИО: 2-3 слова, каждое с заглавной буквы (например, Иванов Иван Иванович)",
+      ),
     email: z.string().trim().email("Введите корректный e-mail"),
     phone: z
       .string()
       .trim()
       .optional()
-      .refine((v) => !v || v.length >= 10, "Минимум 10 цифр"),
+      .refine((v) => !v || normalizeRuPhone(v) !== null, "Введите номер в формате +7"),
     password: z.string().min(8, "Минимум 8 символов").max(128),
     confirmPassword: z.string(),
     settlementId: z.string().uuid("Выберите населённый пункт"),

@@ -2,16 +2,16 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from "@nestjs/common";
 import {
   DriverApplicationStatus,
   DriverDocumentType,
   User,
-} from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
-import { StorageService } from '../storage/storage.service';
-import { ReviewDriverApplicationDto } from './dto/review-driver-application.dto';
-import { SubmitDriverApplicationDto } from './dto/submit-driver-application.dto';
+} from "@prisma/client";
+import { PrismaService } from "../prisma/prisma.service";
+import { StorageService } from "../storage/storage.service";
+import { ReviewDriverApplicationDto } from "./dto/review-driver-application.dto";
+import { SubmitDriverApplicationDto } from "./dto/submit-driver-application.dto";
 
 const REQUIRED_DOCS: DriverDocumentType[] = [
   DriverDocumentType.passport,
@@ -27,15 +27,23 @@ export class DriverApplicationsService {
   ) {}
 
   private readonly appInclude = {
-    user: { select: { id: true, email: true, fullName: true, phone: true, role: true } },
-    documents: { orderBy: { createdAt: 'asc' as const } },
+    user: {
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        role: true,
+      },
+    },
+    documents: { orderBy: { createdAt: "asc" as const } },
   };
 
   async getMine(user: User) {
     const app = await this.prisma.driverApplication.findFirst({
       where: { userId: user.id },
-      orderBy: { createdAt: 'desc' },
-      include: { documents: { orderBy: { createdAt: 'asc' } } },
+      orderBy: { createdAt: "desc" },
+      include: { documents: { orderBy: { createdAt: "asc" } } },
     });
     return app;
   }
@@ -48,11 +56,11 @@ export class DriverApplicationsService {
           in: [DriverApplicationStatus.draft, DriverApplicationStatus.pending],
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
     if (existing?.status === DriverApplicationStatus.pending) {
-      throw new BadRequestException('Заявка уже на рассмотрении');
+      throw new BadRequestException("Заявка уже на рассмотрении");
     }
 
     if (existing) return existing;
@@ -71,24 +79,31 @@ export class DriverApplicationsService {
     file: { buffer: Buffer; mimetype: string; originalname: string },
   ) {
     if (!file?.buffer?.length) {
-      throw new BadRequestException('Файл не передан');
+      throw new BadRequestException("Файл не передан");
     }
 
     const allowed = /^image\/(jpeg|png|webp)$/i;
     if (!allowed.test(file.mimetype)) {
-      throw new BadRequestException('Допустимы только изображения JPEG, PNG, WebP');
+      throw new BadRequestException(
+        "Допустимы только изображения JPEG, PNG, WebP",
+      );
     }
 
     const app = await this.ensureDraftApplication(user);
     const ext =
-      file.mimetype === 'image/png'
-        ? 'png'
-        : file.mimetype === 'image/webp'
-          ? 'webp'
-          : 'jpg';
+      file.mimetype === "image/png"
+        ? "png"
+        : file.mimetype === "image/webp"
+          ? "webp"
+          : "jpg";
     const objectKey = `applications/${app.id}/${type}.${ext}`;
     const bucket = this.storage.driverDocsBucket();
-    const url = await this.storage.upload(bucket, objectKey, file.buffer, file.mimetype);
+    const url = await this.storage.upload(
+      bucket,
+      objectKey,
+      file.buffer,
+      file.mimetype,
+    );
 
     return this.prisma.driverApplicationDocument.upsert({
       where: {
@@ -121,7 +136,7 @@ export class DriverApplicationsService {
     const missing = REQUIRED_DOCS.filter((t) => !uploadedTypes.has(t));
     if (missing.length > 0) {
       throw new BadRequestException(
-        `Загрузите документы: ${missing.join(', ')}`,
+        `Загрузите документы: ${missing.join(", ")}`,
       );
     }
 
@@ -138,24 +153,29 @@ export class DriverApplicationsService {
 
   listAll() {
     return this.prisma.driverApplication.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: this.appInclude,
     });
   }
 
   async review(id: string, dto: ReviewDriverApplicationDto) {
-    const app = await this.prisma.driverApplication.findUnique({ where: { id } });
-    if (!app) throw new NotFoundException('Заявка не найдена');
+    const app = await this.prisma.driverApplication.findUnique({
+      where: { id },
+    });
+    if (!app) throw new NotFoundException("Заявка не найдена");
 
-    if (dto.status === DriverApplicationStatus.rejected && !dto.rejectionReason) {
-      throw new BadRequestException('Укажите причину отказа');
+    if (
+      dto.status === DriverApplicationStatus.rejected &&
+      !dto.rejectionReason?.trim()
+    ) {
+      throw new BadRequestException("Укажите причину отказа");
     }
 
     return this.prisma.driverApplication.update({
       where: { id },
       data: {
         status: dto.status,
-        rejectionReason: dto.rejectionReason,
+        rejectionReason: dto.rejectionReason?.trim(),
         reviewedAt: new Date(),
       },
       include: this.appInclude,

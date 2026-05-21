@@ -1,8 +1,9 @@
 import { MessageSquare } from "lucide-react"
 
-import { useAdminTickets } from "@/entities/admin/api/useAdmin"
+import { useAdminTickets, useResolveAdminTicket } from "@/entities/admin/api/useAdmin"
 import { formatDate } from "@/shared/lib/format"
 import { Badge } from "@/shared/ui/badge/Badge"
+import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
@@ -10,6 +11,7 @@ import { Spinner } from "@/shared/ui/spinner/Spinner"
 
 export const AdminTicketsPage = () => {
   const { data: tickets, isLoading } = useAdminTickets()
+  const resolveTicket = useResolveAdminTicket()
 
   return (
     <div className="flex flex-col gap-4">
@@ -39,6 +41,18 @@ export const AdminTicketsPage = () => {
                     {t.read ? "прочитано" : "новое"}
                   </Badge>
                 </div>
+                {!t.read && t.title.startsWith("Спор по заказу") ? (
+                  <div className="mt-3">
+                    <Button
+                      size="sm"
+                      type="button"
+                      disabled={resolveTicket.isPending}
+                      onClick={() => resolveTicket.mutate(t.id)}
+                    >
+                      Разрешить спор
+                    </Button>
+                  </div>
+                ) : null}
               </Card>
             </li>
           ))}

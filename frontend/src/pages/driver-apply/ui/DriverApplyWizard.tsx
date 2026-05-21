@@ -8,6 +8,7 @@ import { useDriverApplicationDraftStore } from "@/features/driver-application/mo
 import { useNetworkStore } from "@/features/offline/model/network-store"
 import type { DriverApplication } from "@/shared/api/mock-db"
 import { routes } from "@/shared/config/routes"
+import { isValidFullName, normalizeRuPhone } from "@/shared/lib/validation"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 
 import {
@@ -41,10 +42,10 @@ export const DriverApplyWizard = ({ myApp }: Props) => {
   )
 
   const canNextPersonal =
-    draft.personal.fullName.trim().length >= 5 &&
+    isValidFullName(draft.personal.fullName) &&
     Boolean(draft.personal.birthDate) &&
-    Boolean(draft.personal.phone.trim()) &&
-    Boolean(draft.personal.email.trim())
+    Boolean(normalizeRuPhone(draft.personal.phone)) &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.personal.email.trim())
 
   const docsOk = Boolean(
     draft.documents.passport &&

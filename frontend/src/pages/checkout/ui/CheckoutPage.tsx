@@ -127,7 +127,7 @@ export const CheckoutPage = () => {
         title="Оформление"
         backTo={routes.cart}
         subtitle="Проверьте пункт выдачи и состав"
-        className="!mb-0"
+        className="mb-0!"
       />
 
       {!canSubmit && blockers.length > 0 ? (
@@ -139,6 +139,22 @@ export const CheckoutPage = () => {
           </ul>
         </AlertBanner>
       ) : null}
+
+      <Card>
+        <h2 className="text-sm font-semibold text-slate-800">Сбор закупки</h2>
+        <select
+          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+          value={procurementId ?? ""}
+          onChange={(e) => setProcurement(e.target.value)}
+        >
+          <option value="">Выберите активный сбор</option>
+          {(procurements ?? []).map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.title}
+            </option>
+          ))}
+        </select>
+      </Card>
 
       <Card>
         <h2 className="text-sm font-semibold text-slate-800">Пункт выдачи</h2>

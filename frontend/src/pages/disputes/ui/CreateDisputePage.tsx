@@ -2,6 +2,8 @@ import { useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { ImagePlus, MessageSquare } from "lucide-react"
 
+import { useAuthStore } from "@/app/model/auth-store"
+import { useCreateDispute } from "@/entities/notification/api/useNotifications"
 import { useOrder } from "@/entities/order/api/useOrders"
 import { routes } from "@/shared/config/routes"
 import { Button } from "@/shared/ui/button/Button"
@@ -13,6 +15,8 @@ export const CreateDisputePage = () => {
   const [params] = useSearchParams()
   const orderId = params.get("orderId") ?? ""
   const { data: order, isLoading } = useOrder(orderId)
+  const userId = useAuthStore((s) => s.user?.id)
+  const createDispute = useCreateDispute(userId)
   const [description, setDescription] = useState("")
   const [submitted, setSubmitted] = useState(false)
 
@@ -57,9 +61,11 @@ export const CreateDisputePage = () => {
   return (
     <form
       className="flex flex-col gap-4 p-4 pb-8"
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault()
         if (description.trim().length < 10) return
+        if (!orderId) return
+        await createDispute.mutateAsync({ orderId, message: description.trim() })
         setSubmitted(true)
       }}
     >
@@ -91,7 +97,7 @@ export const CreateDisputePage = () => {
       </Card>
 
       <Button type="submit" fullWidth leftIcon={<MessageSquare size={18} />}>
-        Отправить спор
+        {createDispute.isPending ? "Отправка..." : "Отправить спор"}
       </Button>
     </form>
   )

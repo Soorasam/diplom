@@ -4,9 +4,27 @@ import { VitePWA } from 'vite-plugin-pwa'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
+const normalizeBaseSlashPlugin = (basePath: string) => ({
+  name: 'normalize-base-slash',
+  configureServer(server: { middlewares: { use: (cb: (req: { url?: string }, res: { statusCode: number; setHeader: (n: string, v: string) => void; end: () => void }, next: () => void) => void) => void } }) {
+    server.middlewares.use((req, res, next) => {
+      const url = req.url ?? ''
+      const normalized = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath
+      if (url === normalized || url.startsWith(`${normalized}?`)) {
+        res.statusCode = 302
+        res.setHeader('Location', `${normalized}/`)
+        res.end()
+        return
+      }
+      next()
+    })
+  },
+})
+
 export default defineConfig({
   base: '/diplom/',
   plugins: [
+    normalizeBaseSlashPlugin('/diplom/'),
     react(),
     tailwindcss(),
     VitePWA({

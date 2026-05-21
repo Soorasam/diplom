@@ -182,4 +182,6 @@ export const adminApi = {
       createdAt: n.createdAt,
     }))
   },
+
+  resolveNotification: (id: string) => http.patch(`/admin/notifications/${id}/resolve`, {}, true),
 }

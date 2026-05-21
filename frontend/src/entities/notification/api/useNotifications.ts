@@ -27,3 +27,24 @@ export const useMarkNotificationRead = (userId: string) => {
     },
   })
 }
+
+export const useMyDisputes = (userId?: string) =>
+  useQuery({
+    queryKey: ["disputes", userId ?? ""],
+    queryFn: () => notificationsApi.getDisputes(),
+    enabled: Boolean(userId),
+  })
+
+export const useCreateDispute = (userId?: string) => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: { orderId: string; message: string }) =>
+      notificationsApi.createDispute(payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["disputes", userId ?? ""] })
+      if (userId) {
+        void qc.invalidateQueries({ queryKey: queryKeys.notifications(userId) })
+      }
+    },
+  })
+}

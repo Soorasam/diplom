@@ -38,8 +38,10 @@ export const AdminDriverApplicationsPage = () => {
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filter, setFilter] = useState("")
+  const [rejectionReason, setRejectionReason] = useState("")
+  const [openedDoc, setOpenedDoc] = useState<{ url: string; title: string } | null>(null)
 
-  const list = useMemo(() => {
+  const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
     const withUser = (data ?? []).map((x) => ({ a: x, user: x.user }))
     if (!q) return withUser
@@ -58,7 +60,9 @@ export const AdminDriverApplicationsPage = () => {
     })
   }, [data, filter])
 
-  const selected = list.find((x) => x.a.id === selectedId) ?? list[0]
+  const queue = filtered.filter((x) => x.a.status === "pending")
+  const history = filtered.filter((x) => x.a.status !== "pending")
+  const selected = queue.find((x) => x.a.id === selectedId) ?? queue[0] ?? null
 
   return (
     <div className="flex flex-col gap-4">
@@ -76,7 +80,7 @@ export const AdminDriverApplicationsPage = () => {
         />
       </Card>
 
-      {list.length === 0 ? (
+      {filtered.length === 0 ? (
         <EmptyState icon={FileText} title="Заявок нет" />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
@@ -86,11 +90,14 @@ export const AdminDriverApplicationsPage = () => {
                 Очередь проверок
               </p>
               <p className="text-xs text-slate-500">
-                {list.length} заявок
+                {queue.length} заявок
               </p>
             </div>
-            <ul className="divide-y divide-slate-100">
-              {list.map(({ a, user }) => (
+            {queue.length === 0 ? (
+              <p className="px-4 py-5 text-sm text-slate-500">На проверке заявок нет.</p>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {queue.map(({ a, user }) => (
                 <li key={a.id}>
                   <button
                     type="button"
@@ -110,14 +117,34 @@ export const AdminDriverApplicationsPage = () => {
                           {a.vehicleSummary ?? "—"}
                         </p>
                       </div>
-                      <Badge variant={statusVariant[a.status]}>
-                        {statusLabel[a.status]}
-                      </Badge>
                     </div>
                   </button>
                 </li>
-              ))}
-            </ul>
+                ))}
+              </ul>
+            )}
+
+            <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
+              <p className="text-sm font-semibold text-slate-900">История решений</p>
+              <p className="text-xs text-slate-500">{history.length} заявок</p>
+            </div>
+            {history.length === 0 ? (
+              <p className="px-4 py-5 text-sm text-slate-500">Пока нет обработанных заявок.</p>
+            ) : (
+              <ul className="max-h-72 divide-y divide-slate-100 overflow-auto">
+                {history.map(({ a, user }) => (
+                  <li key={a.id} className="px-4 py-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-sm font-medium text-slate-900">
+                        {user?.name ?? "Пользователь"}
+                      </p>
+                      <Badge variant={statusVariant[a.status]}>{statusLabel[a.status]}</Badge>
+                    </div>
+                    <p className="mt-1 truncate text-xs text-slate-500">{a.vehicleSummary ?? "—"}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
 
           <Card className="border-slate-200">
@@ -159,34 +186,44 @@ export const AdminDriverApplicationsPage = () => {
                   <div className="mt-5 flex flex-wrap gap-2">
                     <Button
                       type="button"
-                      className="!bg-emerald-600 hover:!bg-emerald-500"
+                      className="bg-emerald-600! hover:bg-emerald-500!"
                       leftIcon={<Check size={16} />}
                       disabled={!selected || setStatus.isPending}
                       onClick={() => {
                         if (!selected) return
                         setStatus.mutate({ id: selected.a.id, status: "approved" })
+                        setRejectionReason("")
                       }}
                     >
-                      Approve
+                      Одобрить
                     </Button>
                     <Button
                       type="button"
                       variant="secondary"
                       leftIcon={<X size={16} />}
-                      disabled={!selected || setStatus.isPending}
+                      disabled={
+                        !selected || setStatus.isPending || rejectionReason.trim().length < 5
+                      }
                       onClick={() => {
                         if (!selected) return
-                        const reason = window.prompt("Причина отказа?") ?? ""
                         setStatus.mutate({
                           id: selected.a.id,
                           status: "rejected",
-                          reason: reason.trim() || "Не указано",
+                          reason: rejectionReason.trim(),
                         })
+                        setRejectionReason("")
                       }}
                     >
-                      Reject (причина)
+                      Отклонить
                     </Button>
                   </div>
+                  <Input
+                    className="mt-3"
+                    label="Причина отказа (обязательно для reject)"
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    placeholder="Например: нечитаемое фото прав, нужна пересъёмка"
+                  />
                 </div>
 
                 <div>
@@ -194,23 +231,27 @@ export const AdminDriverApplicationsPage = () => {
                   {(selected.a.documents ?? []).length > 0 ? (
                     <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                       {selected.a.documents!.map((doc) => (
-                        <a
+                        <button
+                          type="button"
                           key={doc.id}
-                          href={doc.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          onClick={() =>
+                            setOpenedDoc({
+                              url: doc.url,
+                              title: `${docTypeLabel[doc.type] ?? doc.type}${doc.fileName ? ` · ${doc.fileName}` : ""}`,
+                            })
+                          }
                           className="block overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
                         >
                           <img
                             src={doc.url}
                             alt={docTypeLabel[doc.type] ?? doc.type}
-                            className="aspect-[4/3] w-full object-contain"
+                            className="aspect-4/3 w-full object-contain"
                           />
                           <p className="border-t border-slate-100 px-3 py-2 text-xs font-medium text-slate-700">
                             {docTypeLabel[doc.type] ?? doc.type}
                             {doc.fileName ? ` · ${doc.fileName}` : ""}
                           </p>
-                        </a>
+                        </button>
                       ))}
                     </div>
                   ) : (
@@ -224,6 +265,26 @@ export const AdminDriverApplicationsPage = () => {
           </Card>
         </div>
       )}
+
+      {openedDoc ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/65 p-4"
+          onClick={() => setOpenedDoc(null)}
+        >
+          <div
+            className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+              <p className="text-sm font-semibold text-slate-900">{openedDoc.title}</p>
+              <Button type="button" variant="ghost" onClick={() => setOpenedDoc(null)}>
+                Закрыть
+              </Button>
+            </div>
+            <img src={openedDoc.url} alt={openedDoc.title} className="max-h-[75vh] w-full object-contain" />
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

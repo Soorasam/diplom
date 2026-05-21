@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { CatalogService } from '../catalog/catalog.service';
 import { calcRoundProgressPercent, decimalToNumber } from '../common/order-labels';
@@ -19,7 +19,14 @@ export class AdminService {
       this.prisma.product.count({ where: { isActive: true } }),
       this.prisma.route.count(),
       this.prisma.settlement.count(),
-      this.prisma.user.count({ where: { role: UserRole.coordinator } }),
+      this.prisma.user.count({
+        where: {
+          OR: [
+            { role: UserRole.coordinator },
+            { driverApplications: { some: { status: 'approved' } } },
+          ],
+        },
+      }),
     ]);
 
     const today = new Date();
@@ -88,7 +95,12 @@ export class AdminService {
 
   listDrivers() {
     return this.prisma.user.findMany({
-      where: { role: UserRole.coordinator },
+      where: {
+        OR: [
+          { role: UserRole.coordinator },
+          { driverApplications: { some: { status: 'approved' } } },
+        ],
+      },
       select: {
         id: true,
         email: true,
@@ -132,6 +144,20 @@ export class AdminService {
       include: {
         user: { select: { id: true, email: true, fullName: true, phone: true } },
       },
+    });
+  }
+
+  async resolveNotification(id: string) {
+    const notification = await this.prisma.notification.findUnique({
+      where: { id },
+      select: { id: true, read: true },
+    });
+    if (!notification) throw new NotFoundException('Обращение не найдено');
+    if (notification.read) return notification;
+
+    return this.prisma.notification.update({
+      where: { id },
+      data: { read: true },
     });
   }
 }

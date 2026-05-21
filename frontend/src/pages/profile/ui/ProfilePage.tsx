@@ -1,5 +1,5 @@
 import { useEffect } from "react"
-import { Link } from "react-router-dom"
+import { Link, useLocation } from "react-router-dom"
 import {
   Bell,
   ChevronRight,
@@ -39,6 +39,7 @@ const roleLabels: Record<string, string> = {
 }
 
 export const ProfilePage = () => {
+  const { pathname } = useLocation()
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const refreshUser = useAuthStore((s) => s.refreshUser)
@@ -58,7 +59,17 @@ export const ProfilePage = () => {
 
   const workspaceLink =
     user?.role === "admin"
-      ? { to: routes.admin.root, label: "Панель администратора", icon: LayoutDashboard }
+      ? pathname.startsWith(routes.admin.root)
+        ? {
+            to: routes.home,
+            label: "Переключиться на клиентский интерфейс",
+            icon: LayoutDashboard,
+          }
+        : {
+            to: routes.admin.root,
+            label: "Панель администратора",
+            icon: LayoutDashboard,
+          }
       : user?.role === "employee"
         ? { to: routes.employee.root, label: "Интерфейс ПВЗ", icon: MapPin }
         : null
@@ -97,7 +108,7 @@ export const ProfilePage = () => {
       {workspaceLink ? (
         <Link
           to={workspaceLink.to}
-          className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:border-blue-200"
+          className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 transition hover:border-blue-200"
         >
           <workspaceLink.icon size={20} className="text-blue-600" />
           <span className="flex-1 text-sm font-medium text-slate-800">

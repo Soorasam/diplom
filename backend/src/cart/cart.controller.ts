@@ -13,7 +13,7 @@ import { User } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CartService } from './cart.service';
-import { CreateCartItemDto, UpdateCartItemDto } from './dto/cart-item.dto';
+import { CheckoutCartDto, CreateCartItemDto, UpdateCartItemDto } from './dto/cart-item.dto';
 
 @Controller('cart')
 @UseGuards(JwtAuthGuard)
@@ -50,7 +50,7 @@ export class CartController {
   }
 
   @Post('checkout')
-  checkout(@CurrentUser() user: User) {
-    return this.cart.checkout(user);
+  checkout(@CurrentUser() user: User, @Body() dto: CheckoutCartDto) {
+    return this.cart.checkout(user, dto);
   }
 }

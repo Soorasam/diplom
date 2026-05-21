@@ -14,6 +14,7 @@ import { Button } from "@/shared/ui/button/Button"
 import { Input } from "@/shared/ui/input/Input"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 import { cn } from "@/shared/lib/cn"
+import { formatRuPhoneInput, normalizeRuPhone } from "@/shared/lib/validation"
 
 export const RegisterForm = () => {
   const navigate = useNavigate()
@@ -52,7 +53,7 @@ export const RegisterForm = () => {
         email: data.email,
         password: data.password,
         fullName: data.fullName,
-        phone: data.phone || undefined,
+        phone: normalizeRuPhone(data.phone ?? "") ?? undefined,
         settlementId: data.settlementId,
         pickupPointId: data.pickupPointId || undefined,
       })
@@ -91,10 +92,14 @@ export const RegisterForm = () => {
       <Input
         label="Телефон"
         type="tel"
-        placeholder="+7 999 000-00-00"
+        placeholder="+7 (999) 000-00-00"
         autoComplete="tel"
         error={errors.phone?.message}
-        {...register("phone")}
+        {...register("phone", {
+          onChange: (e) => {
+            e.target.value = formatRuPhoneInput(e.target.value)
+          },
+        })}
       />
 
       <Input
@@ -170,7 +175,7 @@ export const RegisterForm = () => {
         type="submit"
         fullWidth
         loading={isSubmitting}
-        className="!bg-blue-500 hover:!bg-blue-400"
+        className="bg-blue-500! hover:bg-blue-400!"
       >
         Зарегистрироваться
       </Button>

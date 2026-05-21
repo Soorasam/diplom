@@ -67,6 +67,11 @@ export class AdminController {
     return this.admin.listNotifications();
   }
 
+  @Patch('notifications/:id/resolve')
+  resolveNotification(@Param('id', ParseUUIDPipe) id: string) {
+    return this.admin.resolveNotification(id);
+  }
+
   @Patch('orders/:id/status')
   updateOrderStatus(
     @CurrentUser() user: User,
