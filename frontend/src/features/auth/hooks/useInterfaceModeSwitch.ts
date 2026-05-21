@@ -1,8 +1,9 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { homeRouteForRole, useAuthStore } from "@/app/model/auth-store"
+import { useAuthStore } from "@/app/model/auth-store"
 import { ApiError } from "@/shared/api/client"
+import { routes } from "@/shared/config/routes"
 
 import type { InterfaceMode } from "./useCanUseDriverMode"
 
@@ -19,7 +20,7 @@ export const useInterfaceModeSwitch = (navigateOnSwitch = true) => {
       const nextRole = mode === "driver" ? "driver" : "client"
       await switchRole(nextRole)
       if (navigateOnSwitch) {
-        navigate(homeRouteForRole(nextRole), { replace: true })
+        navigate(mode === "driver" ? routes.driver.profile : routes.profile, { replace: true })
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось переключить режим")

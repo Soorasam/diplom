@@ -21,3 +21,9 @@ export class UpdateCartItemDto {
   @Max(999)
   quantity!: number;
 }
+
+export class CheckoutCartDto {
+  @IsOptional()
+  @IsUUID()
+  roundId?: string;
+}

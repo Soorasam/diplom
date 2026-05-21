@@ -65,6 +65,16 @@ export const useAdminTickets = () =>
     queryFn: () => adminApi.getNotifications(),
   })
 
+export const useResolveAdminTicket = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => adminApi.resolveNotification(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [...queryKeys.admin.stats, "notifications"] })
+    },
+  })
+}
+
 export const useUpdateAdminOrderStatus = () => {
   const qc = useQueryClient()
   return useMutation({

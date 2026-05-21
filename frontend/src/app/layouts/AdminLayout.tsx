@@ -2,7 +2,6 @@ import { Link, Outlet, useLocation } from "react-router-dom"
 import {
   BarChart3,
   LayoutDashboard,
-  Map,
   MessageSquare,
   Package,
   Route,
@@ -62,13 +61,6 @@ export const AdminLayout = () => {
           ))}
         </nav>
 
-        <Link
-          to={routes.home}
-          className="m-2 flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
-        >
-          <Map size={16} />
-          К клиенту
-        </Link>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">

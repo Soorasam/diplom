@@ -1,6 +1,7 @@
 import { Check } from "lucide-react"
 
 import { useDriverApplicationDraftStore } from "@/features/driver-application/model/driver-application-draft-store"
+import { formatRuPhoneInput } from "@/shared/lib/validation"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { Input } from "@/shared/ui/input/Input"
@@ -41,10 +42,10 @@ export const PersonalStep = ({ canContinue, onContinue }: Props) => {
           label="Телефон"
           value={draft.personal.phone}
           onChange={(e) => {
-            setPersonal({ phone: e.target.value })
+            setPersonal({ phone: formatRuPhoneInput(e.target.value) })
             touchSaved()
           }}
-          placeholder="+7 (___) ___-__-__"
+          placeholder="+7 (999) 000-00-00"
           autoComplete="tel"
         />
         <Input

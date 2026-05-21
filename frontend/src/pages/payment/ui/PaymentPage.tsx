@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { CreditCard, ShieldCheck } from "lucide-react"
 
 import { useCreateOrder } from "@/entities/order/api/useOrders"
+import { useCartStore } from "@/features/cart/model/cart-store"
 import { queryKeys } from "@/shared/config/query-keys"
 import { useQueryClient } from "@tanstack/react-query"
 import { routes } from "@/shared/config/routes"
@@ -31,6 +32,7 @@ export const PaymentPage = () => {
   const qc = useQueryClient()
   const [paying, setPaying] = useState(false)
   const [failed, setFailed] = useState(false)
+  const resetCart = useCartStore((s) => s.reset)
 
   if (!state?.items?.length) {
     return (
@@ -65,6 +67,7 @@ export const PaymentPage = () => {
       })
       void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
       void qc.invalidateQueries({ queryKey: queryKeys.procurements.all })
+      resetCart()
       navigate(routes.order(order.id), { replace: true })
     } catch {
       setPaying(false)
@@ -78,10 +81,10 @@ export const PaymentPage = () => {
         title="Оплата"
         backTo={routes.checkout}
         subtitle="Демо-оплата · после успеха вес заказа учтётся в сборе"
-        className="!mb-0"
+        className="mb-0!"
       />
 
-      <Card className="border-blue-100 bg-gradient-to-br from-blue-50 to-white !p-5">
+      <Card className="border-blue-100 bg-linear-to-br from-blue-50 to-white p-5!">
         <div className="flex items-center gap-4">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/25">
             <CreditCard size={28} />
@@ -95,7 +98,7 @@ export const PaymentPage = () => {
         </div>
       </Card>
 
-      <Card className="!p-4">
+      <Card className="p-4!">
         <p className="mb-3 text-sm font-semibold text-slate-900">Состав заказа</p>
         <ul className="divide-y divide-slate-100">
           {state.lineLabels.map((line) => (

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { useCartStore } from "@/features/cart/model/cart-store"
 import { queryKeys } from "@/shared/config/query-keys"
 
 import { ordersApi } from "./ordersApi"
@@ -23,6 +24,8 @@ export const useCreateOrder = () => {
   return useMutation({
     mutationFn: ordersApi.create,
     onSuccess: () => {
+      useCartStore.getState().reset()
+      void qc.invalidateQueries({ queryKey: queryKeys.cart })
       void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
     },
   })

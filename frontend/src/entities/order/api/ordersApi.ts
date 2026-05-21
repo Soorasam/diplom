@@ -37,7 +37,7 @@ export const ordersApi = {
     }
     const { http: h } = await import("@/shared/api/client")
     await h.patch("/profile", { pickupPointId: payload.pickupPointId }, true)
-    const created = await cartApi.checkout()
+    const created = await cartApi.checkout(payload.procurementId)
     return ordersApi.getById(created.id)
   },
 
