@@ -9,6 +9,7 @@ interface ProcurementProgressProps {
   >
   size?: "sm" | "md"
   showHint?: boolean
+  showPercent?: boolean
   tone?: "default" | "inverse"
 }
 
@@ -16,52 +17,54 @@ export const ProcurementProgress = ({
   procurement,
   size = "md",
   showHint = false,
+  showPercent = true,
   tone = "default",
 }: ProcurementProgressProps) => {
   const progress = procurement.currentVolumePercent
-  const barH = size === "sm" ? "h-1.5" : "h-2.5"
+  const barH = size === "sm" ? "h-2" : "h-2.5"
   const inverse = tone === "inverse"
+  const metMin = progress >= procurement.minVolumePercent
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-baseline justify-between gap-2 text-xs">
+    <div className="relative space-y-2">
+      {showPercent ? (
         <span
           className={cn(
-            "font-medium",
-            inverse ? "text-blue-50" : "text-slate-600",
-          )}
-        >
-          {formatWeightKg(procurement.currentWeightKg)}
-          <span className={inverse ? "text-blue-200/80" : "text-slate-400"}> / </span>
-          {formatWeightKg(procurement.targetWeightKg)}
-        </span>
-        <span
-          className={cn(
-            "tabular-nums font-bold",
-            inverse
-              ? "text-white"
-              : progress >= procurement.minVolumePercent
-                ? "text-emerald-700"
-                : "text-blue-700",
+            "absolute right-0 top-0 z-[1] text-xs font-semibold tabular-nums leading-none",
+            inverse ? "text-white" : "text-sky-800 dark:text-cyan-300",
           )}
         >
           {progress}%
         </span>
-      </div>
+      ) : null}
+      <p
+        className={cn(
+          "pr-10 text-xs font-medium leading-normal",
+          inverse ? "text-white/90" : "text-slate-500 dark:text-slate-400",
+        )}
+      >
+        {formatWeightKg(procurement.currentWeightKg)}
+        <span className={inverse ? "text-white/55" : "text-slate-400 dark:text-slate-500"}>
+          {" "}
+          / {formatWeightKg(procurement.targetWeightKg)}
+        </span>
+      </p>
       <div
         className={cn(
-          "overflow-hidden rounded-full",
+          "overflow-hidden rounded-lg",
           barH,
-          inverse ? "bg-white/25" : "bg-slate-200/80",
+          inverse ? "bg-white/25" : "bg-slate-200 dark:bg-slate-700",
         )}
       >
         <div
           className={cn(
-            "rounded-full transition-all duration-500",
+            "rounded-lg transition-all duration-500",
             barH,
             inverse
               ? "bg-white"
-              : "bg-gradient-to-r from-blue-500 to-blue-600",
+              : metMin
+                ? "ui-progress-fill--ok"
+                : "ui-progress-fill--low",
           )}
           style={{ width: `${Math.min(progress, 100)}%` }}
         />
@@ -69,8 +72,8 @@ export const ProcurementProgress = ({
       {showHint ? (
         <p
           className={cn(
-            "text-[11px] leading-snug",
-            inverse ? "text-blue-100" : "text-slate-500",
+            "text-[11px] font-normal leading-relaxed",
+            inverse ? "text-white/75" : "text-slate-500 dark:text-slate-400",
           )}
         >
           Вес вашего заказа добавится к сбору после оплаты

@@ -13,6 +13,7 @@ import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { PageShell } from "@/shared/ui/page-shell/PageShell"
+import { CheckoutSteps } from "@/shared/ui/checkout-steps/CheckoutSteps"
 
 export type PaymentCheckoutState = {
   userId: string
@@ -84,14 +85,16 @@ export const PaymentPage = () => {
         className="mb-0!"
       />
 
-      <Card className="border-blue-100 bg-linear-to-br from-blue-50 to-white p-5!">
+      <CheckoutSteps current="payment" className="mb-2" />
+
+      <Card className="ui-panel p-5!">
         <div className="flex items-center gap-4">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-md shadow-blue-600/25">
+          <span className="ui-icon-solid flex h-14 w-14 rounded-2xl">
             <CreditCard size={28} />
           </span>
           <div>
             <p className="text-sm font-medium text-slate-600">Сумма к оплате</p>
-            <p className="text-3xl font-bold tracking-tight text-blue-700">
+            <p className="ui-price text-3xl tracking-tight">
               {formatPrice(state.total)}
             </p>
           </div>

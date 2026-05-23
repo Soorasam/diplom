@@ -94,8 +94,8 @@ export const ActiveProcurementsPage = () => {
     cn(
       "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition",
       active
-        ? "bg-blue-600 text-white shadow-sm"
-        : "bg-white text-slate-600 ring-1 ring-slate-200/80 hover:bg-slate-50",
+        ? "ui-pill-active"
+        : "ui-pill-inactive ring-1 ring-subtle/40",
     )
 
   return (
@@ -103,13 +103,12 @@ export const ActiveProcurementsPage = () => {
       <PageHeader
         title="Активные сборы"
         subtitle="Участвуйте в сборе — выберите товары в каталоге и оплатите заказ"
-        backTo={routes.home}
         className="!mb-0"
       />
 
       {!isAuthenticated ? (
         <AlertBanner variant="info" title="Войдите в аккаунт">
-          <Link to={routes.auth} className="font-semibold text-blue-700 underline">
+          <Link to={routes.auth} className="ui-link font-semibold underline">
             Авторизация
           </Link>{" "}
           нужна для участия в сборе и оформления заказа.
@@ -129,7 +128,7 @@ export const ActiveProcurementsPage = () => {
           <select
             value={deliveryFilter}
             onChange={(e) => setDeliveryFilter(e.target.value as DeliveryMode | "all")}
-            className="min-h-[2.25rem] rounded-full border-0 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200/80"
+            className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
           >
             <option value="all">Все маршруты</option>
             <option value="winter_road">Зимник</option>
@@ -139,7 +138,7 @@ export const ActiveProcurementsPage = () => {
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortKey)}
-            className="min-h-[2.25rem] rounded-full border-0 bg-white px-3.5 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200/80"
+            className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
           >
             <option value="closesAt">По дате закрытия</option>
             <option value="progress">По заполнению</option>
@@ -173,15 +172,15 @@ export const ActiveProcurementsPage = () => {
                   <Card className="overflow-hidden !p-0">
                     <Link
                       to={routes.procurement(p.id)}
-                      className="group block px-4 py-4 transition hover:bg-slate-50/80"
+                      className="group block p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
                     >
                       <ProcurementCard procurement={p} embedded />
-                      <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 group-hover:underline">
+                      <span className="ui-link mt-2 inline-flex items-center gap-1 text-xs group-hover:underline">
                         Подробнее о сборе
                         <ChevronRight size={14} />
                       </span>
                     </Link>
-                    <div className="border-t border-slate-100 bg-slate-50/80 px-4 py-3.5">
+                    <div className="border-t border-slate-200/80 p-4 dark:border-slate-700/60">
                       {hasJoined ? (
                         <div className="flex items-center justify-between gap-2">
                           <p className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-emerald-700">

@@ -54,7 +54,7 @@ export const MapView = ({
           {markers.slice(0, 4).map((m) => (
             <li
               key={m.id}
-              className="flex items-center gap-2 rounded-lg bg-white/80 px-2 py-1.5 text-xs text-slate-700 shadow-sm"
+              className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white/90 px-2 py-2 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-300"
             >
               <MapPin size={14} className="shrink-0 text-blue-600" />
               <span className="truncate">{m.title}</span>

@@ -1,8 +1,7 @@
 import { useParams, Link, useSearchParams } from "react-router-dom"
-import { Plus, Trash2, Truck } from "lucide-react"
+import { Plus, Truck } from "lucide-react"
 
 import { useProduct } from "@/entities/product/api/useProducts"
-import { ActiveProcurementBanner } from "@/widgets/active-procurement-banner/ui/ActiveProcurementBanner"
 import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { useOpenSelectedProcurement } from "@/features/procurement/hooks/useOpenSelectedProcurement"
@@ -14,9 +13,9 @@ import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
-import { Badge } from "@/shared/ui/badge/Badge"
 import { ProductImage } from "@/shared/ui/product-image/ProductImage"
 import { QuantityStepper } from "@/shared/ui/quantity-stepper/QuantityStepper"
+import { ProcurementProgress } from "@/widgets/procurement-progress/ui/ProcurementProgress"
 
 export const ProductPage = () => {
   const { id = "" } = useParams()
@@ -28,13 +27,10 @@ export const ProductPage = () => {
 
   const activeRoundId = roundFromUrl ?? procurementIdFromStore ?? ""
   const { procurement: openProcurement } = useOpenSelectedProcurement(activeRoundId)
-  const { addItem, setQuantity, clearCart } = useCartActions()
+  const { addItem, setQuantity } = useCartActions()
   const setProcurement = useCartStore((s) => s.setProcurement)
   const quantity =
     useCartStore((s) => s.items.find((i) => i.productId === id)?.quantity) ?? 0
-  const cartItemCount = useCartStore((s) =>
-    s.items.reduce((sum, i) => sum + i.quantity, 0),
-  )
 
   if (isLoading) {
     return (
@@ -59,91 +55,74 @@ export const ProductPage = () => {
 
   return (
     <PageShell>
-      {openProcurement ? <ActiveProcurementBanner procurement={openProcurement} /> : null}
       <PageHeader title={product.name} backTo={routes.catalog} className="!mb-0" />
 
       <ProductImage
         src={product.imageUrl}
         alt={product.name}
         variant="detail"
-        className="shadow-sm"
+        className="rounded-2xl border border-slate-200 dark:border-slate-800"
       />
 
-      <div>
-        <p className="text-2xl font-bold text-blue-700">{formatPrice(product.price)}</p>
-        <p className="mt-1 text-sm text-slate-500">
-          {product.weightKg > 0 ? `${product.weightKg} кг · ` : ""}
-          {product.unit}
-        </p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="ui-price text-3xl leading-tight">{formatPrice(product.price)}</p>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            {product.weightKg > 0 ? `${product.weightKg} кг · ` : ""}
+            {product.unit}
+          </p>
+        </div>
+        {quantity > 0 ? (
+          <QuantityStepper
+            quantity={quantity}
+            onDecrease={() => void setQuantity(product.id, quantity - 1)}
+            onIncrease={() => void setQuantity(product.id, quantity + 1)}
+            className="shrink-0"
+          />
+        ) : (
+          <Button
+            size="lg"
+            className="h-11 w-[7.25rem] shrink-0 justify-center px-0"
+            onClick={handleAdd}
+            aria-label="В корзину"
+          >
+            <Plus size={20} />
+          </Button>
+        )}
       </div>
 
       <Card>
-        <h2 className="text-sm font-semibold text-slate-800">Описание</h2>
-        <p className="mt-2 text-sm leading-relaxed text-slate-600">{product.description}</p>
+        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Описание</h2>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+          {product.description}
+        </p>
       </Card>
 
       <Card>
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-          <Truck size={18} className="text-blue-600" />
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-slate-100">
+          <Truck size={18} className="text-sky-600 dark:text-sky-400" />
           Доставка
         </div>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           Товар будет включён в ближайший сбор по вашему маршруту. Срок зависит от погоды и
           заполнения маршрута.
         </p>
         {openProcurement ? (
           <div className="mt-3">
-            <div className="flex items-center justify-between text-xs text-slate-500">
-              <span>{openProcurement.title}</span>
-              <Badge variant="info">{openProcurement.currentVolumePercent}%</Badge>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{openProcurement.title}</p>
+            <div className="mt-2">
+              <ProcurementProgress procurement={openProcurement} size="sm" />
             </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-              <div
-                className="h-full rounded-full bg-blue-600"
-                style={{ width: `${openProcurement.currentVolumePercent}%` }}
-              />
-            </div>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
               Доставка ориентировочно {formatShortDate(openProcurement.estimatedDelivery)}
             </p>
           </div>
         ) : null}
       </Card>
 
-      <div className="flex flex-col gap-3">
-        {quantity > 0 ? (
-          <QuantityStepper
-            quantity={quantity}
-            onDecrease={() => void setQuantity(product.id, quantity - 1)}
-            onIncrease={() => void setQuantity(product.id, quantity + 1)}
-            className="w-full justify-between"
-          />
-        ) : (
-          <Button fullWidth size="lg" onClick={handleAdd}>
-            <Plus size={18} />
-            В корзину
-          </Button>
-        )}
-
-        {cartItemCount > 0 ? (
-          <Button
-            type="button"
-            variant="outline"
-            fullWidth
-            onClick={() => void clearCart()}
-          >
-            <Trash2 size={18} />
-            Очистить корзину
-          </Button>
-        ) : null}
-
-        <Link
-          to={routes.cart}
-          className="block text-center text-sm font-medium text-blue-600"
-        >
-          Перейти в корзину
-        </Link>
-      </div>
+      <Link to={routes.cart} className="ui-link block text-center text-sm">
+        Перейти в корзину
+      </Link>
     </PageShell>
   )
 }

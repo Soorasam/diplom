@@ -34,16 +34,16 @@ export const OrdersPage = () => {
           {orders.map((order) => (
             <li key={order.id}>
               <Link to={routes.order(order.id)}>
-                <Card className="transition hover:border-blue-200">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-slate-900">№ {order.id}</p>
+                <Card className="ui-card-interactive transition">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-slate-900 dark:text-slate-100">№ {order.id}</p>
                       <p className="text-xs text-slate-500">{formatDate(order.createdAt)}</p>
-                      <p className="mt-1 text-sm font-medium text-blue-700">
+                      <p className="ui-price mt-1 text-sm">
                         {formatPrice(order.total)}
                       </p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-1">
+                    <div className="flex shrink-0 flex-col items-end gap-2">
                       <Badge variant={orderStatusVariant[order.status]}>
                         {orderStatusLabel[order.status]}
                       </Badge>

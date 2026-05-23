@@ -138,8 +138,8 @@ export const DriverRoutePage = () => {
         subtitle="Статус точек обновляется, когда сотрудник ПВЗ принимает все заказы"
       />
 
-      <Card className="border-blue-100 bg-blue-50/40">
-        <div className="flex flex-wrap items-center gap-2">
+      <Card className="ui-panel">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
           <Badge variant="info">{routeStatusLabel[activeRoute.status]}</Badge>
           <Badge variant="default">
             <Snowflake size={12} className="mr-1 inline" />
@@ -155,13 +155,13 @@ export const DriverRoutePage = () => {
       </Card>
 
       {nextStop && !tripCompleted ? (
-        <Card className="border-blue-200 bg-gradient-to-br from-white to-blue-50/60">
+        <Card className="ui-panel-gradient">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
+            <div className="ui-icon-solid flex h-10 w-10 items-center justify-center rounded-2xl">
               <Truck size={20} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-medium text-blue-700">Следующая точка</p>
+              <p className="text-xs font-medium ui-text-accent">Следующая точка</p>
               <p className="truncate font-semibold text-slate-900">{nextStop.label}</p>
               <p className="text-xs text-slate-500">{nextStop.subtitle}</p>
             </div>
@@ -177,9 +177,9 @@ export const DriverRoutePage = () => {
               <Card
                 className={
                   stop.status === "arrived"
-                    ? "border-blue-300 bg-blue-50/50"
+                    ? "ui-stop-active"
                     : stop.status === "done"
-                      ? "border-emerald-200 bg-emerald-50/30"
+                      ? "ui-stop-done"
                       : ""
                 }
               >
@@ -187,9 +187,9 @@ export const DriverRoutePage = () => {
                   <div
                     className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                       stop.status === "done"
-                        ? "bg-emerald-100 text-emerald-700"
+                        ? "ui-icon-soft"
                         : stop.status === "arrived"
-                          ? "bg-blue-600 text-white"
+                          ? "ui-icon-solid"
                           : "bg-slate-100 text-slate-500"
                     }`}
                   >
@@ -220,8 +220,8 @@ export const DriverRoutePage = () => {
       </div>
 
       {tripCompleted ? (
-        <Card className="border-emerald-200 bg-emerald-50/40">
-          <p className="text-sm font-semibold text-emerald-800">
+        <Card className="ui-panel">
+          <p className="text-sm font-semibold ui-text-accent">
             Рейс завершён: все ПВЗ приняли товар.
           </p>
         </Card>

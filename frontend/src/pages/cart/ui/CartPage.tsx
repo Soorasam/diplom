@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom"
-import { Minus, Package, Plus, MapPin, Trash2 } from "lucide-react"
+import { Package, MapPin, Trash2 } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { useProducts } from "@/entities/product/api/useProducts"
@@ -18,6 +18,8 @@ import { Input } from "@/shared/ui/input/Input"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { Button } from "@/shared/ui/button/Button"
 import { StickyActionBar } from "@/shared/ui/sticky-action-bar/StickyActionBar"
+import { CheckoutSteps } from "@/shared/ui/checkout-steps/CheckoutSteps"
+import { QuantityStepper } from "@/shared/ui/quantity-stepper/QuantityStepper"
 import { CartProcurementBlock } from "@/widgets/cart-procurement-block/ui/CartProcurementBlock"
 
 export const CartPage = () => {
@@ -81,35 +83,23 @@ export const CartPage = () => {
   return (
     <>
     <PageShell withStickyFooter={cartProducts.length > 0}>
-        <div className="flex items-start justify-between gap-3">
-          <PageHeader
-            title="Корзина"
-            subtitle={
-              cartProducts.length > 0
-                ? `${cartProducts.length} поз. · ${formatWeightKg(cartWeightKg)}`
-                : "Пусто"
-            }
-            className="!mb-0 min-w-0 flex-1"
-          />
-          {cartProducts.length > 0 ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700"
-              onClick={() => void clearCart()}
-            >
-              <Trash2 size={16} />
-              Очистить
-            </Button>
-          ) : null}
-        </div>
+        <PageHeader
+          title="Корзина"
+          subtitle={
+            cartProducts.length > 0
+              ? `${cartProducts.length} поз. · ${formatWeightKg(cartWeightKg)}`
+              : "Пусто"
+          }
+          className="!mb-0"
+        />
+
+        <CheckoutSteps current="cart" />
 
         <CartProcurementBlock />
 
         <Card className="!p-4">
           <div className="flex items-start gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+            <span className="ui-icon-soft flex h-10 w-10 shrink-0 rounded-xl">
               <MapPin size={20} />
             </span>
             <div className="min-w-0 flex-1">
@@ -117,7 +107,7 @@ export const CartPage = () => {
               <select
                 value={pickupPointId ?? ""}
                 onChange={(e) => setPickupPoint(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-sm"
+                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               >
                 <option value="">Выберите пункт</option>
                 {pickupPoints?.map((pp) => (
@@ -128,13 +118,26 @@ export const CartPage = () => {
               </select>
               <Link
                 to={routes.pickupPoints}
-                className="mt-2 inline-block text-xs font-medium text-blue-600"
+                className="ui-link mt-2 inline-block text-xs"
               >
                 Карта пунктов выдачи
               </Link>
             </div>
           </div>
         </Card>
+
+        {cartProducts.length > 0 ? (
+          <Button
+            type="button"
+            variant="outline"
+            fullWidth
+            className="text-red-600 hover:border-red-200 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:border-red-900 dark:hover:bg-red-950/40"
+            onClick={() => void clearCart()}
+          >
+            <Trash2 size={18} />
+            Очистить корзину
+          </Button>
+        ) : null}
 
         {cartProducts.length === 0 ? (
           <EmptyState
@@ -151,7 +154,7 @@ export const CartPage = () => {
                 <li key={productId}>
                   <Card className="!p-3">
                     <div className="flex gap-3">
-                      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
                         {product.imageUrl ? (
                           <img
                             src={product.imageUrl}
@@ -170,29 +173,14 @@ export const CartPage = () => {
                           {formatWeightKg(product.weightKg * quantity)} ·{" "}
                           {formatPrice(product.price)} / {product.unit}
                         </p>
-                        <div className="mt-2 flex items-center justify-between">
-                          <div className="flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 p-0.5">
-                            <button
-                              type="button"
-                              onClick={() => void setQuantity(productId, quantity - 1)}
-                              className="flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-white"
-                              aria-label="Уменьшить"
-                            >
-                              <Minus size={16} />
-                            </button>
-                            <span className="min-w-8 text-center text-sm font-bold tabular-nums">
-                              {quantity}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => void setQuantity(productId, quantity + 1)}
-                              className="flex h-8 w-8 items-center justify-center rounded-md text-slate-600 hover:bg-white"
-                              aria-label="Увеличить"
-                            >
-                              <Plus size={16} />
-                            </button>
-                          </div>
-                          <span className="text-sm font-bold text-slate-900">
+                        <div className="mt-2 grid grid-cols-[7.25rem_1fr] items-center gap-3">
+                          <QuantityStepper
+                            quantity={quantity}
+                            size="sm"
+                            onDecrease={() => void setQuantity(productId, quantity - 1)}
+                            onIncrease={() => void setQuantity(productId, quantity + 1)}
+                          />
+                          <span className="text-right text-sm font-bold tabular-nums text-slate-900 dark:text-slate-100">
                             {formatPrice(product.price * quantity)}
                           </span>
                         </div>
@@ -203,7 +191,7 @@ export const CartPage = () => {
               ))}
             </ul>
 
-            <div className="scroll-mt-4">
+            <div className="mb-2 scroll-mt-4">
               <Input
                 label="Комментарий"
                 placeholder="Пожелания к заказу…"
@@ -229,7 +217,7 @@ export const CartPage = () => {
               <span className="text-slate-600">
                 {formatWeightKg(cartWeightKg)} · {cartProducts.length} поз.
               </span>
-              <span className="text-lg font-bold text-blue-700">{formatPrice(total)}</span>
+              <span className="ui-price text-lg">{formatPrice(total)}</span>
             </div>
             {canCheckout ? (
               <Link to={routes.checkout} className="block">

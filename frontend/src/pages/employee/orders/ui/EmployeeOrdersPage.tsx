@@ -69,7 +69,7 @@ export const EmployeeOrdersPage = () => {
           </div>
         </Card>
       ) : queuedCount > 0 ? (
-        <Card className="border-blue-200 bg-blue-50/40">
+        <Card className="ui-panel">
           <p className="text-sm font-semibold text-slate-900">Синхронизация</p>
           <p className="mt-1 text-sm text-slate-600">
             В очереди действий: {queuedCount}.
@@ -96,11 +96,11 @@ export const EmployeeOrdersPage = () => {
           {filtered.map((o) => (
             <li key={o.id}>
               <Card className="border-slate-200">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-slate-900">№ {o.id.slice(0, 8)}</p>
                     {o.roundTitle ? (
-                      <p className="text-xs text-blue-600">{o.roundTitle}</p>
+                      <p className="text-xs ui-text-muted">{o.roundTitle}</p>
                     ) : null}
                     <p className="mt-0.5 text-xs text-slate-500">
                       {o.userName} · {o.userPhone}
@@ -114,7 +114,7 @@ export const EmployeeOrdersPage = () => {
 
                 <Button
                   type="button"
-                  className="mt-4 w-full !bg-emerald-600 hover:!bg-emerald-500"
+                  className="mt-4 w-full"
                   leftIcon={<CheckCircle2 size={16} />}
                   disabled={handout.isPending}
                   onClick={() => handout.mutate(o.id)}

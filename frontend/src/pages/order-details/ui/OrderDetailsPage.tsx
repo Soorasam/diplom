@@ -64,11 +64,13 @@ export const OrderDetailsPage = () => {
         subtitle={formatDate(order.createdAt)}
       />
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
+          {formatPrice(order.total)}
+        </span>
         <Badge variant={orderStatusVariant[order.status]}>
           {orderStatusLabel[order.status]}
         </Badge>
-        <span className="text-lg font-bold text-slate-900">{formatPrice(order.total)}</span>
       </div>
 
       {pickup ? (
@@ -147,12 +149,12 @@ export const OrderDetailsPage = () => {
           onClick={() => setQrOpen(false)}
         >
           <Card
-            className="max-w-xs text-center shadow-xl"
+            className="ornament-frame max-w-xs text-center"
             onClick={(e) => e.stopPropagation()}
           >
             <p className="text-sm font-semibold text-slate-900">QR-код заказа</p>
             <p className="mt-1 text-xs text-slate-500">Покажите сотруднику ПВЗ</p>
-            <div className="mx-auto mt-4 flex h-40 w-40 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 font-mono text-xs text-slate-600">
+            <div className="relative z-10 mx-auto mt-4 flex h-40 w-40 items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 font-mono text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {order.id}
             </div>
             <Button className="mt-4" fullWidth onClick={() => setQrOpen(false)}>

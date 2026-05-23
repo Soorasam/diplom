@@ -46,7 +46,7 @@ export const DriverProcurementsPage = () => {
     <PageShell>
       <PageHeader title="Мои сборы" subtitle="Водитель создает и закрывает свои сборы" />
 
-      <Card className="border-blue-100 bg-blue-50/40">
+      <Card className="ui-panel">
         <p className="text-sm font-semibold text-slate-900">Правило ролей</p>
         <p className="mt-1 text-sm text-slate-600">
           Водитель: создает и закрывает сбор. ПВЗ/админ: подтверждают приемку товара в точках.

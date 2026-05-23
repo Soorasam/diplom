@@ -18,7 +18,6 @@ import { orderStatusLabel, orderStatusVariant } from "@/shared/lib/order-status"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
-import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { ProcurementCard } from "@/widgets/procurement-card/ui/ProcurementCard"
 import { ProductCard } from "@/widgets/product-card/ui/ProductCard"
 
@@ -34,137 +33,144 @@ export const HomePage = () => {
   const nearestDelivery = procurements?.[0]?.estimatedDelivery
 
   return (
-    <PageShell className="gap-5">
-      <header className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-blue-900 to-slate-900 px-5 py-6 text-white shadow-lg">
-        <p className="text-xs font-medium uppercase tracking-wider text-blue-200/90">
-          Северные закупки
-        </p>
-        <h1 className="mt-2 text-2xl font-bold leading-tight">
-          {user ? `Здравствуйте, ${user.name.split(" ")[0]}` : "Кооперативная доставка"}
-        </h1>
-        <p className="mt-2 text-sm text-slate-300">
-          Объединяем заказы жителей отдалённых посёлков Якутии
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
-            <Snowflake size={14} />
-            Сезонные маршруты
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-medium">
-            <MapPin size={14} />
-            Пункты выдачи
-          </span>
+    <div className="flex min-h-full flex-col font-sans">
+      {/* Хеддер: на всю ширину колонки, сразу под safe-area */}
+      <header className="home-hero ornament-frame relative z-10 w-full shrink-0 overflow-hidden rounded-b-2xl">
+        <div className="relative z-10 mx-auto w-full max-w-[480px] px-4 pb-6 pt-[max(1.5rem,calc(env(safe-area-inset-top,0px)+1rem))]">
+          <p className="text-[11px] font-semibold uppercase leading-normal tracking-[0.14em] text-sky-200/90">
+            Северные закупки
+          </p>
+          <h1 className="mt-3 text-2xl font-bold leading-normal tracking-tight text-white">
+            {user ? `Здравствуйте, ${user.name.split(" ")[0]}` : "Кооперативная доставка"}
+          </h1>
+          <p className="mt-2 max-w-sm text-sm font-normal leading-relaxed text-slate-200">
+            Объединяем заказы жителей отдалённых посёлков Якутии
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="pattern-hero-chip">
+              <Snowflake size={14} />
+              Сезонные маршруты
+            </span>
+            <span className="pattern-hero-chip">
+              <MapPin size={14} />
+              Пункты выдачи
+            </span>
+          </div>
         </div>
       </header>
 
-      {nearestDelivery ? (
-        <Card className="border-blue-100 bg-blue-50/50">
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-              <Truck size={20} />
-            </span>
-            <div>
-              <p className="text-xs font-medium text-blue-800">Ближайшая доставка</p>
-              <p className="text-sm font-semibold text-slate-900">
-                ориентир — {formatShortDate(nearestDelivery)}
-              </p>
-            </div>
-          </div>
-        </Card>
-      ) : null}
-
-      {activeOrder ? (
-        <Link to={routes.order(activeOrder.id)}>
-          <Card className="transition hover:border-blue-200">
-            <div className="flex items-center justify-between gap-2">
+      <div className="mx-auto flex w-full max-w-[480px] flex-col items-center gap-4 p-4 pb-28">
+        {nearestDelivery ? (
+          <Card className="w-full p-4">
+            <div className="flex items-center gap-3">
+              <span className="ui-icon-well h-11 w-11">
+                <Truck size={20} />
+              </span>
               <div>
-                <p className="text-xs text-slate-500">Активный заказ</p>
-                <p className="font-semibold text-slate-900">№ {activeOrder.id}</p>
+                <p className="text-xs font-medium leading-normal text-sky-600 dark:text-sky-400">
+                  Ближайшая доставка
+                </p>
+                <p className="mt-1 text-sm font-semibold leading-normal text-slate-900 dark:text-slate-100">
+                  ориентир — {formatShortDate(nearestDelivery)}
+                </p>
               </div>
-              <Badge variant={orderStatusVariant[activeOrder.status]}>
-                {orderStatusLabel[activeOrder.status]}
-              </Badge>
             </div>
           </Card>
-        </Link>
-      ) : null}
+        ) : null}
 
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-800">Активные сборы</h2>
-          <Link to={routes.activeProcurements} className="text-xs font-medium text-blue-600">
-            Все
+        {activeOrder ? (
+          <Link to={routes.order(activeOrder.id)} className="w-full">
+            <Card className="ui-card-interactive w-full p-4 transition-colors">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-normal leading-relaxed text-slate-500 dark:text-slate-400">
+                    Активный заказ
+                  </p>
+                  <p className="mt-1 font-semibold leading-normal text-slate-900 dark:text-slate-100">
+                    № {activeOrder.id}
+                  </p>
+                </div>
+                <Badge variant={orderStatusVariant[activeOrder.status]}>
+                  {orderStatusLabel[activeOrder.status]}
+                </Badge>
+              </div>
+            </Card>
           </Link>
-        </div>
-        {loadingProcurements ? (
-          <div className="flex justify-center py-6">
-            <Spinner />
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {procurements?.slice(0, 2).map((p) => (
-              <Link key={p.id} to={routes.procurement(p.id)}>
-                <ProcurementCard procurement={p} compact />
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
+        ) : null}
 
-      <Link
-        to={routes.activeProcurements}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
-      >
-        <Truck size={18} />
-        Перейти к активным сборам
-        <ArrowRight size={18} />
-      </Link>
-
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-slate-800">Популярное</h2>
-          <Link to={routes.catalog} className="text-xs font-medium text-blue-600">
-            Каталог
-          </Link>
-        </div>
-        {loadingPopular ? (
-          <div className="flex justify-center py-6">
-            <Spinner />
+        <section className="w-full">
+          <div className="ornament-divider mb-4" aria-hidden />
+          <div className="mb-3 flex w-full items-center justify-between gap-2">
+            <h2 className="ui-section-title">Активные сборы</h2>
+            <Link to={routes.activeProcurements} className="ui-link">
+              Все
+            </Link>
           </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3">
-            {popular?.slice(0, 4).map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {categories && categories.length > 0 ? (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold text-slate-800">Категории</h2>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((cat) => (
-              <Link
-                key={cat.id}
-                to={`${routes.catalog}?category=${cat.id}`}
-                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-blue-300 hover:bg-blue-50"
-              >
-                {cat.name}
-              </Link>
-            ))}
-          </div>
+          {loadingProcurements ? (
+            <div className="flex justify-center py-8">
+              <Spinner />
+            </div>
+          ) : (
+            <div className="flex w-full flex-col gap-2">
+              {procurements?.slice(0, 2).map((p) => (
+                <Link key={p.id} to={routes.procurement(p.id)} className="w-full">
+                  <ProcurementCard procurement={p} compact />
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
-      ) : null}
 
-      <Link
-        to={routes.catalog}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700"
-      >
-        <ShoppingBag size={18} />
-        Перейти в каталог
-        <ArrowRight size={18} />
-      </Link>
-    </PageShell>
+        <Link to={routes.activeProcurements} className="ui-cta ui-cta-primary">
+          <Truck size={18} />
+          Активные сборы
+          <ArrowRight size={18} />
+        </Link>
+
+        <section className="w-full">
+          <div className="ornament-divider mb-4" aria-hidden />
+          <div className="mb-3 flex w-full items-center justify-between gap-2">
+            <h2 className="ui-section-title">Популярное</h2>
+            <Link to={routes.catalog} className="ui-link">
+              Каталог
+            </Link>
+          </div>
+          {loadingPopular ? (
+            <div className="flex justify-center py-8">
+              <Spinner />
+            </div>
+          ) : (
+            <div className="product-grid-tight w-full">
+              {popular?.slice(0, 4).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {categories && categories.length > 0 ? (
+          <section className="w-full">
+            <h2 className="ui-section-title mb-3">Категории</h2>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  to={`${routes.catalog}?category=${cat.id}`}
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-sky-700 transition-colors hover:border-sky-200 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800 dark:text-sky-400 dark:hover:border-slate-600 dark:hover:bg-slate-700"
+                >
+                  {cat.name}
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <Link to={routes.catalog} className="ui-cta ui-cta-outline">
+          <ShoppingBag size={18} />
+          Каталог
+          <ArrowRight size={18} />
+        </Link>
+      </div>
+    </div>
   )
 }

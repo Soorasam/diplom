@@ -19,6 +19,7 @@ import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
+import { CheckoutSteps } from "@/shared/ui/checkout-steps/CheckoutSteps"
 
 export const CheckoutPage = () => {
   const navigate = useNavigate()
@@ -134,6 +135,8 @@ export const CheckoutPage = () => {
         className="mb-0!"
       />
 
+      <CheckoutSteps current="checkout" className="mb-2" />
+
       {!canSubmit && blockers.length > 0 ? (
         <AlertBanner variant="warning" title="Заполните перед оплатой">
           <ul className="list-disc space-y-1 pl-4">
@@ -160,7 +163,7 @@ export const CheckoutPage = () => {
         <h2 className="text-sm font-semibold text-slate-800">Пункт выдачи</h2>
         {pickupPoints && pickupPoints.length > 0 ? (
           <select
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+            className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             value={pickupPointId ?? ""}
             onChange={(e) => setPickupPoint(e.target.value)}
           >
@@ -204,7 +207,7 @@ export const CheckoutPage = () => {
             </ul>
             <div className="mt-3 flex justify-between border-t border-slate-100 pt-3 font-semibold">
               <span>Итого</span>
-              <span className="text-blue-700">{formatPrice(total)}</span>
+              <span className="ui-price">{formatPrice(total)}</span>
             </div>
           </>
         )}
@@ -217,7 +220,7 @@ export const CheckoutPage = () => {
         </Card>
       ) : null}
 
-      <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-slate-200 bg-white p-3">
+      <label className="flex cursor-pointer items-start gap-2 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-[#18202C]">
         <input type="checkbox" className="mt-0.5" {...register("agreeTerms")} />
         <span className="text-xs text-slate-600">
           Согласен с условиями кооперативной доставки. Сроки могут меняться из‑за погоды и

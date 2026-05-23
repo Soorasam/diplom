@@ -175,7 +175,7 @@ export const ProcurementDetailPage = () => {
           onClick={() => setConfirmOpen(false)}
         >
           <Card
-            className="w-full max-w-md shadow-2xl"
+            className="ornament-frame w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
             <p className="text-lg font-bold text-slate-900">Участие в сборе</p>

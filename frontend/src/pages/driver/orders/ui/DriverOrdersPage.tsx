@@ -38,8 +38,8 @@ export const DriverOrdersPage = () => {
           {orders.map((order) => (
             <li key={order.id}>
               <Card>
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
                     <p className="font-semibold text-slate-900">№ {order.id}</p>
                     <p className="text-xs text-slate-500">{formatDate(order.createdAt)}</p>
                     <p className="mt-1 text-sm font-medium text-blue-700">

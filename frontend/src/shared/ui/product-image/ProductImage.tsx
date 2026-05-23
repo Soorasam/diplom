@@ -35,7 +35,7 @@ export const ProductImage = ({
       <img
         src={src}
         alt={alt}
-        className="h-full w-full object-contain drop-shadow-sm"
+        className="h-full w-full object-contain"
         loading="lazy"
         decoding="async"
       />

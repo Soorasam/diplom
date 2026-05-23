@@ -56,7 +56,7 @@ const tabs: MobileNavTab[] = [
 
 export const DriverLayout = () => (
   <MobilePageLayout>
-    <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col safe-top">
+    <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col">
       <Outlet />
     </main>
     <MobileBottomNav tabs={tabs} />
