@@ -38,10 +38,7 @@ export const useCartSync = () => {
     if (!shouldFetchCart) return
     if (!cartLoaded || !serverCart) return
 
-    setFromServer(
-      mapBackendCartItems(serverCart),
-      serverCart.round?.id ?? null,
-    )
+    setFromServer(mapBackendCartItems(serverCart), serverCart.round?.id)
     if (user?.pickupPointId) {
       setPickupPoint(user.pickupPointId)
     }

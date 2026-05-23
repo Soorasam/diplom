@@ -4,11 +4,13 @@ import { useQueryClient } from "@tanstack/react-query"
 import { useAuthStore } from "@/app/model/auth-store"
 import { cartApi } from "@/entities/cart/api/cartApi"
 import { mapBackendCartItems } from "@/features/cart/lib/map-backend-cart"
+import { resolveRoundIdForCart } from "@/features/cart/lib/resolve-round-id"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { queryKeys } from "@/shared/config/query-keys"
 
 export const useCartActions = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const procurementId = useCartStore((s) => s.procurementId)
   const qc = useQueryClient()
   const setFromServer = useCartStore((s) => s.setFromServer)
   const localAdd = useCartStore((s) => s.addItem)
@@ -18,23 +20,55 @@ export const useCartActions = () => {
 
   const applyServerCart = useCallback(
     async (cart: Awaited<ReturnType<typeof cartApi.get>>) => {
-      setFromServer(mapBackendCartItems(cart), cart.round?.id ?? null)
+      setFromServer(mapBackendCartItems(cart), cart.round?.id)
       await qc.invalidateQueries({ queryKey: queryKeys.cart })
     },
     [setFromServer, qc],
   )
 
+  /** Черновик с сервера после вступления в сбор */
+  const pushDraftItemsToServer = useCallback(
+    async (roundId: string) => {
+      const draft = useCartStore
+        .getState()
+        .items.filter((i) => !i.lineId)
+      if (draft.length === 0) return
+
+      for (const item of draft) {
+        await cartApi.addItem(item.productId, item.quantity, roundId)
+      }
+      const cart = await cartApi.get()
+      await applyServerCart(cart)
+    },
+    [applyServerCart],
+  )
+
   const addItem = useCallback(
-    async (productId: string, qty = 1) => {
-      const roundId = useCartStore.getState().procurementId ?? undefined
+    async (productId: string, qty = 1, explicitRoundId?: string) => {
+      const roundId =
+        explicitRoundId ??
+        procurementId ??
+        resolveRoundIdForCart(qc) ??
+        undefined
+
+      if (!roundId) {
+        localAdd(productId, qty)
+        return
+      }
+
       if (!isAuthenticated) {
         localAdd(productId, qty)
         return
       }
-      const cart = await cartApi.addItem(productId, qty, roundId)
-      await applyServerCart(cart)
+
+      try {
+        const cart = await cartApi.addItem(productId, qty, roundId)
+        await applyServerCart(cart)
+      } catch {
+        localAdd(productId, qty)
+      }
     },
-    [isAuthenticated, localAdd, applyServerCart],
+    [isAuthenticated, localAdd, applyServerCart, qc, procurementId],
   )
 
   const setQuantity = useCallback(
@@ -76,5 +110,5 @@ export const useCartActions = () => {
     localClear()
   }, [isAuthenticated, localClear, applyServerCart])
 
-  return { addItem, setQuantity, removeItem, clearCart }
+  return { addItem, setQuantity, removeItem, clearCart, pushDraftItemsToServer }
 }

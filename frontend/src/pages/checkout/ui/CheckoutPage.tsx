@@ -1,12 +1,11 @@
-import { useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { useProducts } from "@/entities/product/api/useProducts"
-import { useActiveProcurements } from "@/entities/procurement/api/useProcurements"
 import { usePickupPoints } from "@/entities/settlement/api/useSettlements"
+import { useProcurementParticipation } from "@/features/procurement/hooks/useProcurementParticipation"
 import { calcCartWeightKg } from "@/features/cart/lib/calc-weight"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import {
@@ -30,11 +29,12 @@ export const CheckoutPage = () => {
   const procurementId = useCartStore((s) => s.procurementId)
   const comment = useCartStore((s) => s.comment)
   const setPickupPoint = useCartStore((s) => s.setPickupPoint)
-  const setProcurement = useCartStore((s) => s.setProcurement)
+
+  const { procurement, hasJoined, isRoundOpen, canCheckoutRound } =
+    useProcurementParticipation()
 
   const { data: products } = useProducts()
   const { data: pickupPoints } = usePickupPoints(authUser?.settlementId)
-  const { data: procurements } = useActiveProcurements()
   const {
     register,
     handleSubmit,
@@ -46,12 +46,6 @@ export const CheckoutPage = () => {
   })
 
   const agreeTerms = watch("agreeTerms")
-
-  useEffect(() => {
-    if (procurementId) return
-    const active = procurements?.[0]
-    if (active) setProcurement(active.id)
-  }, [procurementId, procurements, setProcurement])
 
   const pickup = pickupPoints?.find((p) => p.id === pickupPointId)
   const lineItems = items
@@ -67,7 +61,6 @@ export const CheckoutPage = () => {
 
   const total = lineItems.reduce((s, i) => s + i.product.price * i.quantity, 0)
 
-  const activeProcurement = procurements?.find((p) => p.id === procurementId)
   const cartWeightKg =
     products && lineItems.length > 0
       ? calcCartWeightKg(
@@ -76,17 +69,21 @@ export const CheckoutPage = () => {
         )
       : 0
   const limitExceeded =
-    activeProcurement != null &&
-    activeProcurement.currentWeightKg + cartWeightKg > activeProcurement.targetWeightKg + 0.001
+    procurement != null &&
+    procurement.currentWeightKg + cartWeightKg > procurement.targetWeightKg + 0.001
 
   const blockers: string[] = []
   if (!user) blockers.push("Войдите в аккаунт")
   if (lineItems.length === 0) blockers.push("В корзине нет товаров — добавьте из каталога")
   if (!pickupPointId) blockers.push("Выберите пункт выдачи")
-  if (!procurementId) blockers.push("Нет активного сбора закупки")
+  if (!procurementId) blockers.push("Выберите сбор в корзине")
+  if (procurementId && !hasJoined) blockers.push("Вступите в сбор в корзине")
+  if (procurementId && hasJoined && !isRoundOpen) {
+    blockers.push("Сбор закрыт — выберите другой открытый сбор")
+  }
   if (limitExceeded) {
-    const left = activeProcurement
-      ? Math.max(activeProcurement.targetWeightKg - activeProcurement.currentWeightKg, 0)
+    const left = procurement
+      ? Math.max(procurement.targetWeightKg - procurement.currentWeightKg, 0)
       : 0
     blockers.push(
       `Превышен лимит сбора (ваш заказ ${formatWeightKg(cartWeightKg)}, доступно ещё ${formatWeightKg(left)})`,
@@ -97,7 +94,14 @@ export const CheckoutPage = () => {
   const canSubmit = blockers.length === 0
 
   const onSubmit = () => {
-    if (!authUser || !pickupPointId || !procurementId || lineItems.length === 0 || limitExceeded) {
+    if (
+      !authUser ||
+      !pickupPointId ||
+      !procurementId ||
+      !canCheckoutRound ||
+      lineItems.length === 0 ||
+      limitExceeded
+    ) {
       return
     }
     navigate(routes.payment, {
@@ -140,21 +144,17 @@ export const CheckoutPage = () => {
         </AlertBanner>
       ) : null}
 
-      <Card>
-        <h2 className="text-sm font-semibold text-slate-800">Сбор закупки</h2>
-        <select
-          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
-          value={procurementId ?? ""}
-          onChange={(e) => setProcurement(e.target.value)}
-        >
-          <option value="">Выберите активный сбор</option>
-          {(procurements ?? []).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.title}
-            </option>
-          ))}
-        </select>
-      </Card>
+      {procurement ? (
+        <Card>
+          <h2 className="text-sm font-semibold text-slate-800">Сбор закупки</h2>
+          <p className="mt-1 text-sm text-slate-700">{procurement.title}</p>
+          {!hasJoined ? (
+            <p className="mt-2 text-xs text-amber-700">
+              Вернитесь в корзину и нажмите «Вступить в этот сбор».
+            </p>
+          ) : null}
+        </Card>
+      ) : null}
 
       <Card>
         <h2 className="text-sm font-semibold text-slate-800">Пункт выдачи</h2>

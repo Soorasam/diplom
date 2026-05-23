@@ -8,6 +8,7 @@ import {
   LogOut,
   MapPin,
   MessageSquare,
+  Package,
   Pencil,
   Truck,
   User,
@@ -19,10 +20,12 @@ import { InterfaceModeSwitch } from "@/features/auth/ui/InterfaceModeSwitch"
 import { useMyDriverApplication } from "@/features/driver-application/api/useDriverApplications"
 import { routes } from "@/shared/config/routes"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Card } from "@/shared/ui/card/Card"
 import { Button } from "@/shared/ui/button/Button"
 
 const menuLinks = [
+  { to: routes.orders, label: "Мои заказы", icon: Package },
   { to: routes.profileEdit, label: "Редактировать данные", icon: Pencil },
   { to: routes.disputes, label: "Мои споры", icon: MessageSquare },
   { to: routes.addresses, label: "Населённый пункт", icon: MapPin },
@@ -31,13 +34,6 @@ const menuLinks = [
   { to: routes.pickupPoints, label: "Пункты выдачи", icon: MapPin },
 ]
 
-const roleLabels: Record<string, string> = {
-  client: "Житель",
-  driver: "Житель",
-  employee: "Сотрудник ПВЗ",
-  admin: "Администратор",
-}
-
 export const ProfilePage = () => {
   const { pathname } = useLocation()
   const user = useAuthStore((s) => s.user)
@@ -45,7 +41,7 @@ export const ProfilePage = () => {
   const refreshUser = useAuthStore((s) => s.refreshUser)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const { data: myApp } = useMyDriverApplication()
-  const { canUseDriverMode, activeMode } = useCanUseDriverMode()
+  const { canUseDriverMode } = useCanUseDriverMode()
 
   const isDriverApproved = myApp?.status === "approved"
   const isSimpleResident =
@@ -75,7 +71,7 @@ export const ProfilePage = () => {
         : null
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <PageShell>
       <PageHeader title="Профиль" />
 
       <Card className="flex items-center gap-4">
@@ -85,21 +81,6 @@ export const ProfilePage = () => {
         <div>
           <p className="font-semibold text-slate-900">{user?.name ?? "Гость"}</p>
           <p className="text-sm text-slate-500">{user?.phone ?? "Не авторизован"}</p>
-          {user ? (
-            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-              <p className="text-xs font-medium text-blue-600">
-                {roleLabels[user.role] ?? user.role}
-              </p>
-              {canUseDriverMode ? (
-                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-200/70">
-                  + водитель
-                </span>
-              ) : null}
-              {canUseDriverMode && activeMode === "driver" ? (
-                <span className="text-[10px] text-slate-500">· сейчас режим водителя</span>
-              ) : null}
-            </div>
-          ) : null}
         </div>
       </Card>
 
@@ -190,6 +171,6 @@ export const ProfilePage = () => {
           Выйти
         </Button>
       ) : null}
-    </div>
+    </PageShell>
   )
 }

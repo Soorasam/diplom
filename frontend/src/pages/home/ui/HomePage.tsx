@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
+import { useSyncSelectedProcurement } from "@/features/procurement/hooks/useSyncSelectedProcurement"
 import { useActiveProcurements } from "@/entities/procurement/api/useProcurements"
 import { useOrders } from "@/entities/order/api/useOrders"
 import { useCategories, usePopularProducts } from "@/entities/product/api/useProducts"
@@ -17,11 +18,13 @@ import { orderStatusLabel, orderStatusVariant } from "@/shared/lib/order-status"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { ProcurementCard } from "@/widgets/procurement-card/ui/ProcurementCard"
 import { ProductCard } from "@/widgets/product-card/ui/ProductCard"
 
 export const HomePage = () => {
   const user = useAuthStore((s) => s.user)
+  useSyncSelectedProcurement()
   const { data: procurements, isLoading: loadingProcurements } = useActiveProcurements()
   const { data: orders } = useOrders(user?.id)
   const { data: popular, isLoading: loadingPopular } = usePopularProducts()
@@ -31,7 +34,7 @@ export const HomePage = () => {
   const nearestDelivery = procurements?.[0]?.estimatedDelivery
 
   return (
-    <div className="flex flex-col gap-5 p-4">
+    <PageShell className="gap-5">
       <header className="overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-blue-900 to-slate-900 px-5 py-6 text-white shadow-lg">
         <p className="text-xs font-medium uppercase tracking-wider text-blue-200/90">
           Северные закупки
@@ -162,6 +165,6 @@ export const HomePage = () => {
         Перейти в каталог
         <ArrowRight size={18} />
       </Link>
-    </div>
+    </PageShell>
   )
 }

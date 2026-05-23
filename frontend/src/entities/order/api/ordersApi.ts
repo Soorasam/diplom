@@ -33,7 +33,7 @@ export const ordersApi = {
     const { cartApi } = await import("@/entities/cart/api/cartApi")
     await cartApi.clear()
     for (const item of payload.items) {
-      await cartApi.addItem(item.productId, item.quantity)
+      await cartApi.addItem(item.productId, item.quantity, payload.procurementId)
     }
     const { http: h } = await import("@/shared/api/client")
     await h.patch("/profile", { pickupPointId: payload.pickupPointId }, true)

@@ -64,10 +64,11 @@ model User {
 
   settlement  Settlement?  @relation(fields: [settlementId], references: [id])
   pickupPoint PickupPoint? @relation(fields: [pickupPointId], references: [id])
-  cartItems          CartItem[]
-  orders             Order[]
-  notifications      Notification[]
-  driverApplications DriverApplication[]
+  cartItems           CartItem[]
+  orders              Order[]
+  roundParticipations RoundParticipant[]
+  notifications       Notification[]
+  driverApplications  DriverApplication[]
 
   @@map("users")
 }
@@ -122,11 +123,25 @@ model Round {
   currentWeightKg    Decimal     @default(0) @map("current_weight_kg") @db.Decimal(10, 2)
   targetWeightKg     Decimal     @default(500) @map("target_weight_kg") @db.Decimal(10, 2)
 
-  route     Route      @relation(fields: [routeId], references: [id])
-  cartItems CartItem[]
-  orders    Order[]
+  route        Route              @relation(fields: [routeId], references: [id])
+  cartItems    CartItem[]
+  orders       Order[]
+  participants RoundParticipant[]
 
   @@map("rounds")
+}
+
+model RoundParticipant {
+  id       String   @id @default(uuid()) @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  roundId  String   @map("round_id") @db.Uuid
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  round Round @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roundId], name: "uq_round_participant_user_round")
+  @@map("round_participants")
 }
 
 model Category {

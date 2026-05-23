@@ -7,6 +7,7 @@ import { queryKeys } from "@/shared/config/query-keys"
 import type { MapMarker, MapRoute } from "@/shared/types"
 import { MapView } from "@/shared/ui/map/MapView"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 
 export const DriverMapPage = () => {
@@ -38,7 +39,7 @@ export const DriverMapPage = () => {
     })) ?? []
 
   return (
-    <div className="flex flex-col gap-4">
+    <PageShell>
       <PageHeader
         title="Карта маршрутов"
         subtitle="Все точки доставки на сегодня"
@@ -67,6 +68,6 @@ export const DriverMapPage = () => {
           </div>
         </>
       )}
-    </div>
+    </PageShell>
   )
 }

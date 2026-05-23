@@ -89,21 +89,24 @@ export class CartService {
     };
   }
 
-  private async resolveOpenRound(roundId?: string) {
-    if (roundId) {
-      const round = await this.prisma.round.findUnique({ where: { id: roundId } });
-      if (!round) throw new NotFoundException('Сбор не найден');
-      if (round.status !== RoundStatus.open) {
-        throw new BadRequestException('Сбор закрыт');
-      }
-      return round;
+  private async resolveOpenRound(roundId: string) {
+    const round = await this.prisma.round.findUnique({ where: { id: roundId } });
+    if (!round) throw new NotFoundException('Сбор не найден');
+    if (round.status !== RoundStatus.open) {
+      throw new BadRequestException('Сбор закрыт');
     }
-    const round = await this.prisma.round.findFirst({
-      where: { status: RoundStatus.open },
-      orderBy: { closesAt: 'asc' },
-    });
-    if (!round) throw new BadRequestException('Нет открытых сборов');
     return round;
+  }
+
+  private async assertUserJoinedRound(userId: string, roundId: string) {
+    const participant = await this.prisma.roundParticipant.findUnique({
+      where: {
+        uq_round_participant_user_round: { userId, roundId },
+      },
+    });
+    if (!participant) {
+      throw new BadRequestException('Сначала вступите в сбор');
+    }
   }
 
   async addItem(user: User, dto: CreateCartItemDto) {
@@ -112,16 +115,25 @@ export class CartService {
     });
     if (!product) throw new NotFoundException('Товар не найден');
 
+    if (!dto.roundId) {
+      throw new BadRequestException(
+        'Укажите сбор: вступите в сбор на странице «Сборы» или выберите его в корзине',
+      );
+    }
+
+    const round = await this.resolveOpenRound(dto.roundId);
+
     const existingRoundRef = await this.prisma.cartItem.findFirst({
       where: { userId: user.id },
       select: { roundId: true },
     });
 
-    const round = existingRoundRef
-      ? await this.resolveOpenRound(existingRoundRef.roundId).catch(() =>
-          this.resolveOpenRound(dto.roundId),
-        )
-      : await this.resolveOpenRound(dto.roundId);
+    if (existingRoundRef && existingRoundRef.roundId !== round.id) {
+      throw new BadRequestException(
+        'В корзине товары другого сбора. Очистите корзину или выберите тот же сбор.',
+      );
+    }
+
     const quantity = dto.quantity ?? 1;
 
     await this.prisma.cartItem.upsert({
@@ -186,8 +198,9 @@ export class CartService {
       throw new BadRequestException('Не выбран сбор для оформления');
     }
     if (round.status !== RoundStatus.open) {
-      throw new BadRequestException('Сбор уже закрыт');
+      throw new BadRequestException('Сбор закрыт — новые заказы недоступны');
     }
+    await this.assertUserJoinedRound(user.id, round.id);
 
     let totalEstimate = 0;
     let orderWeightKg = 0;

@@ -5,7 +5,7 @@ import { Card } from "@/shared/ui/card/Card"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 
 export const DriverApplyApproved = () => (
-  <div className="flex flex-col gap-4 p-4 pb-8">
+  <div className="flex flex-col gap-4">
     <PageHeader
       title="Стать водителем"
       subtitle="Заявка одобрена — включите режим водителя, когда будете на маршруте"

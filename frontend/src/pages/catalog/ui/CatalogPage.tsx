@@ -4,10 +4,10 @@ import { Search, ShoppingCart } from "lucide-react"
 
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { useValidCartItemCount } from "@/features/cart/hooks/useCartSync"
-import {
-  useActiveProcurements,
-  useProcurement,
-} from "@/entities/procurement/api/useProcurements"
+import { useProcurementParticipation } from "@/features/procurement/hooks/useProcurementParticipation"
+import { useOpenSelectedProcurement } from "@/features/procurement/hooks/useOpenSelectedProcurement"
+import { useSyncSelectedProcurement } from "@/features/procurement/hooks/useSyncSelectedProcurement"
+import { useActiveProcurements } from "@/entities/procurement/api/useProcurements"
 import { useCategories, useProducts } from "@/entities/product/api/useProducts"
 import type { ProductFilters } from "@/entities/product/api/productsApi"
 import { routes } from "@/shared/config/routes"
@@ -28,13 +28,19 @@ export const CatalogPage = () => {
   const setProcurement = useCartStore((s) => s.setProcurement)
   const cartCount = useValidCartItemCount()
 
+  useSyncSelectedProcurement(roundFromUrl)
+
   const activeRoundId = roundFromUrl ?? procurementIdFromStore ?? ""
 
   useEffect(() => {
     if (roundFromUrl) setProcurement(roundFromUrl)
   }, [roundFromUrl, setProcurement])
 
-  const { data: activeProcurement, isLoading: loadingRound } = useProcurement(activeRoundId)
+  const {
+    procurement: openProcurement,
+    closedProcurement,
+    isLoading: loadingRound,
+  } = useOpenSelectedProcurement(activeRoundId)
 
   const [search, setSearch] = useState("")
   const [categoryId, setCategoryId] = useState<string | undefined>(
@@ -50,6 +56,10 @@ export const CatalogPage = () => {
   const { data: categories } = useCategories()
   const { data: products, isLoading } = useProducts(filters)
   const { data: procurements } = useActiveProcurements()
+  const { hasJoined, isAuthenticated, procurementId: selectedRoundId } =
+    useProcurementParticipation()
+
+  const hasOpenProcurements = (procurements?.length ?? 0) > 0
 
   return (
     <PageShell>
@@ -57,23 +67,45 @@ export const CatalogPage = () => {
           <div className="flex justify-center py-6">
             <Spinner />
           </div>
-        ) : activeProcurement ? (
-          <ActiveProcurementBanner procurement={activeProcurement} />
+        ) : openProcurement ? (
+          <ActiveProcurementBanner procurement={openProcurement} />
         ) : null}
 
-        {!activeProcurement && !loadingRound && procurements && procurements.length > 0 ? (
-          <AlertBanner variant="warning" title="Сначала выберите сбор">
-            Перейдите в раздел «Сборы» и нажмите «Участвовать» — откроется каталог с вашим
-            маршрутом.
+        {closedProcurement ? (
+          <AlertBanner variant="warning" title="Сбор завершён">
+            «{closedProcurement.title}» больше не принимает заказы.{" "}
+            <Link to={routes.activeProcurements} className="font-semibold text-blue-700 underline">
+              Выберите открытый сбор
+            </Link>
+            .
+          </AlertBanner>
+        ) : null}
+
+        {!openProcurement &&
+        !closedProcurement &&
+        !loadingRound &&
+        hasOpenProcurements ? (
+          <AlertBanner variant="info" title="Сбор не выбран">
+            Товары можно добавить в корзину. Сбор выберите в корзине или в разделе{" "}
+            <Link to={routes.activeProcurements} className="font-semibold text-blue-700 underline">
+              Сборы
+            </Link>
+            .
+          </AlertBanner>
+        ) : null}
+
+        {openProcurement && isAuthenticated && selectedRoundId && !hasJoined ? (
+          <AlertBanner variant="info" title="Вступите перед оплатой">
+            Товары в корзине сохранятся. Перед оформлением нажмите «Вступить в сбор» в корзине.
           </AlertBanner>
         ) : null}
 
         <PageHeader
           title="Каталог"
           subtitle={
-            activeProcurement
+            openProcurement
               ? "Добавьте товары в корзину, затем оплатите заказ"
-              : "Товары доступны после выбора сбора"
+              : "Каталог товаров — сбор можно выбрать при оформлении"
           }
           className="!mb-0"
         />

@@ -2,10 +2,11 @@ import { QrCode } from "lucide-react"
 
 import { Card } from "@/shared/ui/card/Card"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 
 export const EmployeeScanPage = () => {
   return (
-    <div className="flex flex-col gap-4">
+    <PageShell>
       <PageHeader
         title="Сканер"
         subtitle="Сканируйте QR на заказе или у жителя"
@@ -25,7 +26,7 @@ export const EmployeeScanPage = () => {
           </p>
         </div>
       </Card>
-    </div>
+    </PageShell>
   )
 }
 

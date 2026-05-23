@@ -1,11 +1,11 @@
 import { Link, useNavigate } from "react-router-dom"
-import { Minus, Package, Plus, MapPin } from "lucide-react"
+import { Minus, Package, Plus, MapPin, Trash2 } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { useProducts } from "@/entities/product/api/useProducts"
 import { usePickupPoints } from "@/entities/settlement/api/useSettlements"
-import { useProcurement } from "@/entities/procurement/api/useProcurements"
 import { useCartActions } from "@/features/cart/hooks/useCartActions"
+import { useProcurementParticipation } from "@/features/procurement/hooks/useProcurementParticipation"
 import { calcCartWeightKg } from "@/features/cart/lib/calc-weight"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { routes } from "@/shared/config/routes"
@@ -18,22 +18,28 @@ import { Input } from "@/shared/ui/input/Input"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { Button } from "@/shared/ui/button/Button"
 import { StickyActionBar } from "@/shared/ui/sticky-action-bar/StickyActionBar"
-import { ProcurementProgress } from "@/widgets/procurement-progress/ui/ProcurementProgress"
+import { CartProcurementBlock } from "@/widgets/cart-procurement-block/ui/CartProcurementBlock"
 
 export const CartPage = () => {
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const items = useCartStore((s) => s.items)
-  const procurementId = useCartStore((s) => s.procurementId)
   const pickupPointId = useCartStore((s) => s.pickupPointId)
   const comment = useCartStore((s) => s.comment)
-  const { setQuantity } = useCartActions()
+  const { setQuantity, clearCart } = useCartActions()
   const setPickupPoint = useCartStore((s) => s.setPickupPoint)
   const setComment = useCartStore((s) => s.setComment)
 
+  const {
+    procurement,
+    canCheckoutRound,
+    isAuthenticated,
+    hasJoined,
+    procurementId,
+  } = useProcurementParticipation()
+
   const { data: products } = useProducts()
   const { data: pickupPoints } = usePickupPoints(user?.settlementId)
-  const { data: activeProcurement } = useProcurement(procurementId ?? "")
 
   const cartProducts = items
     .map((item) => {
@@ -49,39 +55,57 @@ export const CartPage = () => {
   const total = cartProducts.reduce((sum, i) => sum + i.product.price * i.quantity, 0)
   const cartWeightKg = products ? calcCartWeightKg(items, products) : 0
   const weightOverLimit =
-    activeProcurement != null &&
-    activeProcurement.currentWeightKg + cartWeightKg >
-      activeProcurement.targetWeightKg + 0.001
+    procurement != null &&
+    procurement.currentWeightKg + cartWeightKg >
+      procurement.targetWeightKg + 0.001
 
   const canCheckout =
-    Boolean(pickupPointId) && cartProducts.length > 0 && !weightOverLimit
+    isAuthenticated &&
+    canCheckoutRound &&
+    Boolean(pickupPointId) &&
+    cartProducts.length > 0 &&
+    !weightOverLimit
+
+  const checkoutHint = !isAuthenticated
+    ? "Войдите в аккаунт"
+    : !procurementId
+      ? "Выберите сбор"
+      : !hasJoined
+        ? "Вступите в сбор"
+        : !pickupPointId
+          ? "Выберите пункт выдачи"
+          : weightOverLimit
+            ? "Превышен лимит веса"
+            : "Оформить и оплатить"
 
   return (
     <>
     <PageShell withStickyFooter={cartProducts.length > 0}>
-        <PageHeader
-          title="Корзина"
-          subtitle={
-            cartProducts.length > 0
-              ? `${cartProducts.length} поз. · ${formatWeightKg(cartWeightKg)}`
-              : "Пусто"
-          }
-          className="!mb-0"
-        />
+        <div className="flex items-start justify-between gap-3">
+          <PageHeader
+            title="Корзина"
+            subtitle={
+              cartProducts.length > 0
+                ? `${cartProducts.length} поз. · ${formatWeightKg(cartWeightKg)}`
+                : "Пусто"
+            }
+            className="!mb-0 min-w-0 flex-1"
+          />
+          {cartProducts.length > 0 ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="shrink-0 text-red-600 hover:bg-red-50 hover:text-red-700"
+              onClick={() => void clearCart()}
+            >
+              <Trash2 size={16} />
+              Очистить
+            </Button>
+          ) : null}
+        </div>
 
-        {activeProcurement ? (
-          <Card className="border-blue-100 bg-blue-50/50 !p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-              Сбор
-            </p>
-            <p className="mt-1 text-sm font-semibold text-slate-900">
-              {activeProcurement.title}
-            </p>
-            <div className="mt-3">
-              <ProcurementProgress procurement={activeProcurement} size="sm" />
-            </div>
-          </Card>
-        ) : null}
+        <CartProcurementBlock />
 
         <Card className="!p-4">
           <div className="flex items-start gap-3">
@@ -215,7 +239,7 @@ export const CartPage = () => {
               </Link>
             ) : (
               <Button type="button" fullWidth size="lg" disabled>
-                {!pickupPointId ? "Выберите пункт выдачи" : "Превышен лимит веса"}
+                {checkoutHint}
               </Button>
             )}
           </div>

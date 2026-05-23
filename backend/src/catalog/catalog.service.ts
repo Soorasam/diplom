@@ -75,7 +75,7 @@ export class CatalogService {
     };
   }
 
-  /** Выбор сбора для оформления заказа — прогресс не меняется до checkout */
+  /** Вступление в открытый сбор (можно оформлять несколько заказов, пока сбор open) */
   async joinRound(user: User, roundId: string) {
     const round = await this.prisma.round.findUnique({ where: { id: roundId } });
     if (!round) throw new NotFoundException('Сбор не найден');
@@ -87,19 +87,39 @@ export class CatalogService {
       throw new BadRequestException('Достигнут лимит веса сбора');
     }
 
+    await this.prisma.roundParticipant.upsert({
+      where: {
+        uq_round_participant_user_round: { userId: user.id, roundId },
+      },
+      create: { userId: user.id, roundId },
+      update: {},
+    });
+
     return {
       roundId,
       roundIds: await this.listUserRoundIds(user.id),
     };
   }
 
+  /** Сборы, в которые пользователь вступил (для каталога и корзины) */
   async listUserRoundIds(userId: string) {
-    const orders = await this.prisma.order.findMany({
+    const rows = await this.prisma.roundParticipant.findMany({
       where: { userId },
       select: { roundId: true },
-      distinct: ['roundId'],
+      orderBy: { joinedAt: 'desc' },
     });
-    return orders.map((o) => o.roundId);
+    return rows.map((r) => r.roundId);
+  }
+
+  async assertUserJoinedRound(userId: string, roundId: string) {
+    const participant = await this.prisma.roundParticipant.findUnique({
+      where: {
+        uq_round_participant_user_round: { userId, roundId },
+      },
+    });
+    if (!participant) {
+      throw new BadRequestException('Сначала вступите в сбор');
+    }
   }
 
   async getRound(id: string) {

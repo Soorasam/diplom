@@ -91,13 +91,6 @@ export const InterfaceModeSwitch = ({
         })}
       </div>
 
-      <p className="mt-3 text-center text-xs text-slate-500">
-        Сейчас открыт интерфейс{" "}
-        <span className="font-semibold text-slate-700">
-          {activeMode === "driver" ? "водителя" : "жителя"}
-        </span>
-      </p>
-
       {error ? (
         <p className="mt-2 rounded-xl bg-red-50 px-3 py-2 text-center text-xs text-red-700">
           {error}

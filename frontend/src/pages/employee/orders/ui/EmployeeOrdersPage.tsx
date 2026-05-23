@@ -10,6 +10,7 @@ import { useNetworkStore } from "@/features/offline/model/network-store"
 import { useOfflineQueueStore } from "@/features/offline/model/offline-queue-store"
 import { Input } from "@/shared/ui/input/Input"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
@@ -39,7 +40,7 @@ export const EmployeeOrdersPage = () => {
   }, [orders, query])
 
   return (
-    <div className="flex flex-col gap-4">
+    <PageShell>
       <PageHeader
         title="Заказы в выдаче"
         subtitle="Поиск по жителю, номеру заказа или товару"
@@ -146,7 +147,7 @@ export const EmployeeOrdersPage = () => {
           }
         />
       )}
-    </div>
+    </PageShell>
   )
 }
 

@@ -4,7 +4,7 @@ import { routes } from "@/shared/config/routes"
 import { Card } from "@/shared/ui/card/Card"
 
 export const DriverApplyGuest = () => (
-  <div className="p-4">
+  <div>
     <Card>
       <p className="text-sm font-semibold text-slate-900">Нужен вход</p>
       <p className="mt-1 text-sm text-slate-600">

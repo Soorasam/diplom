@@ -11,6 +11,7 @@ import {
 } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
+import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { participateInProcurement } from "@/features/procurement/lib/participate-in-procurement"
 import {
@@ -42,6 +43,7 @@ export const ActiveProcurementsPage = () => {
   const { data: procurements, isLoading } = useActiveProcurements()
   const { data: memberships = [] } = useMyProcurementMemberships(user?.id)
   const join = useJoinProcurement(user?.id)
+  const { pushDraftItemsToServer } = useCartActions()
   const setProcurement = useCartStore((s) => s.setProcurement)
 
   const [viewMode, setViewMode] = useState<"list" | "map">("list")
@@ -77,7 +79,10 @@ export const ActiveProcurementsPage = () => {
     }
     setLimitMessage(null)
     try {
-      if (isAuthenticated) await join.mutateAsync(p.id)
+      if (isAuthenticated) {
+        await join.mutateAsync(p.id)
+        await pushDraftItemsToServer(p.id)
+      }
       participateInProcurement(navigate, setProcurement, p.id)
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Не удалось выбрать сбор"
@@ -161,7 +166,7 @@ export const ActiveProcurementsPage = () => {
         ) : (
           <ul className="flex flex-col gap-4">
             {filtered.map((p) => {
-              const hasOrder = memberships.includes(p.id)
+              const hasJoined = memberships.includes(p.id)
               const atLimit = p.currentWeightKg >= p.targetWeightKg
               return (
                 <li key={p.id}>
@@ -177,19 +182,22 @@ export const ActiveProcurementsPage = () => {
                       </span>
                     </Link>
                     <div className="border-t border-slate-100 bg-slate-50/80 px-4 py-3.5">
-                      {hasOrder ? (
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">
-                            <CheckCircle2 size={18} />
-                            Заказ оформлен
+                      {hasJoined ? (
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-emerald-700">
+                            <CheckCircle2 size={16} className="shrink-0" />
+                            Участвуете
                           </p>
-                          <Link
-                            to={routes.orders}
-                            className="inline-flex items-center gap-1 text-sm font-semibold text-blue-700"
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="!min-h-9 shrink-0 px-3"
+                            rightIcon={<ArrowRight size={14} />}
+                            onClick={() => participateInProcurement(navigate, setProcurement, p.id)}
                           >
-                            Мои заказы
-                            <ArrowRight size={16} />
-                          </Link>
+                            Каталог
+                          </Button>
                         </div>
                       ) : (
                         <Button

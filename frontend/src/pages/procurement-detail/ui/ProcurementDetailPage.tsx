@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link, useNavigate, useParams } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 import { ArrowRight, Map, Package } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
@@ -8,6 +8,7 @@ import {
   useMyProcurementMemberships,
   useProcurement,
 } from "@/entities/procurement/api/useProcurements"
+import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { participateInProcurement } from "@/features/procurement/lib/participate-in-procurement"
 import { routes } from "@/shared/config/routes"
@@ -32,11 +33,13 @@ export const ProcurementDetailPage = () => {
   const { data: procurement, isLoading } = useProcurement(id)
   const { data: memberships = [] } = useMyProcurementMemberships(user?.id)
   const join = useJoinProcurement(user?.id)
+  const { pushDraftItemsToServer } = useCartActions()
 
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [limitMessage, setLimitMessage] = useState<string | null>(null)
 
-  const hasOrder = memberships.includes(id)
+  const hasJoined = memberships.includes(id)
+  const isClosed = procurement?.status !== "open"
   const atLimit =
     procurement != null && procurement.currentWeightKg >= procurement.targetWeightKg
 
@@ -47,7 +50,10 @@ export const ProcurementDetailPage = () => {
       return
     }
     try {
-      if (isAuthenticated) await join.mutateAsync(procurement.id)
+      if (isAuthenticated) {
+        await join.mutateAsync(procurement.id)
+        await pushDraftItemsToServer(procurement.id)
+      }
       setConfirmOpen(false)
       participateInProcurement(navigate, setProcurement, procurement.id)
     } catch (e) {
@@ -119,36 +125,44 @@ export const ProcurementDetailPage = () => {
           />
         </Card>
 
-        {hasOrder ? (
-          <AlertBanner variant="success" title="Заказ в этом сборе уже оформлен">
-            Отслеживайте статус в разделе «Заказы».
+        {hasJoined && !isClosed ? (
+          <AlertBanner variant="success" title="Вы участвуете в сборе">
+            Можно оформлять несколько заказов, пока сбор открыт. Закрытые сборы не принимают
+            новые заказы.
+          </AlertBanner>
+        ) : null}
+        {isClosed ? (
+          <AlertBanner variant="warning" title="Сбор закрыт">
+            Новые заказы в этот сбор недоступны.
           </AlertBanner>
         ) : null}
       </PageShell>
 
       <StickyActionBar>
-        {hasOrder ? (
-          <Link to={routes.orders} className="block">
-            <Button
-              type="button"
-              fullWidth
-              size="lg"
-              variant="outline"
-              rightIcon={<ArrowRight size={18} />}
-            >
-              Мои заказы
-            </Button>
-          </Link>
+        {hasJoined && !isClosed ? (
+          <Button
+            type="button"
+            fullWidth
+            size="lg"
+            rightIcon={<ArrowRight size={18} />}
+            onClick={() => participateInProcurement(navigate, setProcurement, procurement.id)}
+          >
+            Перейти в каталог
+          </Button>
         ) : (
           <Button
             type="button"
             fullWidth
             size="lg"
-            disabled={!isAuthenticated || atLimit || join.isPending}
+            disabled={!isAuthenticated || atLimit || isClosed || join.isPending}
             leftIcon={<Package size={18} />}
             onClick={() => setConfirmOpen(true)}
           >
-            {atLimit ? "Лимит веса достигнут" : "Участвовать в сборе"}
+            {isClosed
+              ? "Сбор закрыт"
+              : atLimit
+                ? "Лимит веса достигнут"
+                : "Участвовать в сборе"}
           </Button>
         )}
       </StickyActionBar>

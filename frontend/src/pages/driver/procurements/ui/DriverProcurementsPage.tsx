@@ -15,6 +15,7 @@ import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { Input } from "@/shared/ui/input/Input"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 
 export const DriverProcurementsPage = () => {
@@ -42,7 +43,7 @@ export const DriverProcurementsPage = () => {
     title.trim().length > 5 && Boolean(effectiveRouteId) && Boolean(closesAt)
 
   return (
-    <div className="flex flex-col gap-4">
+    <PageShell>
       <PageHeader title="Мои сборы" subtitle="Водитель создает и закрывает свои сборы" />
 
       <Card className="border-blue-100 bg-blue-50/40">
@@ -140,6 +141,6 @@ export const DriverProcurementsPage = () => {
           ))}
         </ul>
       )}
-    </div>
+    </PageShell>
   )
 }

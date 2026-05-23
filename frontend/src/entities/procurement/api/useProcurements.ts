@@ -62,6 +62,11 @@ export const useJoinProcurement = (userId?: string) => {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
+      if (userId) {
+        void qc.invalidateQueries({
+          queryKey: queryKeys.procurements.memberships(userId),
+        })
+      }
     },
   })
 }

@@ -10,6 +10,7 @@ import { Badge } from "@/shared/ui/badge/Badge"
 import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 
 const deliveryModeLabel: Record<DeliveryMode, string> = {
@@ -60,22 +61,24 @@ export const DriverRoutePage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-10">
-        <Spinner />
-      </div>
+      <PageShell>
+        <div className="flex justify-center py-10">
+          <Spinner />
+        </div>
+      </PageShell>
     )
   }
 
   if (!activeRoute) {
     return (
-      <div className="flex flex-col gap-4">
+      <PageShell>
         <PageHeader title="Маршрут" subtitle="Точки доставки" />
         <EmptyState
           icon={MapPin}
           title="Нет активного маршрута"
           description="Маршрут появится после назначения диспетчером"
         />
-      </div>
+      </PageShell>
     )
   }
 
@@ -98,14 +101,14 @@ export const DriverRoutePage = () => {
   )
   if (stops.length === 0) {
     return (
-      <div className="flex flex-col gap-4">
+      <PageShell>
         <PageHeader title={activeRoute.name} subtitle="Точки доставки" />
         <EmptyState
           icon={MapPin}
           title="Точки маршрута не заданы"
           description="Диспетчер добавит пункты выдачи после формирования рейса"
         />
-      </div>
+      </PageShell>
     )
   }
 
@@ -124,7 +127,7 @@ export const DriverRoutePage = () => {
   const autoCompleted = completedStops === stops.length
 
   return (
-    <div className="flex flex-col gap-4">
+    <PageShell>
       <PageHeader
         title={activeRoute.name}
         subtitle="Водитель видит точки, адрес следующей доставки и текущий статус"
@@ -223,6 +226,6 @@ export const DriverRoutePage = () => {
           Все действия по приемке подтверждает ПВЗ. Водитель видит маршрут и следующую точку.
         </p>
       )}
-    </div>
+    </PageShell>
   )
 }

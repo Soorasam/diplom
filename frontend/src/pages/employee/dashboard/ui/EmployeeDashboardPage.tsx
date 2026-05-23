@@ -2,10 +2,11 @@ import { CheckCircle2, Package, WifiOff } from "lucide-react"
 
 import { Card } from "@/shared/ui/card/Card"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 
 export const EmployeeDashboardPage = () => {
   return (
-    <div className="flex flex-col gap-4">
+    <PageShell>
       <PageHeader
         title="Сводка"
         subtitle="Быстрые действия для выдачи в ПВЗ"
@@ -51,7 +52,7 @@ export const EmployeeDashboardPage = () => {
           </div>
         </div>
       </Card>
-    </div>
+    </PageShell>
   )
 }
 

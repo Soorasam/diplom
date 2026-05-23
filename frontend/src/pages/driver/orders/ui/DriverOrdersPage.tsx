@@ -10,6 +10,7 @@ import { Badge } from "@/shared/ui/badge/Badge"
 import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 
 export const DriverOrdersPage = () => {
@@ -22,7 +23,7 @@ export const DriverOrdersPage = () => {
   })
 
   return (
-    <div className="flex flex-col gap-4">
+    <PageShell>
       <PageHeader
         title="Заказы на маршруте"
         subtitle="Статусы доставки по точкам"
@@ -63,6 +64,6 @@ export const DriverOrdersPage = () => {
           description="На текущем маршруте нет назначенных заказов"
         />
       )}
-    </div>
+    </PageShell>
   )
 }

@@ -20,6 +20,7 @@ interface CartState {
   setQuantity: (productId: string, quantity: number) => void
   setPickupPoint: (id: string) => void
   setProcurement: (id: string) => void
+  clearProcurement: () => void
   setComment: (comment: string) => void
   setFromServer: (items: CartItem[], procurementId?: string | null) => void
   pruneInvalidProducts: (validProductIds: string[]) => void
@@ -83,6 +84,10 @@ export const useCartStore = create<CartState>()(
         logEvent("cart:setProcurement", { procurementId: id })
         set({ procurementId: id })
       },
+      clearProcurement: () => {
+        logEvent("cart:clearProcurement")
+        set({ procurementId: null })
+      },
       setComment: (comment) => {
         logEvent("cart:setComment", { comment })
         set({ comment })
@@ -90,9 +95,18 @@ export const useCartStore = create<CartState>()(
 
       setFromServer: (items, procurementId) => {
         logEvent("cart:syncFromServer", { count: items.length })
-        set({
-          items,
-          procurementId: procurementId ?? null,
+        set((s) => {
+          const serverIds = new Set(items.map((i) => i.productId))
+          const draftOnly = s.items.filter(
+            (i) => !i.lineId && !serverIds.has(i.productId),
+          )
+          return {
+            items: [...items, ...draftOnly],
+            procurementId:
+              procurementId != null && procurementId !== ""
+                ? procurementId
+                : s.procurementId,
+          }
         })
       },
 

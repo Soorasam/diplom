@@ -65,13 +65,13 @@ export const AdminDriverApplicationsPage = () => {
   const selected = queue.find((x) => x.a.id === selectedId) ?? queue[0] ?? null
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 md:gap-6">
       <PageHeader
         title="Заявки водителей"
         subtitle="Проверка документов и решение по статусу"
       />
 
-      <Card className="border-slate-200">
+      <Card>
         <Input
           label="Поиск"
           placeholder="Имя, email, машина, статус…"
@@ -83,8 +83,8 @@ export const AdminDriverApplicationsPage = () => {
       {filtered.length === 0 ? (
         <EmptyState icon={FileText} title="Заявок нет" />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
-          <Card padding="none" className="overflow-hidden border-slate-200">
+        <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,320px)_1fr] lg:gap-6">
+          <Card padding="none" className="overflow-hidden">
             <div className="border-b border-slate-200 bg-slate-50 px-4 py-3">
               <p className="text-sm font-semibold text-slate-900">
                 Очередь проверок
@@ -147,14 +147,14 @@ export const AdminDriverApplicationsPage = () => {
             )}
           </Card>
 
-          <Card className="border-slate-200">
+          <Card>
             {selected ? (
-              <div className="grid gap-6 xl:grid-cols-2">
+              <div className="flex flex-col gap-6">
                 <div>
                   <p className="text-sm font-semibold text-slate-900">
                     Данные водителя
                   </p>
-                  <div className="mt-3 space-y-2 text-sm text-slate-700">
+                  <div className="mt-4 space-y-2.5 text-sm text-slate-700">
                     <p>
                       <span className="text-slate-500">Имя:</span>{" "}
                       <span className="font-medium text-slate-900">
@@ -183,7 +183,7 @@ export const AdminDriverApplicationsPage = () => {
                     ) : null}
                   </div>
 
-                  <div className="mt-5 flex flex-wrap gap-2">
+                  <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     <Button
                       type="button"
                       className="bg-emerald-600! hover:bg-emerald-500!"
@@ -199,7 +199,7 @@ export const AdminDriverApplicationsPage = () => {
                     </Button>
                     <Button
                       type="button"
-                      variant="secondary"
+                      variant="danger"
                       leftIcon={<X size={16} />}
                       disabled={
                         !selected || setStatus.isPending || rejectionReason.trim().length < 5
@@ -218,7 +218,7 @@ export const AdminDriverApplicationsPage = () => {
                     </Button>
                   </div>
                   <Input
-                    className="mt-3"
+                    className="mt-4"
                     label="Причина отказа (обязательно для reject)"
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
@@ -226,10 +226,10 @@ export const AdminDriverApplicationsPage = () => {
                   />
                 </div>
 
-                <div>
+                <div className="border-t border-slate-100 pt-6">
                   <p className="text-sm font-semibold text-slate-900">Документы</p>
                   {(selected.a.documents ?? []).length > 0 ? (
-                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                       {selected.a.documents!.map((doc) => (
                         <button
                           type="button"

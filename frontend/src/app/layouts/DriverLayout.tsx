@@ -1,50 +1,64 @@
-import { Link, Outlet, useLocation } from "react-router-dom"
-import { LayoutDashboard, ListOrdered, Map, Route, ShoppingBasket, User } from "lucide-react"
+import { Outlet } from "react-router-dom"
+import {
+  LayoutDashboard,
+  ListOrdered,
+  Map,
+  Route,
+  ShoppingBasket,
+  User,
+} from "lucide-react"
 
 import { routes } from "@/shared/config/routes"
-import { cn } from "@/shared/lib/cn"
+import { MobilePageLayout } from "@/shared/ui/mobile-page-layout/MobilePageLayout"
+import {
+  MobileBottomNav,
+  type MobileNavTab,
+} from "@/widgets/mobile-bottom-nav/ui/MobileBottomNav"
 
-const tabs = [
-  { label: "Сводка", path: routes.driver.root, icon: LayoutDashboard },
-  { label: "Сборы", path: routes.driver.procurements, icon: ShoppingBasket },
-  { label: "Маршрут", path: routes.driver.route, icon: Route },
-  { label: "Заказы", path: routes.driver.orders, icon: ListOrdered },
-  { label: "Карта", path: routes.driver.map, icon: Map },
-  { label: "Профиль", path: routes.driver.profile, icon: User },
+const tabs: MobileNavTab[] = [
+  {
+    label: "Сводка",
+    path: routes.driver.root,
+    icon: LayoutDashboard,
+    match: (p) => p === routes.driver.root,
+  },
+  {
+    label: "Сборы",
+    path: routes.driver.procurements,
+    icon: ShoppingBasket,
+    match: (p) => p.startsWith(routes.driver.procurements),
+  },
+  {
+    label: "Маршрут",
+    path: routes.driver.route,
+    icon: Route,
+    match: (p) => p.startsWith(routes.driver.route),
+  },
+  {
+    label: "Заказы",
+    path: routes.driver.orders,
+    icon: ListOrdered,
+    match: (p) => p.startsWith(routes.driver.orders),
+  },
+  {
+    label: "Карта",
+    path: routes.driver.map,
+    icon: Map,
+    match: (p) => p.startsWith(routes.driver.map),
+  },
+  {
+    label: "Профиль",
+    path: routes.driver.profile,
+    icon: User,
+    match: (p) => p.startsWith(routes.driver.profile),
+  },
 ]
 
-export const DriverLayout = () => {
-  const { pathname } = useLocation()
-
-  return (
-    <div className="flex min-h-screen flex-col bg-slate-100">
-      <main className="mx-auto w-full max-w-lg flex-1 overflow-y-auto px-4 py-4 pb-24 safe-top">
-        <Outlet />
-      </main>
-
-      <nav className="fixed bottom-0 left-[50vw] z-50 w-screen -translate-x-1/2 border-t border-slate-200 bg-white safe-bottom">
-        <div className="mx-auto flex h-16 w-full max-w-lg items-center justify-around">
-          {tabs.map((tab) => {
-            const active =
-              tab.path === routes.driver.root
-                ? pathname === tab.path
-                : pathname.startsWith(tab.path)
-            return (
-              <Link
-                key={tab.path}
-                to={tab.path}
-                className={cn(
-                  "flex min-w-[3.25rem] flex-col items-center gap-0.5 text-[10px] font-medium",
-                  active ? "text-blue-600" : "text-slate-400",
-                )}
-              >
-                <tab.icon size={22} />
-                {tab.label}
-              </Link>
-            )
-          })}
-        </div>
-      </nav>
-    </div>
-  )
-}
+export const DriverLayout = () => (
+  <MobilePageLayout>
+    <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col safe-top">
+      <Outlet />
+    </main>
+    <MobileBottomNav tabs={tabs} />
+  </MobilePageLayout>
+)

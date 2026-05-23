@@ -11,6 +11,7 @@ import { formatShortDate } from "@/shared/lib/format"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Card } from "@/shared/ui/card/Card"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 
 const deliveryModeLabel = {
@@ -59,7 +60,7 @@ export const DriverDashboardPage = () => {
   const isLoading = loadingRoutes || loadingOrders
 
   return (
-    <div className="flex flex-col gap-4">
+    <PageShell>
       <PageHeader
         title="Сводка на сегодня"
         subtitle={user?.name ?? "Водитель"}
@@ -155,6 +156,6 @@ export const DriverDashboardPage = () => {
           ) : null}
         </>
       )}
-    </div>
+    </PageShell>
   )
 }

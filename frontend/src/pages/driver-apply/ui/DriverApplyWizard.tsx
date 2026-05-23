@@ -77,7 +77,7 @@ export const DriverApplyWizard = ({ myApp }: Props) => {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 pb-8">
+    <div className="flex flex-col gap-4">
       <PageHeader
         title="Стать водителем"
         subtitle="Заявка с автосохранением и проверкой документов"

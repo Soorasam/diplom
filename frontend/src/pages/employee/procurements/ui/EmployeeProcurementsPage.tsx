@@ -7,13 +7,14 @@ import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 
 export const EmployeeProcurementsPage = () => {
   const { data: list = [] } = useAllProcurements()
   const approve = useApproveProcurementReceipt("employee")
 
   return (
-    <div className="flex flex-col gap-4">
+    <PageShell>
       <PageHeader
         title="Доставленные сборы"
         subtitle="Сотрудник ПВЗ подтверждает приемку товара"
@@ -55,7 +56,7 @@ export const EmployeeProcurementsPage = () => {
           ))}
         </ul>
       )}
-    </div>
+    </PageShell>
   )
 }
 

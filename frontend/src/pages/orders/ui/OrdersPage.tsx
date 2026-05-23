@@ -7,6 +7,7 @@ import { routes } from "@/shared/config/routes"
 import { formatDate, formatPrice } from "@/shared/lib/format"
 import { orderStatusLabel, orderStatusVariant } from "@/shared/lib/order-status"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
@@ -17,8 +18,12 @@ export const OrdersPage = () => {
   const { data: orders, isLoading } = useOrders(user?.id)
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <PageHeader title="Мои заказы" subtitle="История и статус сборов" />
+    <PageShell>
+      <PageHeader
+        title="Мои заказы"
+        subtitle="История и статус сборов"
+        backTo={routes.profile}
+      />
 
       {isLoading ? (
         <div className="flex justify-center py-10">
@@ -57,6 +62,6 @@ export const OrdersPage = () => {
           description="Оформите первый заказ из каталога"
         />
       )}
-    </div>
+    </PageShell>
   )
 }
