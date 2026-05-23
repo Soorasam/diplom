@@ -28,10 +28,13 @@ export async function ensureDemoDelivery(prisma: PrismaClient) {
 
   if (!round) {
     const route =
-      (await prisma.route.findFirst({ orderBy: { title: 'asc' } })) ??
+      (await prisma.route.findFirst({
+        where: { title: 'Демо-рейс (ПВЗ)' },
+      })) ??
       (await prisma.route.create({
         data: {
-          title: 'Якутск → Верхневилюйский улус',
+          title: 'Демо-рейс (ПВЗ)',
+          description: 'Служебный маршрут для демонстрации приёма на ПВЗ',
           transportType: 'winter_road',
         },
       }));

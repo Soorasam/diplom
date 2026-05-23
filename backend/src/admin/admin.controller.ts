@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { User, UserRole } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -7,6 +7,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { UpdateOrderStatusDto } from '../orders/dto/update-order-status.dto';
 import { OrdersService } from '../orders/orders.service';
 import { AdminService } from './admin.service';
+import { CreateRouteDto } from './dto/create-route.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -40,6 +41,11 @@ export class AdminController {
   @Get('routes')
   routes() {
     return this.admin.listRoutes();
+  }
+
+  @Post('routes')
+  createRoute(@Body() dto: CreateRouteDto) {
+    return this.admin.createRoute(dto);
   }
 
   @Get('settlements')

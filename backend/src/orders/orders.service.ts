@@ -4,10 +4,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { OrderStatus, User, UserRole } from '@prisma/client';
+import { OrderStatus, RoundStatus, User, UserRole } from '@prisma/client';
 import { assertOrderStatusTransition } from '../common/order-status-transitions';
 import { mapOrderDetail, mapOrderListItem, OrderWithRelations } from '../common/order-mapper';
 import { ORDER_STATUS_LABELS } from '../common/order-labels';
+import { DeliveryStopsService } from '../logistics/delivery-stops.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 
@@ -23,7 +24,10 @@ type OrderWithUser = OrderWithRelations & {
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private deliveryStops: DeliveryStopsService,
+  ) {}
 
   private async findOrderOrThrow(id: string): Promise<OrderWithUser> {
     const order = await this.prisma.order.findUnique({
@@ -108,7 +112,43 @@ export class OrdersService {
       },
       include: orderInclude,
     });
+
+    await this.syncDeliveryStopAfterStatusChange(
+      order.roundId,
+      order.pickupPointId,
+      dto.status,
+    );
+
     return this.withCustomer(updated as OrderWithUser);
+  }
+
+  /** Синхронизация точек маршрута водителя при смене статуса (в т.ч. из админки) */
+  private async syncDeliveryStopAfterStatusChange(
+    roundId: string | null | undefined,
+    pickupPointId: string | null | undefined,
+    newStatus: OrderStatus,
+  ) {
+    if (!roundId || !pickupPointId) return;
+
+    await this.deliveryStops.syncStopsForRound(roundId);
+
+    if (newStatus === OrderStatus.in_transit) {
+      await this.deliveryStops.markStopInProgress(roundId, pickupPointId);
+      return;
+    }
+
+    if (newStatus === OrderStatus.at_pickup || newStatus === OrderStatus.delivered) {
+      const completion = await this.deliveryStops.refreshStopCompletion(
+        roundId,
+        pickupPointId,
+      );
+      if (completion.roundCompleted) {
+        await this.prisma.round.update({
+          where: { id: roundId },
+          data: { status: RoundStatus.fulfilled },
+        });
+      }
+    }
   }
 
   private assertStaffCanAccessOrder(user: User, order: OrderWithRelations) {

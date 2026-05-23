@@ -47,15 +47,8 @@ export async function uploadFromAsset(fileName: string, objectKey: string): Prom
   return uploadProductImage(objectKey, body, contentType);
 }
 
+/** @deprecated Используйте seed-catalog + файлы по slug из seed-products.ts */
 export type SeedProductImage = {
   objectKey: string;
   assetFile: string;
 };
-
-export const SEED_PRODUCT_IMAGES: SeedProductImage[] = [
-  { objectKey: 'grechka.png', assetFile: 'grechka.png' },
-  { objectKey: 'condensed-milk.png', assetFile: 'condensed-milk.png' },
-  { objectKey: 'laundry-powder.png', assetFile: 'laundry-powder.png' },
-  { objectKey: 'paracetamol.png', assetFile: 'paracetamol.png' },
-  { objectKey: 'sealant.png', assetFile: 'sealant.png' },
-];

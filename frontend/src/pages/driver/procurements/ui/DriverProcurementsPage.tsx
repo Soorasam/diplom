@@ -72,14 +72,24 @@ export const DriverProcurementsPage = () => {
               <select
                 value={effectiveRouteId}
                 onChange={(e) => setRouteId(e.target.value)}
-                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                disabled={routeList.length === 0}
+                className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-50 disabled:text-slate-400"
               >
-                {routeList.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name}
-                  </option>
-                ))}
+                {routeList.length === 0 ? (
+                  <option value="">Нет маршрутов в системе</option>
+                ) : (
+                  routeList.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))
+                )}
               </select>
+              {routeList.length === 0 ? (
+                <p className="mt-1 text-xs text-amber-700">
+                  Сначала добавьте маршрут доставки в админ-панели (раздел «Маршруты»).
+                </p>
+              ) : null}
             </label>
 
             <Input

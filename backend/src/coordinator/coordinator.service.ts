@@ -23,7 +23,7 @@ export class CoordinatorService {
   ) {}
 
   async listRoutes() {
-    const [routes, pickupPoints, orders, allStops] = await Promise.all([
+    const [routes, orders, allStops] = await Promise.all([
       this.prisma.route.findMany({
         orderBy: { title: 'asc' },
         include: {
@@ -33,14 +33,9 @@ export class CoordinatorService {
           },
         },
       }),
-      this.prisma.pickupPoint.findMany({
-        include: { settlement: true },
-      }),
       this.prisma.order.findMany({
         where: {
-          status: {
-            notIn: [OrderStatus.cancelled, OrderStatus.delivered],
-          },
+          status: { not: OrderStatus.cancelled },
           pickupPointId: { not: null },
         },
         include: {
@@ -64,7 +59,7 @@ export class CoordinatorService {
       stopsByRound.set(stop.roundId, list);
     }
 
-    return routes.map((route) => {
+    const mapped = routes.map((route) => {
       const latest = route.rounds[0];
       const transportType = route.transportType;
       const deliveryMode =
@@ -96,16 +91,27 @@ export class CoordinatorService {
             roundOrders,
             s.pickupPointId,
           );
+          const derivedStatus = this.deriveStopUiStatus(s, counts);
+          if (
+            derivedStatus === 'completed' &&
+            s.status !== DeliveryStopStatus.completed
+          ) {
+            void this.deliveryStops
+              .refreshStopCompletion(latest.id, s.pickupPointId)
+              .then(async (result) => {
+                if (result.roundCompleted) {
+                  await this.prisma.round.update({
+                    where: { id: latest.id },
+                    data: { status: RoundStatus.fulfilled },
+                  });
+                }
+              });
+          }
           return {
             pickupPointId: s.pickupPointId,
             label: s.pickupPoint.coordinatorName,
             settlementName: s.pickupPoint.settlement.name,
-            status:
-              s.status === DeliveryStopStatus.completed
-                ? 'completed'
-                : s.status === DeliveryStopStatus.in_progress
-                  ? 'in_progress'
-                  : 'pending',
+            status: derivedStatus,
             totalOrders: counts.total,
             receivedOrders: counts.received,
             inTransitOrders: counts.inTransit,
@@ -114,8 +120,8 @@ export class CoordinatorService {
         });
 
         const allStopsDone =
-          stops.length > 0 &&
-          stops.every((s) => s.status === DeliveryStopStatus.completed);
+          deliveryStops.length > 0 &&
+          deliveryStops.every((s) => s.status === 'completed');
         const hasDelivery =
           roundOrders.some((o) => o.status === OrderStatus.in_transit) ||
           stops.some((s) => s.status !== DeliveryStopStatus.pending);
@@ -125,8 +131,6 @@ export class CoordinatorService {
         } else if (hasDelivery || latest.status === RoundStatus.closed) {
           status = 'active';
         }
-      } else if (latest?.status === RoundStatus.open) {
-        status = 'active';
       }
 
       const routeOrders = orders.filter((o) => o.round?.routeId === route.id);
@@ -141,16 +145,6 @@ export class CoordinatorService {
           destinations.push({ id: settlement.id, name: settlement.name });
         }
 
-        if (destinations.length === 0) {
-          for (const pp of pickupPoints) {
-            if (seenSettlementIds.has(pp.settlementId)) continue;
-            seenSettlementIds.add(pp.settlementId);
-            destinations.push({
-              id: pp.settlementId,
-              name: pp.settlement.name,
-            });
-          }
-        }
       }
 
       const points =
@@ -177,6 +171,19 @@ export class CoordinatorService {
         deliveryStops,
       };
     });
+
+    return mapped.filter((route) => this.isRouteVisibleToDriver(route));
+  }
+
+  /** Водителю — только маршруты с реальной доставкой, не пустые шаблоны из seed */
+  private isRouteVisibleToDriver(route: {
+    status: 'planned' | 'active' | 'completed';
+    deliveryStops?: { pickupPointId: string }[];
+    points: { lat: number; lng: number }[];
+  }): boolean {
+    if ((route.deliveryStops?.length ?? 0) > 0) return true;
+    if (route.status === 'active' || route.status === 'completed') return true;
+    return route.points.length > 1;
   }
 
   async startDelivery(roundId: string) {
@@ -236,6 +243,24 @@ export class CoordinatorService {
       ordersCount: orders.length,
       inTransitCount: inTransit,
     };
+  }
+
+  /** Статус точки для UI: учитывает заказы, если в БД точка ещё не обновлена */
+  private deriveStopUiStatus(
+    stop: { status: DeliveryStopStatus },
+    counts: ReturnType<DeliveryStopsService['orderCountsForStop']>,
+  ): 'pending' | 'in_progress' | 'completed' {
+    if (stop.status === DeliveryStopStatus.completed) return 'completed';
+    if (
+      counts.total > 0 &&
+      counts.inTransit === 0 &&
+      counts.received >= counts.total
+    ) {
+      return 'completed';
+    }
+    if (counts.inTransit > 0 || counts.received > 0) return 'in_progress';
+    if (stop.status === DeliveryStopStatus.in_progress) return 'in_progress';
+    return 'pending';
   }
 
   mapRound(round: {

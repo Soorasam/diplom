@@ -35,9 +35,16 @@ export class EventLogInterceptor implements NestInterceptor {
               : JSON.stringify(data).slice(0, 300) + (JSON.stringify(data).length > 300 ? '…' : '');
           this.logger.log(`← ${method} ${url} ${ms}ms ${preview}`);
         },
-        error: (err: Error) => {
+        error: (err: Error & { status?: number }) => {
           const ms = Date.now() - started;
-          this.logger.error(`✗ ${method} ${url} ${ms}ms ${err.message}`);
+          const msg = `✗ ${method} ${url} ${ms}ms ${err.message}`;
+          const isStaleRefresh =
+            method === 'POST' && url.includes('/auth/refresh');
+          if (isStaleRefresh) {
+            this.logger.warn(msg);
+          } else {
+            this.logger.error(msg);
+          }
         },
       }),
     );

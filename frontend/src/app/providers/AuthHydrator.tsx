@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 
 import { useAuthStore } from "@/app/model/auth-store"
-import { getAccessToken } from "@/shared/api/auth-storage"
+import { ensureValidAccessToken } from "@/shared/api/client"
 
 /** После восстановления сессии подтягивает профиль с сервера */
 export const AuthHydrator = () => {
@@ -11,10 +11,18 @@ export const AuthHydrator = () => {
 
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated) return
-    if (!getAccessToken()) return
-    void refreshUser().catch(() => {
-      useAuthStore.getState().logout()
-    })
+    void (async () => {
+      const ok = await ensureValidAccessToken()
+      if (!ok) {
+        useAuthStore.getState().logout()
+        return
+      }
+      try {
+        await refreshUser()
+      } catch {
+        useAuthStore.getState().logout()
+      }
+    })()
   }, [hasHydrated, isAuthenticated, refreshUser])
 
   return null

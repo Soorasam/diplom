@@ -34,15 +34,51 @@ export type AdminPickupPoint = PickupPoint & {
   employees: { id: string; name: string; email: string; phone: string }[]
 }
 
+export type AdminRouteRow = {
+  id: string
+  title: string
+  transportType: string
+  description?: string | null
+  seasonNote?: string | null
+}
+
+export type CreateRoutePayload = {
+  title: string
+  description?: string
+  transportType: "winter_road" | "river" | "highway"
+  seasonNote?: string
+}
+
+const mapAdminRoute = (r: AdminRouteRow): DeliveryRoute & {
+  description?: string | null
+  seasonNote?: string | null
+  transportType: string
+} => ({
+  id: r.id,
+  name: r.title,
+  fromSettlementId: "",
+  toSettlementIds: [],
+  deliveryMode:
+    r.transportType === "river"
+      ? "river"
+      : r.transportType === "winter_road"
+        ? "winter_road"
+        : "mixed",
+  status: "planned",
+  points: [],
+  description: r.description,
+  seasonNote: r.seasonNote,
+  transportType: r.transportType,
+})
+
 export type AdminTicket = {
   id: string
-  userId: string
-  userName: string
-  userEmail: string
   title: string
   body: string
   read: boolean
   createdAt: string
+  kind: "dispute" | "other"
+  reporterName: string | null
 }
 
 export const adminApi = {
@@ -80,31 +116,12 @@ export const adminApi = {
     ),
 
   getRoutes: async () => {
-    const list = await http.get<
-      {
-        id: string
-        title: string
-        transportType: string
-        description?: string | null
-      }[]
-    >("/admin/routes", true)
-    return list.map(
-      (r): DeliveryRoute => ({
-        id: r.id,
-        name: r.title,
-        fromSettlementId: "",
-        toSettlementIds: [],
-        deliveryMode:
-          r.transportType === "river"
-            ? "river"
-            : r.transportType === "winter_road"
-              ? "winter_road"
-              : "mixed",
-        status: "active",
-        points: [],
-      }),
-    )
+    const list = await http.get<AdminRouteRow[]>("/admin/routes", true)
+    return list.map(mapAdminRoute)
   },
+
+  createRoute: (payload: CreateRoutePayload) =>
+    http.post<AdminRouteRow>("/admin/routes", payload, true).then(mapAdminRoute),
 
   getSettlements: async () => {
     const list = await http.get<
@@ -163,27 +180,7 @@ export const adminApi = {
     http.patch<BackendRound>(`/rounds/${id}/close`, {}, true).then(mapRound),
 
   getNotifications: async (): Promise<AdminTicket[]> => {
-    const list = await http.get<
-      {
-        id: string
-        userId: string
-        title: string
-        body: string
-        read: boolean
-        createdAt: string
-        user?: { id: string; email: string; fullName: string | null; phone: string | null }
-      }[]
-    >("/admin/notifications", true)
-    return list.map((n) => ({
-      id: n.id,
-      userId: n.userId,
-      userName: n.user?.fullName ?? n.user?.email ?? n.userId,
-      userEmail: n.user?.email ?? "",
-      title: n.title,
-      body: n.body,
-      read: n.read,
-      createdAt: n.createdAt,
-    }))
+    return http.get<AdminTicket[]>("/admin/notifications", true)
   },
 
   resolveNotification: (id: string) => http.patch(`/admin/notifications/${id}/resolve`, {}, true),

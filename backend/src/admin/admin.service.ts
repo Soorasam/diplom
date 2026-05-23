@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
+import { CreateRouteDto } from './dto/create-route.dto';
 import { CatalogService } from '../catalog/catalog.service';
 import { calcRoundProgressPercent, decimalToNumber } from '../common/order-labels';
 import { mapOrderDetail, OrderWithRelations } from '../common/order-mapper';
@@ -89,6 +90,17 @@ export class AdminService {
     return this.prisma.route.findMany({ orderBy: { title: 'asc' } });
   }
 
+  createRoute(dto: CreateRouteDto) {
+    return this.prisma.route.create({
+      data: {
+        title: dto.title.trim(),
+        description: dto.description?.trim() || null,
+        transportType: dto.transportType,
+        seasonNote: dto.seasonNote?.trim() || null,
+      },
+    });
+  }
+
   listSettlements() {
     return this.prisma.settlement.findMany({ orderBy: { name: 'asc' } });
   }
@@ -138,13 +150,39 @@ export class AdminService {
   }
 
   listNotifications() {
-    return this.prisma.notification.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 200,
-      include: {
-        user: { select: { id: true, email: true, fullName: true, phone: true } },
-      },
-    });
+    return this.prisma.notification
+      .findMany({
+        where: { user: { role: UserRole.admin } },
+        orderBy: { createdAt: 'desc' },
+        take: 200,
+        include: {
+          user: { select: { id: true, email: true, fullName: true, phone: true } },
+        },
+      })
+      .then((items) => items.map((n) => this.mapAdminNotification(n)));
+  }
+
+  /** Только уведомления админу; для споров — автор и текст отдельно */
+  private mapAdminNotification(n: {
+    id: string;
+    title: string;
+    body: string;
+    read: boolean;
+    createdAt: Date;
+    user: { id: string; email: string; fullName: string | null; phone: string | null };
+  }) {
+    const isDispute = n.title.startsWith('Спор по заказу');
+    const opened = n.body.match(/^Пользователь (.+?) открыл спор:\s*([\s\S]*)$/);
+
+    return {
+      id: n.id,
+      title: n.title,
+      body: isDispute && opened ? opened[2].trim() : n.body,
+      read: n.read,
+      createdAt: n.createdAt,
+      kind: isDispute ? ('dispute' as const) : ('other' as const),
+      reporterName: isDispute && opened ? opened[1].trim() : null,
+    };
   }
 
   async resolveNotification(id: string) {

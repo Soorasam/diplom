@@ -1,53 +1,22 @@
 /**
- * Загружает картинки в MinIO и прописывает imageUrl у товаров (если БД уже была засеяна).
+ * Загружает картинки в MinIO и прописывает imageUrl у товаров.
  * npm run storage:seed
  */
 import { PrismaClient } from '@prisma/client';
 
-import {
-  SEED_PRODUCT_IMAGES,
-  uploadFromAsset,
-} from '../prisma/lib/minio-seed';
+import { uploadSeedProductImages } from '../prisma/lib/seed-catalog';
 
 const prisma = new PrismaClient();
 
-const PRODUCT_NAMES = [
-  'Гречка, 1 кг',
-  'Сгущённое молоко, 380 г',
-  'Стиральный порошок, 3 кг',
-  'Парацетамол 500 мг',
-  'Герметик морозостойкий',
-] as const;
-
 async function main() {
-  const products = await prisma.product.findMany({
-    where: { name: { in: [...PRODUCT_NAMES] } },
-    orderBy: { name: 'asc' },
-  });
-
-  if (products.length === 0) {
-    console.log('Товары не найдены — сначала выполните prisma db seed');
+  const count = await prisma.product.count();
+  if (count === 0) {
+    console.log('Товары не найдены — сначала: npm run prisma:seed:catalog');
     return;
   }
 
-  const byName = new Map(products.map((p) => [p.name, p]));
-  const order = [...PRODUCT_NAMES];
-
-  for (let i = 0; i < order.length; i++) {
-    const name = order[i];
-    const product = byName.get(name);
-    const img = SEED_PRODUCT_IMAGES[i];
-    if (!product || !img) continue;
-
-    const imageUrl = await uploadFromAsset(img.assetFile, img.objectKey);
-    await prisma.product.update({
-      where: { id: product.id },
-      data: { imageUrl },
-    });
-    console.log(`  ${name} → ${imageUrl}`);
-  }
-
-  console.log('Картинки товаров обновлены.');
+  const { uploaded, missing } = await uploadSeedProductImages(prisma);
+  console.log(`Готово. Загружено: ${uploaded}, без файла: ${missing}`);
 }
 
 main()

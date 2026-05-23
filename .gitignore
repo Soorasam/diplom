@@ -52,3 +52,8 @@ frontend/.env.*.local
 *.njsproj
 *.sln
 *.sw?
+
+VKR_word
+
+# Архив дубликатов картинок seed (в репозитории только отдельные PNG)
+backend/prisma/seed-assets/products/assets.zip

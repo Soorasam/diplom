@@ -11,10 +11,12 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
+    "prisma:reset:accounts": "ts-node -P tsconfig.scripts.json prisma/reset-accounts-only.ts",
+    "prisma:seed:catalog": "ts-node -P tsconfig.scripts.json prisma/seed-catalog-only.ts",
     "prisma:studio": "prisma studio",
     "assets:fetch": "node scripts/fetch-seed-images.mjs",
     "assets:generate": "node scripts/generate-seed-images.mjs",
-    "storage:seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} scripts/seed-product-images.ts"
+    "storage:seed": "ts-node -P tsconfig.scripts.json scripts/seed-product-images.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1049.0",

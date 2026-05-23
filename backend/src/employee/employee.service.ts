@@ -262,6 +262,10 @@ export class EmployeeService {
       },
     });
 
+    if (order.roundId) {
+      await this.deliveryStops.refreshStopCompletion(order.roundId, pickupPointId);
+    }
+
     return { order: this.mapOrder(updated) };
   }
 

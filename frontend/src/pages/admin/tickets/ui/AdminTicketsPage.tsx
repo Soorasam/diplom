@@ -17,7 +17,7 @@ export const AdminTicketsPage = () => {
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Обращения"
-        subtitle="Уведомления пользователей из системы"
+        subtitle="Споры и заявки, направленные администратору"
       />
 
       {isLoading ? (
@@ -33,7 +33,10 @@ export const AdminTicketsPage = () => {
                   <div className="min-w-0">
                     <p className="font-semibold text-slate-900">{t.title}</p>
                     <p className="text-xs text-slate-500">
-                      {t.userName} · {t.userEmail} · {formatDate(t.createdAt)}
+                      {t.kind === "dispute" && t.reporterName
+                        ? `От: ${t.reporterName}`
+                        : "Система"}{" "}
+                      · {formatDate(t.createdAt)}
                     </p>
                     <p className="mt-2 text-sm text-slate-600">{t.body}</p>
                   </div>
@@ -41,7 +44,7 @@ export const AdminTicketsPage = () => {
                     {t.read ? "прочитано" : "новое"}
                   </Badge>
                 </div>
-                {!t.read && t.title.startsWith("Спор по заказу") ? (
+                {!t.read && t.kind === "dispute" ? (
                   <div className="mt-3">
                     <Button
                       size="sm"
@@ -61,7 +64,7 @@ export const AdminTicketsPage = () => {
         <EmptyState
           icon={MessageSquare}
           title="Обращений нет"
-          description="Появятся при создании уведомлений пользователям (например, по заявкам водителя)"
+          description="Появятся, когда житель откроет спор по заказу"
         />
       )}
     </div>

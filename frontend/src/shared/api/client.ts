@@ -38,7 +38,10 @@ async function refreshAccessToken(): Promise<string | null> {
       body: JSON.stringify({ refreshToken: refresh }),
     })
       .then(async (res) => {
-        if (!res.ok) return null
+        if (!res.ok) {
+          clearTokens()
+          return null
+        }
         const data = (await res.json()) as AuthResponse
         saveTokens(data.access_token, data.refresh_token)
         return data.access_token
@@ -50,6 +53,13 @@ async function refreshAccessToken(): Promise<string | null> {
   }
 
   return refreshPromise
+}
+
+/** Обновить access по refresh или вернуть false, если сессия протухла */
+export async function ensureValidAccessToken(): Promise<boolean> {
+  if (getAccessToken()) return true
+  const token = await refreshAccessToken()
+  return Boolean(token)
 }
 
 type RequestOptions = RequestInit & { auth?: boolean; _retried?: boolean }
