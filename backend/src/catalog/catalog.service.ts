@@ -5,12 +5,16 @@ import {
   decimalToNumber,
   roundWeightTotals,
 } from '../common/order-labels';
+import { DeliveryStopsService } from '../logistics/delivery-stops.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRoundDto } from './dto/create-round.dto';
 
 @Injectable()
 export class CatalogService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private deliveryStops: DeliveryStopsService,
+  ) {}
 
   async publicStats() {
     const [activeRounds, settlementsCount, participants] = await Promise.all([
@@ -137,11 +141,13 @@ export class CatalogService {
     if (round.status !== RoundStatus.open) {
       throw new BadRequestException('Сбор уже закрыт');
     }
-    return this.prisma.round.update({
+    const updated = await this.prisma.round.update({
       where: { id },
       data: { status: RoundStatus.closed },
       include: { route: true },
     });
+    await this.deliveryStops.dispatchRound(id);
+    return updated;
   }
 
   async fulfillRound(id: string) {

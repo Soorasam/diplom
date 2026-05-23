@@ -47,6 +47,7 @@ import { AdminAnalyticsPage } from "@/pages/admin/analytics/ui/AdminAnalyticsPag
 
 import { EmployeeLayout } from "./layouts/EmployeeLayout"
 import { EmployeeDashboardPage } from "@/pages/employee/dashboard/ui/EmployeeDashboardPage"
+import { EmployeeIntakePage } from "@/pages/employee/intake/ui/EmployeeIntakePage"
 import { EmployeeOrdersPage } from "@/pages/employee/orders/ui/EmployeeOrdersPage"
 import { EmployeeProcurementsPage } from "@/pages/employee/procurements/ui/EmployeeProcurementsPage"
 import { EmployeeScanPage } from "@/pages/employee/scan/ui/EmployeeScanPage"
@@ -95,8 +96,10 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <EmployeeDashboardPage /> },
-      { path: "procurements", element: <EmployeeProcurementsPage /> },
+      { path: "intake", element: <EmployeeIntakePage /> },
+      { path: "handout", element: <EmployeeOrdersPage /> },
       { path: "orders", element: <EmployeeOrdersPage /> },
+      { path: "procurements", element: <EmployeeProcurementsPage /> },
       { path: "scan", element: <EmployeeScanPage /> },
       { path: "profile", element: <ProfilePage /> },
     ],

@@ -3,7 +3,22 @@ import type { DeliveryRoute } from "@/shared/api/mock-db"
 import type { Order } from "@/shared/api/mock-db"
 import { mapBackendOrder } from "@/shared/api/mappers"
 
-type CoordinatorRoute = DeliveryRoute & { activeRoundId?: string | null }
+export type RouteDeliveryStop = {
+  pickupPointId: string
+  label: string
+  settlementName: string
+  status: "pending" | "in_progress" | "completed"
+  totalOrders: number
+  receivedOrders: number
+  inTransitOrders: number
+  coords: { lat: number; lng: number }
+}
+
+export type CoordinatorRoute = DeliveryRoute & {
+  activeRoundId?: string | null
+  hubLabel?: string
+  deliveryStops?: RouteDeliveryStop[]
+}
 
 export const routesApi = {
   getAll: async (): Promise<DeliveryRoute[]> => {

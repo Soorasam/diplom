@@ -1,11 +1,11 @@
 import { CheckCircle2, Package, Search, WifiOff } from "lucide-react"
 import { useMemo, useState } from "react"
 
+import { employeeApi } from "@/entities/employee/api/employeeApi"
 import {
-  useEmployeeOrderStatusActions,
-  useEmployeeOrders,
-  useEmployeePickupPointId,
-} from "@/entities/employee/api/useEmployeeOrders"
+  useEmployeeHandout,
+  useEmployeeWorkspace,
+} from "@/entities/employee/api/useEmployeeWorkspace"
 import { useNetworkStore } from "@/features/offline/model/network-store"
 import { useOfflineQueueStore } from "@/features/offline/model/offline-queue-store"
 import { Input } from "@/shared/ui/input/Input"
@@ -25,16 +25,19 @@ export const EmployeeOrdersPage = () => {
     s.actions.filter((a) => a.status === "queued" || a.status === "failed").length,
   )
 
-  const { data: pickupPointId } = useEmployeePickupPointId()
-  const { data: orders, isLoading } = useEmployeeOrders()
-  const actions = useEmployeeOrderStatusActions(pickupPointId ?? undefined)
+  const { data: workspace, isLoading } = useEmployeeWorkspace()
+  const handout = useEmployeeHandout()
+
+  const orders = useMemo(
+    () => (workspace?.handoutOrders ?? []).map(employeeApi.mapWorkspaceOrder),
+    [workspace],
+  )
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    if (!orders) return []
     if (!q) return orders
     return orders.filter((o) => {
-      const hay = [o.id, o.userName, o.userPhone, o.itemsText].join(" ").toLowerCase()
+      const hay = [o.id, o.userName, o.userPhone, o.itemsText, o.roundTitle].join(" ").toLowerCase()
       return hay.includes(q)
     })
   }, [orders, query])
@@ -42,8 +45,8 @@ export const EmployeeOrdersPage = () => {
   return (
     <PageShell>
       <PageHeader
-        title="Заказы в выдаче"
-        subtitle="Поиск по жителю, номеру заказа или товару"
+        title="Выдача жителям"
+        subtitle="Заказы, принятые от водителя и готовые к получению"
       />
 
       {!isOnline ? (
@@ -55,7 +58,7 @@ export const EmployeeOrdersPage = () => {
             <div className="min-w-0">
               <p className="text-sm font-semibold text-slate-900">Нет сети</p>
               <p className="mt-1 text-sm text-slate-600">
-                Действия сохраняются локально и синхронизируются автоматически.
+                Выдача сохраняется локально и синхронизируется автоматически.
               </p>
               {queuedCount > 0 ? (
                 <p className="mt-2 text-xs font-medium text-amber-800">
@@ -67,11 +70,9 @@ export const EmployeeOrdersPage = () => {
         </Card>
       ) : queuedCount > 0 ? (
         <Card className="border-blue-200 bg-blue-50/40">
-          <p className="text-sm font-semibold text-slate-900">
-            Синхронизация
-          </p>
+          <p className="text-sm font-semibold text-slate-900">Синхронизация</p>
           <p className="mt-1 text-sm text-slate-600">
-            В очереди действий: {queuedCount}. Сейчас они отправляются на сервер.
+            В очереди действий: {queuedCount}.
           </p>
         </Card>
       ) : null}
@@ -79,7 +80,7 @@ export const EmployeeOrdersPage = () => {
       <Card className="border-slate-200">
         <Input
           label="Поиск"
-          placeholder="Например: Иванов, ord-001, рис"
+          placeholder="Фамилия, номер заказа, товар"
           leftIcon={<Search size={16} />}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -97,41 +98,29 @@ export const EmployeeOrdersPage = () => {
               <Card className="border-slate-200">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900">
-                      № {o.id}
-                    </p>
+                    <p className="text-sm font-semibold text-slate-900">№ {o.id.slice(0, 8)}</p>
+                    {o.roundTitle ? (
+                      <p className="text-xs text-blue-600">{o.roundTitle}</p>
+                    ) : null}
                     <p className="mt-0.5 text-xs text-slate-500">
                       {o.userName} · {o.userPhone}
                     </p>
                     <p className="mt-2 text-sm text-slate-700">{o.itemsText}</p>
                   </div>
-
                   <Badge variant={orderStatusVariant[o.status]}>
                     {orderStatusLabel[o.status]}
                   </Badge>
                 </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    leftIcon={<Package size={16} />}
-                    disabled={o.status === "at_pickup" || o.status === "delivered"}
-                    onClick={() => actions.mutate({ orderId: o.id, status: "at_pickup" })}
-                  >
-                    Готов к выдаче
-                  </Button>
-
-                  <Button
-                    type="button"
-                    className="!bg-emerald-600 hover:!bg-emerald-500"
-                    leftIcon={<CheckCircle2 size={16} />}
-                    disabled={o.status !== "at_pickup"}
-                    onClick={() => actions.mutate({ orderId: o.id, status: "delivered" })}
-                  >
-                    Выдать
-                  </Button>
-                </div>
+                <Button
+                  type="button"
+                  className="mt-4 w-full !bg-emerald-600 hover:!bg-emerald-500"
+                  leftIcon={<CheckCircle2 size={16} />}
+                  disabled={handout.isPending}
+                  onClick={() => handout.mutate(o.id)}
+                >
+                  Выдать жителю
+                </Button>
               </Card>
             </li>
           ))}
@@ -139,15 +128,10 @@ export const EmployeeOrdersPage = () => {
       ) : (
         <EmptyState
           icon={Package}
-          title="Нет заказов"
-          description={
-            pickupPointId
-              ? "Заказы появятся, когда сбор будет доставлен в ваш ПВЗ"
-              : "ПВЗ для сотрудника не найден"
-          }
+          title="Нет заказов на выдачу"
+          description="Сначала примите товар от водителя во вкладке «Приём»"
         />
       )}
     </PageShell>
   )
 }
-

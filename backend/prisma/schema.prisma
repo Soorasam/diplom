@@ -50,6 +50,12 @@ enum TransportType {
   highway
 }
 
+enum DeliveryStopStatus {
+  pending
+  in_progress
+  completed
+}
+
 model User {
   id             String   @id @default(uuid()) @db.Uuid
   email          String   @unique
@@ -93,8 +99,9 @@ model PickupPoint {
   phone            String?
 
   settlement Settlement @relation(fields: [settlementId], references: [id])
-  users      User[]
-  orders     Order[]
+  users          User[]
+  orders         Order[]
+  deliveryStops  RoundDeliveryStop[]
 
   @@map("pickup_points")
 }
@@ -125,10 +132,26 @@ model Round {
 
   route        Route              @relation(fields: [routeId], references: [id])
   cartItems    CartItem[]
-  orders       Order[]
-  participants RoundParticipant[]
+  orders         Order[]
+  participants   RoundParticipant[]
+  deliveryStops  RoundDeliveryStop[]
 
   @@map("rounds")
+}
+
+model RoundDeliveryStop {
+  id            String             @id @default(uuid()) @db.Uuid
+  roundId       String             @map("round_id") @db.Uuid
+  pickupPointId String             @map("pickup_point_id") @db.Uuid
+  status        DeliveryStopStatus @default(pending)
+  sortOrder     Int                @default(0) @map("sort_order")
+  completedAt   DateTime?          @map("completed_at")
+
+  round       Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  pickupPoint PickupPoint @relation(fields: [pickupPointId], references: [id])
+
+  @@unique([roundId, pickupPointId], name: "uq_round_delivery_stop")
+  @@map("round_delivery_stops")
 }
 
 model RoundParticipant {

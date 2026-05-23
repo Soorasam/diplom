@@ -1,8 +1,8 @@
 import { Outlet } from "react-router-dom"
 import {
   LayoutDashboard,
-  ListOrdered,
-  PackageSearch,
+  PackageCheck,
+  HandHelping,
   QrCode,
   User,
 } from "lucide-react"
@@ -22,16 +22,17 @@ const tabs: MobileNavTab[] = [
     match: (p) => p === routes.employee.root,
   },
   {
-    label: "Сборы",
-    path: routes.employee.procurements,
-    icon: PackageSearch,
-    match: (p) => p.startsWith(routes.employee.procurements),
+    label: "Приём",
+    path: routes.employee.intake,
+    icon: PackageCheck,
+    match: (p) => p.startsWith(routes.employee.intake),
   },
   {
-    label: "Заказы",
-    path: routes.employee.orders,
-    icon: ListOrdered,
-    match: (p) => p.startsWith(routes.employee.orders),
+    label: "Выдача",
+    path: routes.employee.handout,
+    icon: HandHelping,
+    match: (p) =>
+      p.startsWith(routes.employee.handout) || p.startsWith("/employee/orders"),
   },
   {
     label: "Скан",

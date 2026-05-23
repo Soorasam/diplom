@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -24,5 +24,10 @@ export class CoordinatorController {
   @Get('orders')
   orders() {
     return this.coordinator.listOrders();
+  }
+
+  @Post('rounds/:id/start-delivery')
+  startDelivery(@Param('id') roundId: string) {
+    return this.coordinator.startDelivery(roundId);
   }
 }

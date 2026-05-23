@@ -34,8 +34,10 @@ export const routes = {
 
   employee: {
     root: "/employee",
+    intake: "/employee/intake",
+    handout: "/employee/handout",
     procurements: "/employee/procurements",
-    orders: "/employee/orders",
+    orders: "/employee/handout",
     scan: "/employee/scan",
     profile: "/employee/profile",
   },

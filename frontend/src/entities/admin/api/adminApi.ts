@@ -159,6 +159,9 @@ export const adminApi = {
   fulfillRound: (id: string) =>
     http.patch<BackendRound>(`/rounds/${id}/fulfill`, {}, true).then(mapRound),
 
+  closeAndDispatchRound: (id: string) =>
+    http.patch<BackendRound>(`/rounds/${id}/close`, {}, true).then(mapRound),
+
   getNotifications: async (): Promise<AdminTicket[]> => {
     const list = await http.get<
       {

@@ -1,6 +1,7 @@
 import { PrismaClient, RoundStatus, TransportType, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
+import { ensureDemoDelivery } from './lib/ensure-demo-delivery';
 import {
   SEED_PRODUCT_IMAGES,
   uploadFromAsset,
@@ -77,8 +78,9 @@ async function seedProductImages() {
 async function main() {
   const count = await prisma.settlement.count();
   if (count > 0) {
-    console.log('БД уже содержит данные — обновляем только картинки в MinIO…');
+    console.log('БД уже содержит данные — картинки MinIO + демо-рейс…');
     await seedProductImages();
+    await ensureDemoDelivery(prisma);
     return;
   }
 
@@ -274,6 +276,8 @@ async function main() {
       },
     ],
   });
+
+  await ensureDemoDelivery(prisma);
 
   console.log('Seed выполнен успешно.');
   console.log('  admin@coop.local / admin12345');

@@ -74,6 +74,7 @@ export function useEmployeeOrderStatusActions(pickupPointId?: string) {
     onSuccess: async () => {
       if (!pickupPointId) return
       await qc.invalidateQueries({ queryKey: queryKeys.employee.orders(pickupPointId) })
+      await qc.invalidateQueries({ queryKey: queryKeys.employee.workspace })
     },
   })
 }

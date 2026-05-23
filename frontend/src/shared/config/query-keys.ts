@@ -27,6 +27,7 @@ export const queryKeys = {
     driver: (driverId: string) => ["routes", "driver", driverId] as const,
   },
   employee: {
+    workspace: ["employee", "workspace"] as const,
     orders: (pickupPointId: string) =>
       ["employee", "orders", pickupPointId] as const,
   },

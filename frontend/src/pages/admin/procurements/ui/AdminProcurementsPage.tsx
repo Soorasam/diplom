@@ -1,21 +1,33 @@
-import { CheckCircle2, ShoppingBasket } from "lucide-react"
+import { ShoppingBasket, Truck } from "lucide-react"
 
+import { adminApi } from "@/entities/admin/api/adminApi"
 import { useAdminRounds } from "@/entities/admin/api/useAdmin"
-import { useApproveProcurementReceipt } from "@/entities/procurement/api/useProcurements"
 import { formatShortDate } from "@/shared/lib/format"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { queryKeys } from "@/shared/config/query-keys"
 
 export const AdminProcurementsPage = () => {
   const { data: list = [], isLoading } = useAdminRounds()
-  const approve = useApproveProcurementReceipt("admin")
+  const qc = useQueryClient()
+
+  const closeAndDispatch = useMutation({
+    mutationFn: (id: string) => adminApi.closeAndDispatchRound(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [...queryKeys.admin.stats, "rounds"] })
+    },
+  })
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader title="Сборы" subtitle="Админ подтверждает приемку и контролирует цикл" />
+      <PageHeader
+        title="Сборы"
+        subtitle="Закрытие сбора сразу отправляет рейс: заказы «в пути», ПВЗ и водитель видят точки"
+      />
 
       {isLoading ? (
         <p className="py-8 text-center text-sm text-slate-500">Загрузка…</p>
@@ -33,9 +45,9 @@ export const AdminProcurementsPage = () => {
                   </div>
                   <Badge
                     variant={
-                      p.status === "shipped" || p.status === "closed"
+                      p.status === "shipped"
                         ? "success"
-                        : p.status === "closing"
+                        : p.status === "closed"
                           ? "warning"
                           : "info"
                     }
@@ -43,18 +55,21 @@ export const AdminProcurementsPage = () => {
                     {p.status}
                   </Badge>
                 </div>
-                {p.status === "closed" ? (
+                {p.status === "open" || p.status === "closing" ? (
                   <div className="mt-3">
                     <Button
                       type="button"
-                      variant="secondary"
-                      leftIcon={<CheckCircle2 size={16} />}
-                      disabled={approve.isPending}
-                      onClick={() => approve.mutate(p.id)}
+                      leftIcon={<Truck size={16} />}
+                      disabled={closeAndDispatch.isPending}
+                      onClick={() => closeAndDispatch.mutate(p.id)}
                     >
-                      Подтвердить приемку (админ)
+                      Закрыть сбор и отправить рейс
                     </Button>
                   </div>
+                ) : p.status === "closed" ? (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Рейс в доставке. ПВЗ принимает заказы, водитель видит точки на маршруте.
+                  </p>
                 ) : null}
               </Card>
             </li>
@@ -64,4 +79,3 @@ export const AdminProcurementsPage = () => {
     </div>
   )
 }
-

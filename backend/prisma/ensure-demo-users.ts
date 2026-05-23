@@ -1,6 +1,8 @@
 import { PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
+import { ensureDemoDelivery } from './lib/ensure-demo-delivery';
+
 const prisma = new PrismaClient();
 
 const DEMO_USERS = [
@@ -69,8 +71,9 @@ async function main() {
   }
 
   console.log('\nПВЗ:', pickupPoint.coordinatorName, '—', pickupPoint.address);
+  await ensureDemoDelivery(prisma);
   console.log('Вход: /auth → employee@coop.local');
-  console.log('Интерфейс: /employee');
+  console.log('Интерфейс: /employee → Приём');
 }
 
 main()

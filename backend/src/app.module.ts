@@ -11,12 +11,15 @@ import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { DriverApplicationsModule } from './driver-applications/driver-applications.module';
 import { CoordinatorModule } from './coordinator/coordinator.module';
+import { EmployeeModule } from './employee/employee.module';
+import { LogisticsModule } from './logistics/logistics.module';
 import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     StorageModule,
+    LogisticsModule,
     PrismaModule,
     AuthModule,
     CatalogModule,
@@ -27,6 +30,7 @@ import { StorageModule } from './storage/storage.module';
     NotificationsModule,
     DriverApplicationsModule,
     CoordinatorModule,
+    EmployeeModule,
   ],
   controllers: [HealthController],
 })
