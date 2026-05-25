@@ -17,8 +17,11 @@ const client = () =>
   });
 
 export function publicObjectUrl(key: string): string {
-  const base = (process.env.MINIO_PUBLIC_URL ?? 'http://127.0.0.1:9000').replace(/\/$/, '');
-  return `${base}/${BUCKET}/${key}`;
+  const base = process.env.MINIO_PUBLIC_URL?.trim();
+  if (!base) {
+    return `/${BUCKET}/${key}`;
+  }
+  return `${base.replace(/\/$/, '')}/${BUCKET}/${key}`;
 }
 
 export async function uploadProductImage(

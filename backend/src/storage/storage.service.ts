@@ -24,8 +24,11 @@ export class StorageService {
   }
 
   publicUrl(bucket: string, key: string): string {
-    const base = (process.env.MINIO_PUBLIC_URL ?? 'http://127.0.0.1:9000').replace(/\/$/, '');
-    return `${base}/${bucket}/${key}`;
+    const base = process.env.MINIO_PUBLIC_URL?.trim();
+    if (!base) {
+      return `/${bucket}/${key}`;
+    }
+    return `${base.replace(/\/$/, '')}/${bucket}/${key}`;
   }
 
   async ensureBucket(bucket: string): Promise<void> {

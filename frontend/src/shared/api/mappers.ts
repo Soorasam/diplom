@@ -14,6 +14,7 @@ import type {
   BackendUser,
 } from "@/shared/api/backend-types"
 import type { DeliveryMode, OrderStatus, UserRole } from "@/shared/types"
+import { normalizeProductImageUrl } from "@/shared/lib/normalize-media-url"
 
 export const parseApiNumber = (
   value: number | string | { toNumber(): number } | null | undefined,
@@ -156,7 +157,7 @@ export const mapProduct = (p: BackendProduct): Product => ({
   description: p.description ?? "",
   price: parseApiNumber(p.priceEstimate as number | string),
   categoryId: p.categoryId,
-  imageUrl: p.imageUrl ?? "",
+  imageUrl: normalizeProductImageUrl(p.imageUrl),
   weightKg: parseApiNumber(p.weightKg ?? 0),
   unit: p.unit,
 })
