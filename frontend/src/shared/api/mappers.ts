@@ -177,6 +177,7 @@ export const mapRound = (r: BackendRound): Procurement => ({
         : r.status === "closed"
           ? "closed"
           : "closing",
+  createdAt: r.createdAt ?? r.closesAt,
   closesAt: r.closesAt,
   minVolumePercent: Math.max(
     10,

@@ -42,6 +42,14 @@ export const DriverProcurementsPage = () => {
   const canCreate =
     title.trim().length > 5 && Boolean(effectiveRouteId) && Boolean(closesAt)
 
+  const sortedProcurements = useMemo(
+    () =>
+      [...all].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
+    [all],
+  )
+
   return (
     <PageShell>
       <PageHeader title="Мои сборы" subtitle="Водитель создает и закрывает свои сборы" />
@@ -121,17 +129,19 @@ export const DriverProcurementsPage = () => {
         </Card>
       )}
 
-      {all.length === 0 ? (
+      {sortedProcurements.length === 0 ? (
         <EmptyState icon={Truck} title="Сборов пока нет" />
       ) : (
         <ul className="flex flex-col gap-2">
-          {all.map((p) => (
+          {sortedProcurements.map((p) => (
             <li key={p.id}>
               <Card className="border-slate-200">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-slate-900">{p.title}</p>
-                    <p className="text-xs text-slate-500">Дедлайн: {formatShortDate(p.closesAt)}</p>
+                    <p className="text-xs text-slate-500">
+                      Создан: {formatShortDate(p.createdAt)} · закрытие: {formatShortDate(p.closesAt)}
+                    </p>
                   </div>
                   <Badge variant={p.status === "closed" ? "success" : "info"}>{p.status}</Badge>
                 </div>

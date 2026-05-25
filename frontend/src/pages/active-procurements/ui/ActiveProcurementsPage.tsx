@@ -33,7 +33,7 @@ import { MapView } from "@/shared/ui/map/MapView"
 import { ProcurementCard } from "@/widgets/procurement-card/ui/ProcurementCard"
 import { cn } from "@/shared/lib/cn"
 
-type SortKey = "closesAt" | "progress"
+type SortKey = "createdAt" | "closesAt" | "progress"
 
 export const ActiveProcurementsPage = () => {
   const navigate = useNavigate()
@@ -48,7 +48,7 @@ export const ActiveProcurementsPage = () => {
 
   const [viewMode, setViewMode] = useState<"list" | "map">("list")
   const [deliveryFilter, setDeliveryFilter] = useState<DeliveryMode | "all">("all")
-  const [sort, setSort] = useState<SortKey>("closesAt")
+  const [sort, setSort] = useState<SortKey>("createdAt")
   const [limitMessage, setLimitMessage] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
@@ -60,7 +60,10 @@ export const ActiveProcurementsPage = () => {
       if (sort === "progress") {
         return b.currentVolumePercent - a.currentVolumePercent
       }
-      return new Date(a.closesAt).getTime() - new Date(b.closesAt).getTime()
+      if (sort === "closesAt") {
+        return new Date(a.closesAt).getTime() - new Date(b.closesAt).getTime()
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
     return list
   }, [procurements, deliveryFilter, sort])
@@ -140,6 +143,7 @@ export const ActiveProcurementsPage = () => {
             onChange={(e) => setSort(e.target.value as SortKey)}
             className="min-h-9 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
           >
+            <option value="createdAt">По дате создания</option>
             <option value="closesAt">По дате закрытия</option>
             <option value="progress">По заполнению</option>
           </select>
