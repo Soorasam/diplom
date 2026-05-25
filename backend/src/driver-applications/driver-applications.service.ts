@@ -73,6 +73,14 @@ export class DriverApplicationsService {
     });
   }
 
+  async removeDocument(user: User, type: DriverDocumentType) {
+    const app = await this.ensureDraftApplication(user);
+    await this.prisma.driverApplicationDocument.deleteMany({
+      where: { applicationId: app.id, type },
+    });
+    return { ok: true };
+  }
+
   async uploadDocument(
     user: User,
     type: DriverDocumentType,

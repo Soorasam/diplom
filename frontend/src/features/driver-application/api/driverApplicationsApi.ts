@@ -58,6 +58,9 @@ export const driverApplicationsApi = {
   uploadDocument: (type: DriverDocumentKey, file: File) =>
     http.upload<BackendDoc>(`/driver-applications/me/documents/${type}`, file, true).then(mapDoc),
 
+  removeDocument: (type: DriverDocumentKey) =>
+    http.delete(`/driver-applications/me/documents/${type}`, true),
+
   list: async (): Promise<DriverApplicationWithUser[]> => {
     const list = await http.get<BackendApp[]>("/driver-applications", true)
     return list.map((a) => ({

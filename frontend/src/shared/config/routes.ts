@@ -58,6 +58,7 @@ export const routes = {
     routes: "/admin/routes",
     procurements: "/admin/procurements",
     drivers: "/admin/drivers",
+    driver: (id: string) => `/admin/drivers/${id}`,
     settlements: "/admin/settlements",
     analytics: "/admin/analytics",
     driverApplications: "/admin/driver-applications",

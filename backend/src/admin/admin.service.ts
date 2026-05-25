@@ -196,6 +196,68 @@ export class AdminService {
     });
   }
 
+  async getDriver(id: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id,
+        OR: [
+          { role: UserRole.coordinator },
+          { driverApplications: { some: { status: 'approved' } } },
+        ],
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        phone: true,
+        role: true,
+        settlementId: true,
+        pickupPointId: true,
+        createdAt: true,
+        settlement: { select: { id: true, name: true, ulus: true } },
+        driverApplications: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          include: {
+            documents: { orderBy: { createdAt: 'asc' } },
+          },
+        },
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('Водитель не найден');
+    }
+    const application = user.driverApplications[0] ?? null;
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      phone: user.phone,
+      role: user.role,
+      settlementId: user.settlementId,
+      pickupPointId: user.pickupPointId,
+      createdAt: user.createdAt,
+      settlement: user.settlement,
+      application: application
+        ? {
+            id: application.id,
+            status: application.status,
+            vehicleSummary: application.vehicleSummary,
+            rejectionReason: application.rejectionReason,
+            submittedAt: application.submittedAt,
+            reviewedAt: application.reviewedAt,
+            documents: application.documents.map((d) => ({
+              id: d.id,
+              type: d.type,
+              url: d.url,
+              fileName: d.fileName,
+              mimeType: d.mimeType,
+            })),
+          }
+        : null,
+    };
+  }
+
   listPickupPoints() {
     return this.prisma.pickupPoint.findMany({
       orderBy: { coordinatorName: 'asc' },

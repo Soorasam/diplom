@@ -45,6 +45,7 @@ interface DraftState {
   patchDocument: (key: DriverDocumentKey, patch: Partial<DriverDocumentDraft>) => void
   setReviewStatus: (status: DriverApplicationStatus, rejectionReason?: string) => void
   clear: () => void
+  clearDocuments: () => void
   touchSaved: () => void
 }
 
@@ -94,10 +95,41 @@ export const useDriverApplicationDraftStore = create<DraftState>()(
           draft: { ...s.draft, status, rejectionReason },
         })),
       clear: () => set({ draft: emptyDraft }),
+      clearDocuments: () =>
+        set((s) => ({
+          draft: {
+            ...s.draft,
+            documents: { passport: null, license: null, sts: null },
+          },
+        })),
       touchSaved: () =>
         set((s) => ({ draft: { ...s.draft, lastSavedAt: new Date().toISOString() } })),
     }),
-    { name: "coop-driver-application-draft" },
+    {
+      name: "coop-driver-application-draft",
+      version: 2,
+      migrate: (persisted, version) => {
+        const state = persisted as { draft?: Partial<DriverApplicationDraft> }
+        const draft = state.draft ?? {}
+        return {
+          draft: {
+            ...emptyDraft,
+            personal: { ...emptyDraft.personal, ...draft.personal },
+            vehicle: { ...emptyDraft.vehicle, ...draft.vehicle },
+            lastSavedAt: draft.lastSavedAt,
+            documents: { passport: null, license: null, sts: null },
+          },
+        }
+      },
+      partialize: (state) => ({
+        draft: {
+          personal: state.draft.personal,
+          vehicle: state.draft.vehicle,
+          lastSavedAt: state.draft.lastSavedAt,
+          documents: { passport: null, license: null, sts: null },
+        },
+      }),
+    },
   ),
 )
 

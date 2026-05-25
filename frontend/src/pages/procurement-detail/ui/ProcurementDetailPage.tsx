@@ -12,6 +12,7 @@ import {
 import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { participateInProcurement } from "@/features/procurement/lib/participate-in-procurement"
+import { LeaveProcurementPanel } from "@/features/procurement/ui/LeaveProcurementPanel"
 import { routes } from "@/shared/config/routes"
 import { formatShortDate } from "@/shared/lib/format"
 import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
@@ -40,6 +41,7 @@ export const ProcurementDetailPage = () => {
   const { pushDraftItemsToServer } = useCartActions()
 
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false)
   const [limitMessage, setLimitMessage] = useState<string | null>(null)
 
   const hasJoined = memberships.includes(id)
@@ -71,19 +73,13 @@ export const ProcurementDetailPage = () => {
 
   const handleLeave = async () => {
     if (!procurement || !isAuthenticated) return
-    if (
-      !window.confirm(
-        `Выйти из сбора «${procurement.title}»? Корзина сохранится — для оплаты снова вступите в сбор.`,
-      )
-    ) {
-      return
-    }
     setLimitMessage(null)
     try {
       await leave.mutateAsync(procurement.id)
       if (procurementIdInCart === procurement.id) {
         clearProcurement()
       }
+      setLeaveConfirmOpen(false)
     } catch (e) {
       setLimitMessage(e instanceof Error ? e.message : "Не удалось выйти из сбора")
     }
@@ -165,24 +161,34 @@ export const ProcurementDetailPage = () => {
       <StickyActionBar>
         {hasJoined && !isClosed ? (
           <div className="flex w-full flex-col gap-2">
-            <Button
-              type="button"
-              fullWidth
-              size="lg"
-              rightIcon={<ArrowRight size={18} />}
-              onClick={() => participateInProcurement(navigate, setProcurement, procurement.id)}
-            >
-              Перейти в каталог
-            </Button>
-            <Button
-              type="button"
-              fullWidth
-              variant="outline"
-              disabled={leave.isPending}
-              onClick={() => void handleLeave()}
-            >
-              Выйти из сбора
-            </Button>
+            {leaveConfirmOpen ? (
+              <LeaveProcurementPanel
+                procurementTitle={procurement.title}
+                loading={leave.isPending}
+                onConfirm={() => void handleLeave()}
+                onCancel={() => setLeaveConfirmOpen(false)}
+              />
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  fullWidth
+                  size="lg"
+                  rightIcon={<ArrowRight size={18} />}
+                  onClick={() => participateInProcurement(navigate, setProcurement, procurement.id)}
+                >
+                  Перейти в каталог
+                </Button>
+                <Button
+                  type="button"
+                  fullWidth
+                  variant="outline"
+                  onClick={() => setLeaveConfirmOpen(true)}
+                >
+                  Выйти из сбора
+                </Button>
+              </>
+            )}
           </div>
         ) : (
           <Button

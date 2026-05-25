@@ -59,6 +59,11 @@ export class AdminController {
     return this.admin.listDrivers();
   }
 
+  @Get('drivers/:id')
+  driver(@Param('id', ParseUUIDPipe) id: string) {
+    return this.admin.getDriver(id);
+  }
+
   @Get('pickup-points')
   pickupPoints() {
     return this.admin.listPickupPoints();

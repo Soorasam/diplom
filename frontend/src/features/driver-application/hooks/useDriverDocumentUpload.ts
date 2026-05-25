@@ -7,6 +7,10 @@ import {
   useDriverApplicationDraftStore,
 } from "../model/driver-application-draft-store"
 
+const revokePreview = (url?: string) => {
+  if (url?.startsWith("blob:")) URL.revokeObjectURL(url)
+}
+
 export const useDriverDocumentUpload = () => {
   const setDocument = useDriverApplicationDraftStore((s) => s.setDocument)
   const patchDocument = useDriverApplicationDraftStore((s) => s.patchDocument)
@@ -14,6 +18,9 @@ export const useDriverDocumentUpload = () => {
 
   const pickFile = useCallback(
     async (key: DriverDocumentKey, file: File) => {
+      const prev = useDriverApplicationDraftStore.getState().draft.documents[key]
+      revokePreview(prev?.previewUrl)
+
       const previewUrl = URL.createObjectURL(file)
       const doc: DriverDocumentDraft = {
         key,
@@ -30,12 +37,16 @@ export const useDriverDocumentUpload = () => {
       try {
         patchDocument(key, { progress: 30 })
         const uploaded = await driverApplicationsApi.uploadDocument(key, file)
+        const baseUrl = uploaded.url
+        const cacheBust = `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}t=${Date.now()}`
         patchDocument(key, {
           status: "uploaded",
           progress: 100,
-          previewUrl: uploaded.url,
+          fileName: uploaded.fileName ?? file.name,
+          previewUrl: cacheBust,
           error: undefined,
         })
+        revokePreview(previewUrl)
         touchSaved()
       } catch (e) {
         patchDocument(key, {
@@ -46,6 +57,21 @@ export const useDriverDocumentUpload = () => {
       }
     },
     [patchDocument, setDocument, touchSaved],
+  )
+
+  const detachDocument = useCallback(
+    async (key: DriverDocumentKey) => {
+      const current = useDriverApplicationDraftStore.getState().draft.documents[key]
+      revokePreview(current?.previewUrl)
+      setDocument(key, null)
+      try {
+        await driverApplicationsApi.removeDocument(key)
+      } catch {
+        void 0
+      }
+      touchSaved()
+    },
+    [setDocument, touchSaved],
   )
 
   const retryUpload = useCallback(
@@ -62,5 +88,5 @@ export const useDriverDocumentUpload = () => {
     [pickFile],
   )
 
-  return { pickFile, retryUpload }
+  return { pickFile, retryUpload, detachDocument }
 }

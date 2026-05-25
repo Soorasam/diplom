@@ -16,12 +16,11 @@ type Props = {
 
 export const DocumentsStep = ({ canContinue, onContinue, onBack }: Props) => {
   const documents = useDriverApplicationDraftStore((s) => s.draft.documents)
-  const setDocument = useDriverApplicationDraftStore((s) => s.setDocument)
   const { pickFile, retryUpload } = useDriverDocumentUpload()
 
   return (
-    <Card className="border-slate-200">
-      <div className="space-y-3">
+    <Card className="border-slate-200 !p-4">
+      <div className="divide-y divide-slate-200 dark:divide-slate-700">
         {driverDocumentKeys.map((key) => (
           <DocumentUploadCard
             key={key}
@@ -29,7 +28,6 @@ export const DocumentsStep = ({ canContinue, onContinue, onBack }: Props) => {
             doc={documents[key]}
             onPickFile={(k, file) => void pickFile(k, file)}
             onRetry={retryUpload}
-            onRemove={(k) => setDocument(k, null)}
           />
         ))}
       </div>

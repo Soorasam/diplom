@@ -10,6 +10,7 @@ import {
 } from "@/entities/procurement/api/useProcurements"
 import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useProcurementParticipation } from "@/features/procurement/hooks/useProcurementParticipation"
+import { LeaveProcurementPanel } from "@/features/procurement/ui/LeaveProcurementPanel"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { ApiError } from "@/shared/api/client"
 import { routes } from "@/shared/config/routes"
@@ -20,6 +21,7 @@ import { ActiveProcurementBanner } from "@/widgets/active-procurement-banner/ui/
 
 export const CartProcurementBlock = () => {
   const [leaveError, setLeaveError] = useState<string | null>(null)
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false)
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const setProcurement = useCartStore((s) => s.setProcurement)
@@ -52,17 +54,11 @@ export const CartProcurementBlock = () => {
 
   const handleLeaveSelected = async () => {
     if (!procurementId || !isAuthenticated) return
-    if (
-      !window.confirm(
-        "Выйти из сбора? Корзина сохранится — для оплаты нужно снова вступить в сбор.",
-      )
-    ) {
-      return
-    }
     try {
       await leave.mutateAsync(procurementId)
       clearProcurement()
       setLeaveError(null)
+      setLeaveConfirmOpen(false)
     } catch (e) {
       const msg =
         e instanceof ApiError
@@ -207,16 +203,24 @@ export const CartProcurementBlock = () => {
         </AlertBanner>
       ) : null}
       <ActiveProcurementBanner procurement={procurement} />
-      <Button
-        type="button"
-        variant="outline"
-        fullWidth
-        size="sm"
-        loading={leave.isPending}
-        onClick={() => void handleLeaveSelected()}
-      >
-        Выйти из сбора
-      </Button>
+      {leaveConfirmOpen ? (
+        <LeaveProcurementPanel
+          procurementTitle={procurement.title}
+          loading={leave.isPending}
+          onConfirm={() => void handleLeaveSelected()}
+          onCancel={() => setLeaveConfirmOpen(false)}
+        />
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          fullWidth
+          size="sm"
+          onClick={() => setLeaveConfirmOpen(true)}
+        >
+          Выйти из сбора
+        </Button>
+      )}
       {joinedOpen.length > 0 ? (
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400">
           Сбор для заказа

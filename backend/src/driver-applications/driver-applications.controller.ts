@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseEnumPipe,
@@ -29,6 +30,15 @@ export class DriverApplicationsController {
   @Get("me")
   mine(@CurrentUser() user: User) {
     return this.apps.getMine(user);
+  }
+
+  @Delete("me/documents/:type")
+  removeDocument(
+    @CurrentUser() user: User,
+    @Param("type", new ParseEnumPipe(DriverDocumentType))
+    type: DriverDocumentType,
+  ) {
+    return this.apps.removeDocument(user, type);
   }
 
   @Post("me/documents/:type")

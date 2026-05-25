@@ -14,6 +14,7 @@ import { useAuthStore } from "@/app/model/auth-store"
 import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { participateInProcurement } from "@/features/procurement/lib/participate-in-procurement"
+import { LeaveProcurementPanel } from "@/features/procurement/ui/LeaveProcurementPanel"
 import {
   useActiveProcurements,
   useJoinProcurement,
@@ -54,6 +55,7 @@ export const ActiveProcurementsPage = () => {
   const [deliveryFilter, setDeliveryFilter] = useState<DeliveryMode | "all">("all")
   const [sort, setSort] = useState<SortKey>("createdAt")
   const [limitMessage, setLimitMessage] = useState<string | null>(null)
+  const [leaveConfirmId, setLeaveConfirmId] = useState<string | null>(null)
 
   const filtered = useMemo(() => {
     let list = [...(procurements ?? [])]
@@ -99,19 +101,13 @@ export const ActiveProcurementsPage = () => {
 
   const handleLeave = async (p: Procurement) => {
     if (!isAuthenticated) return
-    if (
-      !window.confirm(
-        `Выйти из сбора «${p.title}»? Корзина сохранится — для оплаты снова вступите в сбор.`,
-      )
-    ) {
-      return
-    }
     setLimitMessage(null)
     try {
       await leave.mutateAsync(p.id)
       if (procurementIdInCart === p.id) {
         clearProcurement()
       }
+      setLeaveConfirmId(null)
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Не удалось выйти из сбора"
       setLimitMessage(msg)
@@ -228,16 +224,24 @@ export const ActiveProcurementsPage = () => {
                               Каталог
                             </Button>
                           </div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            fullWidth
-                            disabled={leave.isPending}
-                            onClick={() => void handleLeave(p)}
-                          >
-                            Выйти из сбора
-                          </Button>
+                          {leaveConfirmId === p.id ? (
+                            <LeaveProcurementPanel
+                              procurementTitle={p.title}
+                              loading={leave.isPending}
+                              onConfirm={() => void handleLeave(p)}
+                              onCancel={() => setLeaveConfirmId(null)}
+                            />
+                          ) : (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              fullWidth
+                              onClick={() => setLeaveConfirmId(p.id)}
+                            >
+                              Выйти из сбора
+                            </Button>
+                          )}
                         </div>
                       ) : (
                         <Button

@@ -71,6 +71,33 @@ const mapAdminRoute = (r: AdminRouteRow): DeliveryRoute & {
   transportType: r.transportType,
 })
 
+export type AdminDriverDetail = {
+  id: string
+  name: string
+  phone: string
+  email: string
+  role: User["role"]
+  settlementId: string
+  pickupPointId: string | null
+  createdAt: string
+  settlement: { id: string; name: string; ulus?: string | null } | null
+  application: {
+    id: string
+    status: string
+    vehicleSummary: string | null
+    rejectionReason: string | null
+    submittedAt: string | null
+    reviewedAt: string | null
+    documents: {
+      id: string
+      type: string
+      url: string
+      fileName: string | null
+      mimeType: string | null
+    }[]
+  } | null
+}
+
 export type AdminTicket = {
   id: string
   title: string
@@ -142,6 +169,33 @@ export const adminApi = {
         settlementId: u.settlementId ?? "",
       }),
     )
+  },
+
+  getDriver: async (id: string): Promise<AdminDriverDetail> => {
+    const d = await http.get<{
+      id: string
+      email: string
+      fullName: string | null
+      phone: string | null
+      role: BackendUser["role"]
+      settlementId: string | null
+      pickupPointId: string | null
+      createdAt: string
+      settlement: { id: string; name: string; ulus?: string | null } | null
+      application: AdminDriverDetail["application"]
+    }>(`/admin/drivers/${id}`, true)
+    return {
+      id: d.id,
+      name: d.fullName ?? d.email,
+      phone: d.phone ?? "",
+      email: d.email,
+      role: mapBackendRole(d.role),
+      settlementId: d.settlementId ?? "",
+      pickupPointId: d.pickupPointId,
+      createdAt: d.createdAt,
+      settlement: d.settlement,
+      application: d.application,
+    }
   },
 
   getPickupPoints: async (): Promise<AdminPickupPoint[]> => {

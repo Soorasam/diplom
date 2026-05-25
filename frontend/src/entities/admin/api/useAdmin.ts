@@ -58,6 +58,13 @@ export const useAdminDrivers = () =>
     queryFn: () => adminApi.getDrivers(),
   })
 
+export const useAdminDriver = (id: string | undefined) =>
+  useQuery({
+    queryKey: queryKeys.admin.driver(id ?? ""),
+    queryFn: () => adminApi.getDriver(id!),
+    enabled: Boolean(id),
+  })
+
 export const useAdminPickupPoints = () =>
   useQuery({
     queryKey: [...queryKeys.admin.stats, "pickup-points"],

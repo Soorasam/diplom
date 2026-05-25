@@ -35,6 +35,7 @@ export const queryKeys = {
     stats: ["admin", "stats"] as const,
     users: ["admin", "users"] as const,
     drivers: ["admin", "drivers"] as const,
+    driver: (id: string) => ["admin", "drivers", id] as const,
   },
   tickets: {
     list: ["tickets", "list"] as const,

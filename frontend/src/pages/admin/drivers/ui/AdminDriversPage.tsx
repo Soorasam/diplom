@@ -1,6 +1,8 @@
+import { Link } from "react-router-dom"
 import { Truck } from "lucide-react"
 
 import { useAdminDrivers } from "@/entities/admin/api/useAdmin"
+import { routes } from "@/shared/config/routes"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
@@ -22,7 +24,8 @@ export const AdminDriversPage = () => {
         <ul className="grid gap-3 sm:grid-cols-2">
           {drivers.map((driver) => (
             <li key={driver.id}>
-              <Card>
+              <Link to={routes.admin.driver(driver.id)} className="block">
+              <Card className="transition-colors hover:border-sky-200 hover:bg-slate-50 dark:hover:border-slate-600 dark:hover:bg-slate-800/50">
                 <div className="flex items-start gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                     <Truck size={20} />
@@ -36,6 +39,7 @@ export const AdminDriversPage = () => {
                   </div>
                 </div>
               </Card>
+              </Link>
             </li>
           ))}
         </ul>
