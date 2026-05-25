@@ -19,8 +19,7 @@ cd backend
 cp .env.example .env
 npm install
 npm run prisma:migrate
-npm run prisma:seed
-npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-users.ts
+npm run prisma:reset:deploy
 npm run start:dev
 
 # Frontend (другой терминал)
@@ -36,34 +35,39 @@ API: `http://localhost:3000/api/v1`
 
 ## Демо-аккаунты
 
-| Роль | Email | Пароль |
-|------|-------|--------|
-| Админ | `admin@coop.local` | `admin12345` |
-| Житель | `demo@coop.local` | `demo12345` |
-| ПВЗ | `employee@coop.local` | `employee12345` |
+| Роль | Email | Пароль | ПВЗ |
+|------|-------|--------|-----|
+| Админ | `admin@coop.local` | `admin12345` | — |
+| Житель | `demo@coop.local` | `demo12345` | Хандыга |
+| ПВЗ | `employee@coop.local` | `employee12345` | Хандыга |
+| ПВЗ | `employee-batagai@coop.local` | `employee12345` | Батагай |
+| ПВЗ | `employee-viluisk@coop.local` | `employee12345` | Вилюйск |
+| ПВЗ | `employee-oymyakon@coop.local` | `employee12345` | Оймякон |
+| ПВЗ | `employee-yakutsk@coop.local` | `employee12345` | Якутск |
 
-Скрипт `ensure-demo-users.ts` также создаёт **демо-рейс**: заказ «в пути» на ПВЗ сотрудника — сразу видно в `/employee` → **Приём** и у водителя в **Маршрут**.
-
-Полная очистка БД (только 3 демо-аккаунта, без каталога и заказов):
-
-```bash
-cd backend
-npm run prisma:reset:accounts
-```
-
-Полный демо-каталог и сборы: `npm run prisma:seed`
-
-Только 20 товаров (5 на категорию) без сброса пользователей: `npm run prisma:seed:catalog`  
-Картинки: `backend/prisma/seed-assets/products/` — имена файлов в `README.md` там же.
-
-Маршруты доставки в БД **не создаются автоматически** (кроме служебного «Демо-рейс» при `ensure-demo-users` / полном seed). Добавляйте их через админ-панель или Prisma Studio.
-
-Если ПВЗ пусто после старой БД:
+**Перед деплоем на VPS** — чистая БД без тестовых сборов и заказов:
 
 ```bash
 cd backend
-npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-users.ts
+npm run prisma:reset:deploy
+npm run storage:seed   # фото товаров в MinIO (если контейнер запущен)
 ```
+
+В БД остаётся только: **5 населённых пунктов (= 5 ПВЗ**, одна запись с названием и адресом), **5 сотрудников ПВЗ**, каталог (~20 товаров), admin и demo-житель (Хандыга). Сборы, маршруты и заказы создаются **только через приложение**.
+
+После обновления схемы: `cd backend && npx prisma migrate deploy && npm run prisma:reset:deploy`
+
+Дополнительно:
+
+| Команда | Когда |
+|---------|--------|
+| `npm run prisma:reset:accounts` | Только 3 аккаунта + 1 НП, без каталога |
+| `npm run prisma:seed` | Дозаполнить каталог, если БД уже есть |
+| `npm run prisma:seed:catalog` | Только товары, без сброса пользователей |
+
+Картинки: `backend/prisma/seed-assets/products/` — см. `README.md` в этой папке.
+
+Обновить пароли демо-аккаунтов без сброса БД: `npx ts-node -P tsconfig.scripts.json prisma/ensure-demo-users.ts`
 
 ## Цикл доставки (как всё связано)
 
@@ -71,7 +75,11 @@ npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-us
 Житель оформляет заказ (ПВЗ = пункт в профиле)
         ↓
 Админ: Сборы → «Закрыть сбор и отправить рейс»
-   (заказы → «в пути», создаются точки ПВЗ на маршруте)
+   (заказы → «подтверждён», создаются точки маршрута)
+        ↓
+Водитель: Маршрут → **чек-лист закупа** на каждой точке закупа
+   (купил / в следующей точке / нет в наличии → возврат + уведомление)
+   → кнопка **«В пути»** → заказы → «в пути», доставка в ПВЗ
         ↓
 Водитель: Маршрут — видит ПВЗ, прогресс приёма
         ↓
@@ -88,7 +96,7 @@ npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-us
 ## Роли и маршруты
 
 - **Житель** — каталог, корзина, заказы, заявка водителя, переключение режима в профиле
-- **Водитель** (`/driver`) — сборы, маршрут с точками ПВЗ, заказы
+- **Водитель** (`/driver`) — сборы, маршрут, **чек-лист закупа**, точки ПВЗ
 - **ПВЗ** (`/employee`) — **Приём** от водителя, **Выдача** жителям
 - **Админ** (`/admin`) — **Сборы** (закрыть и отправить рейс), заказы, товары
 

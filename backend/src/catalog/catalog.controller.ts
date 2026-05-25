@@ -22,8 +22,8 @@ export class CatalogController {
   }
 
   @Get('pickup-points')
-  pickupPoints(@Query('settlement_id') settlementId?: string) {
-    return this.catalog.listPickupPoints(settlementId);
+  pickupPoints() {
+    return this.catalog.listPickupPoints();
   }
 
   @Get('routes')
@@ -39,8 +39,8 @@ export class CatalogController {
   @Post('rounds')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.coordinator, UserRole.admin)
-  createRound(@Body() dto: CreateRoundDto) {
-    return this.catalog.createRound(dto);
+  createRound(@CurrentUser() user: User, @Body() dto: CreateRoundDto) {
+    return this.catalog.createRound(user, dto);
   }
 
   @Post('rounds/:id/join')
@@ -67,9 +67,33 @@ export class CatalogController {
     return this.catalog.getRound(id);
   }
 
-  @Patch('rounds/:id/close')
+  @Get('driver/rounds/active')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.coordinator, UserRole.admin)
+  driverActiveRound(@CurrentUser() user: User) {
+    return this.catalog.getDriverActiveRound(user);
+  }
+
+  @Get('driver/rounds/delivery')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.coordinator, UserRole.admin)
+  driverDeliveryRound(@CurrentUser() user: User) {
+    return this.catalog.getDriverDeliveryRound(user);
+  }
+
+  @Post('rounds/:id/emergency-close')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.coordinator, UserRole.admin)
+  scheduleEmergencyClose(
+    @CurrentUser() user: User,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.catalog.scheduleEmergencyClose(user, id);
+  }
+
+  @Patch('rounds/:id/close')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.admin)
   closeRound(@Param('id', ParseUUIDPipe) id: string) {
     return this.catalog.closeRound(id);
   }

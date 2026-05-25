@@ -1,59 +1,59 @@
 import { PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
-import { ensureDemoDelivery } from './lib/ensure-demo-delivery';
+import { PVZ_EMPLOYEE_ACCOUNTS } from './lib/seed-settlements-pvz';
 
 const prisma = new PrismaClient();
 
-const DEMO_USERS = [
+const CORE_USERS = [
   {
     email: 'admin@coop.local',
     password: 'admin12345',
     fullName: 'Администратор',
     role: UserRole.admin,
+    locationName: 'с. Хандыга',
   },
   {
     email: 'demo@coop.local',
     password: 'demo12345',
     fullName: 'Демо Пользователь',
     role: UserRole.resident,
-  },
-  {
-    email: 'employee@coop.local',
-    password: 'employee12345',
-    fullName: 'Сотрудник ПВЗ',
-    phone: '+7 914 555-00-01',
-    role: UserRole.employee,
+    locationName: 'с. Хандыга',
   },
 ] as const;
 
+const PVZ_BY_EMPLOYEE_EMAIL = [
+  { email: PVZ_EMPLOYEE_ACCOUNTS[0].email, locationName: 'с. Хандыга' },
+  { email: PVZ_EMPLOYEE_ACCOUNTS[1].email, locationName: 'с. Батагай' },
+  { email: PVZ_EMPLOYEE_ACCOUNTS[2].email, locationName: 'с. Вилюйск' },
+  { email: PVZ_EMPLOYEE_ACCOUNTS[3].email, locationName: 'с. Оймякон' },
+  { email: PVZ_EMPLOYEE_ACCOUNTS[4].email, locationName: 'Якутск' },
+] as const;
+
 async function main() {
-  const settlement = await prisma.settlement.findFirst({ orderBy: { name: 'asc' } });
-  if (!settlement) {
-    console.error('Нет населённых пунктов. Сначала выполните: npm run prisma:seed');
+  const pickupByName = new Map(
+    (await prisma.pickupPoint.findMany()).map((p) => [p.name, p]),
+  );
+
+  if (pickupByName.size === 0) {
+    console.error('Нет ПВЗ. Сначала: npm run prisma:reset:deploy');
     process.exit(1);
   }
 
-  const pickupPoint = await prisma.pickupPoint.findFirst({
-    where: { settlementId: settlement.id },
-    orderBy: { coordinatorName: 'asc' },
-  });
-  if (!pickupPoint) {
-    console.error('Нет пунктов выдачи. Сначала выполните: npm run prisma:seed');
-    process.exit(1);
-  }
-
-  for (const demo of DEMO_USERS) {
+  for (const demo of CORE_USERS) {
+    const pickupPoint = pickupByName.get(demo.locationName);
+    if (!pickupPoint) {
+      console.error(`ПВЗ не найден: ${demo.locationName}`);
+      process.exit(1);
+    }
     const hashedPassword = await bcrypt.hash(demo.password, 10);
     const user = await prisma.user.upsert({
       where: { email: demo.email },
       create: {
         email: demo.email,
         fullName: demo.fullName,
-        phone: 'phone' in demo ? demo.phone : null,
         hashedPassword,
         role: demo.role,
-        settlementId: settlement.id,
         pickupPointId: pickupPoint.id,
         isActive: true,
       },
@@ -61,19 +61,50 @@ async function main() {
         fullName: demo.fullName,
         hashedPassword,
         role: demo.role,
-        settlementId: settlement.id,
         pickupPointId: pickupPoint.id,
         isActive: true,
-        ...('phone' in demo ? { phone: demo.phone } : {}),
       },
     });
     console.log(`  ${demo.role.padEnd(12)} ${user.email} / ${demo.password}`);
   }
 
-  console.log('\nПВЗ:', pickupPoint.coordinatorName, '—', pickupPoint.address);
-  await ensureDemoDelivery(prisma);
-  console.log('Вход: /auth → employee@coop.local');
-  console.log('Интерфейс: /employee → Приём');
+  const employeePassword = await bcrypt.hash('employee12345', 10);
+
+  for (let i = 0; i < PVZ_EMPLOYEE_ACCOUNTS.length; i++) {
+    const account = PVZ_EMPLOYEE_ACCOUNTS[i];
+    const link = PVZ_BY_EMPLOYEE_EMAIL[i];
+    const pickupPoint = pickupByName.get(link.locationName);
+    if (!pickupPoint) {
+      console.error(`ПВЗ не найден: ${link.locationName}`);
+      process.exit(1);
+    }
+
+    const user = await prisma.user.upsert({
+      where: { email: account.email },
+      create: {
+        email: account.email,
+        fullName: account.fullName,
+        phone: account.phone,
+        hashedPassword: employeePassword,
+        role: UserRole.employee,
+        pickupPointId: pickupPoint.id,
+        isActive: true,
+      },
+      update: {
+        fullName: account.fullName,
+        phone: account.phone,
+        hashedPassword: employeePassword,
+        role: UserRole.employee,
+        pickupPointId: pickupPoint.id,
+        isActive: true,
+      },
+    });
+    console.log(
+      `  ${UserRole.employee.padEnd(12)} ${user.email} / employee12345  →  ${pickupPoint.name}`,
+    );
+  }
+
+  console.log('\nДемо-рейс и тестовые заказы не создаются — только сценарии в приложении.');
 }
 
 main()

@@ -29,8 +29,8 @@ export class AuthService {
       phone: user.phone,
       fullName: user.fullName,
       role: user.role,
-      settlementId: user.settlementId,
       pickupPointId: user.pickupPointId,
+      settlementId: user.pickupPointId,
       mustChangePassword: user.mustChangePassword,
     };
   }
@@ -77,8 +77,7 @@ export class AuthService {
           phone,
           fullName: dto.fullName,
           hashedPassword,
-          settlementId: dto.settlementId,
-          pickupPointId: dto.pickupPointId,
+          pickupPointId: dto.pickupPointId ?? dto.settlementId,
         },
       });
 

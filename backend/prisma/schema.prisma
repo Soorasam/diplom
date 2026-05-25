@@ -56,6 +56,30 @@ enum DeliveryStopStatus {
   completed
 }
 
+enum OrderItemProcurementStatus {
+  pending
+  purchased
+  refunded
+}
+
+/// Населённый пункт = один ПВЗ (все данные в одной записи).
+model PickupPoint {
+  id       String  @id @default(uuid()) @db.Uuid
+  name     String
+  address  String?
+  phone    String?
+  district String?
+  ulus     String?
+
+  users          User[]
+  orders         Order[]
+  deliveryStops  RoundDeliveryStop[]
+  routeWaypoints RouteWaypoint[]
+  roundWaypoints RoundWaypoint[]
+
+  @@map("pickup_points")
+}
+
 model User {
   id             String   @id @default(uuid()) @db.Uuid
   email          String   @unique
@@ -63,77 +87,85 @@ model User {
   hashedPassword String   @map("hashed_password")
   fullName       String?  @map("full_name")
   role           UserRole @default(resident)
-  settlementId   String?  @map("settlement_id") @db.Uuid
   pickupPointId  String?  @map("pickup_point_id") @db.Uuid
   isActive             Boolean  @default(true) @map("is_active")
   mustChangePassword   Boolean  @default(false) @map("must_change_password")
   createdAt            DateTime @default(now()) @map("created_at")
 
-  settlement  Settlement?  @relation(fields: [settlementId], references: [id])
-  pickupPoint PickupPoint? @relation(fields: [pickupPointId], references: [id])
+  pickupPoint         PickupPoint?         @relation(fields: [pickupPointId], references: [id])
   cartItems           CartItem[]
   orders              Order[]
   roundParticipations RoundParticipant[]
   notifications       Notification[]
   driverApplications  DriverApplication[]
+  driverRoutes        Route[]             @relation("DriverRoutes")
+  driverRounds        Round[]             @relation("DriverRounds")
 
   @@map("users")
 }
 
-model Settlement {
-  id       String  @id @default(uuid()) @db.Uuid
-  name     String
-  district String?
-  ulus     String?
-
-  pickupPoints PickupPoint[]
-  users        User[]
-
-  @@map("settlements")
-}
-
-model PickupPoint {
-  id               String  @id @default(uuid()) @db.Uuid
-  settlementId     String  @map("settlement_id") @db.Uuid
-  coordinatorName  String  @map("coordinator_name")
-  address          String?
-  phone            String?
-
-  settlement Settlement @relation(fields: [settlementId], references: [id])
-  users          User[]
-  orders         Order[]
-  deliveryStops  RoundDeliveryStop[]
-
-  @@map("pickup_points")
-}
-
 model Route {
-  id            String        @id @default(uuid()) @db.Uuid
-  title         String
-  description   String?
-  transportType TransportType @default(highway) @map("transport_type")
-  seasonNote    String?       @map("season_note")
+  id              String        @id @default(uuid()) @db.Uuid
+  title           String
+  description     String?
+  transportType   TransportType @default(highway) @map("transport_type")
+  seasonNote      String?       @map("season_note")
+  isTemplate      Boolean       @default(false) @map("is_template")
+  createdByUserId String?       @map("created_by_user_id") @db.Uuid
 
-  rounds Round[]
+  createdBy User?           @relation("DriverRoutes", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  waypoints RouteWaypoint[]
 
   @@map("routes")
 }
 
-model Round {
-  id                 String      @id @default(uuid()) @db.Uuid
-  routeId            String      @map("route_id") @db.Uuid
-  title              String?
-  status             RoundStatus @default(open)
-  createdAt          DateTime    @default(now()) @map("created_at")
-  closesAt           DateTime    @map("closes_at")
-  minParticipants    Int         @default(10) @map("min_participants")
-  targetParticipants Int         @default(50) @map("target_participants")
-  participantsCount  Int         @default(0) @map("participants_count")
-  currentWeightKg    Decimal     @default(0) @map("current_weight_kg") @db.Decimal(10, 2)
-  targetWeightKg     Decimal     @default(500) @map("target_weight_kg") @db.Decimal(10, 2)
+model RoundWaypoint {
+  id                 String  @id @default(uuid()) @db.Uuid
+  roundId            String  @map("round_id") @db.Uuid
+  pickupPointId      String  @map("pickup_point_id") @db.Uuid
+  sortOrder          Int     @map("sort_order")
+  isProcurementPoint Boolean @default(false) @map("is_procurement_point")
 
-  route        Route              @relation(fields: [routeId], references: [id])
-  cartItems    CartItem[]
+  round       Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  pickupPoint PickupPoint @relation(fields: [pickupPointId], references: [id])
+
+  @@unique([roundId, pickupPointId])
+  @@map("round_waypoints")
+}
+
+model RouteWaypoint {
+  id                 String  @id @default(uuid()) @db.Uuid
+  routeId            String  @map("route_id") @db.Uuid
+  pickupPointId      String  @map("pickup_point_id") @db.Uuid
+  sortOrder          Int     @map("sort_order")
+  isProcurementPoint Boolean @default(false) @map("is_procurement_point")
+
+  route       Route       @relation(fields: [routeId], references: [id], onDelete: Cascade)
+  pickupPoint PickupPoint @relation(fields: [pickupPointId], references: [id])
+
+  @@unique([routeId, pickupPointId])
+  @@map("route_waypoints")
+}
+
+model Round {
+  id                 String        @id @default(uuid()) @db.Uuid
+  title              String?
+  routeTitle         String?       @map("route_title")
+  transportType      TransportType @default(highway) @map("transport_type")
+  createdByUserId    String?       @map("created_by_user_id") @db.Uuid
+  status             RoundStatus   @default(open)
+  createdAt          DateTime      @default(now()) @map("created_at")
+  closesAt           DateTime      @map("closes_at")
+  emergencyCloseAt   DateTime?     @map("emergency_close_at")
+  minParticipants    Int           @default(10) @map("min_participants")
+  targetParticipants Int           @default(50) @map("target_participants")
+  participantsCount  Int           @default(0) @map("participants_count")
+  currentWeightKg    Decimal       @default(0) @map("current_weight_kg") @db.Decimal(10, 2)
+  targetWeightKg     Decimal       @default(500) @map("target_weight_kg") @db.Decimal(10, 2)
+
+  createdBy      User?               @relation("DriverRounds", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  waypoints      RoundWaypoint[]
+  cartItems      CartItem[]
   orders         Order[]
   participants   RoundParticipant[]
   deliveryStops  RoundDeliveryStop[]
@@ -142,12 +174,14 @@ model Round {
 }
 
 model RoundDeliveryStop {
-  id            String             @id @default(uuid()) @db.Uuid
-  roundId       String             @map("round_id") @db.Uuid
-  pickupPointId String             @map("pickup_point_id") @db.Uuid
-  status        DeliveryStopStatus @default(pending)
-  sortOrder     Int                @default(0) @map("sort_order")
-  completedAt   DateTime?          @map("completed_at")
+  id                       String             @id @default(uuid()) @db.Uuid
+  roundId                  String             @map("round_id") @db.Uuid
+  pickupPointId            String             @map("pickup_point_id") @db.Uuid
+  status                   DeliveryStopStatus @default(pending)
+  sortOrder                Int                @default(0) @map("sort_order")
+  completedAt              DateTime?          @map("completed_at")
+  isProcurementStop        Boolean            @default(false) @map("is_procurement_stop")
+  procurementCompletedAt   DateTime?          @map("procurement_completed_at")
 
   round       Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
   pickupPoint PickupPoint @relation(fields: [pickupPointId], references: [id])
@@ -283,13 +317,15 @@ model DriverApplicationDocument {
 }
 
 model OrderItem {
-  id            String  @id @default(uuid()) @db.Uuid
-  orderId       String  @map("order_id") @db.Uuid
-  productId     String  @map("product_id") @db.Uuid
-  productName   String  @map("product_name")
-  quantity      Int
-  unit          String
-  priceSnapshot Decimal @map("price_snapshot") @db.Decimal(12, 2)
+  id                       String                     @id @default(uuid()) @db.Uuid
+  orderId                  String                     @map("order_id") @db.Uuid
+  productId                String                     @map("product_id") @db.Uuid
+  productName              String                     @map("product_name")
+  quantity                 Int
+  unit                     String
+  priceSnapshot            Decimal                    @map("price_snapshot") @db.Decimal(12, 2)
+  procurementStatus        OrderItemProcurementStatus @default(pending) @map("procurement_status")
+  procurementPickupPointId String?                    @map("procurement_pickup_point_id") @db.Uuid
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])

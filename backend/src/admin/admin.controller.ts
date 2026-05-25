@@ -8,7 +8,7 @@ import { UpdateOrderStatusDto } from '../orders/dto/update-order-status.dto';
 import { OrdersService } from '../orders/orders.service';
 import { AdminService } from './admin.service';
 import { CreatePvzEmployeeDto } from './dto/create-pvz-employee.dto';
-import { CreateRouteDto } from './dto/create-route.dto';
+import { CreateSettlementDto } from './dto/create-settlement.dto';
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -44,14 +44,14 @@ export class AdminController {
     return this.admin.listRoutes();
   }
 
-  @Post('routes')
-  createRoute(@Body() dto: CreateRouteDto) {
-    return this.admin.createRoute(dto);
-  }
-
   @Get('settlements')
   settlements() {
     return this.admin.listSettlements();
+  }
+
+  @Post('settlements')
+  createSettlement(@Body() dto: CreateSettlementDto) {
+    return this.admin.createSettlement(dto);
   }
 
   @Get('drivers')

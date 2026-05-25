@@ -19,8 +19,13 @@ export const useProcurementParticipation = () => {
 
   const hasJoined =
     isAuthenticated && Boolean(procurementId && joinedRoundIds.includes(procurementId))
-  const isRoundOpen = procurement?.status === "open"
-  const roundClosed = procurement != null && procurement.status !== "open"
+  const isClosing = procurement?.status === "closing"
+  const isRoundOpen =
+    procurement?.status === "open" || procurement?.status === "closing"
+  const canJoinRound =
+    procurement?.status === "open" || procurement?.status === "closing"
+  const roundClosed =
+    procurement != null && procurement.status !== "open" && procurement.status !== "closing"
   const canCheckoutRound = hasJoined && isRoundOpen && Boolean(procurementId)
 
   return {
@@ -29,6 +34,8 @@ export const useProcurementParticipation = () => {
     joinedRoundIds,
     hasJoined,
     isRoundOpen,
+    isClosing,
+    canJoinRound,
     roundClosed,
     canCheckoutRound,
     isAuthenticated,

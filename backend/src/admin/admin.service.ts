@@ -2,11 +2,11 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { Prisma, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { CreateRouteDto } from './dto/create-route.dto';
 import { CreatePvzEmployeeDto } from './dto/create-pvz-employee.dto';
+import { CreateSettlementDto } from './dto/create-settlement.dto';
 import { CatalogService } from '../catalog/catalog.service';
 import { calcRoundProgressPercent, decimalToNumber } from '../common/order-labels';
-import { mapOrderDetail, OrderWithRelations } from '../common/order-mapper';
+import { mapOrderDetail, orderDetailInclude } from '../common/order-mapper';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -22,7 +22,7 @@ export class AdminService {
       this.prisma.user.count(),
       this.prisma.product.count({ where: { isActive: true } }),
       this.prisma.route.count(),
-      this.prisma.settlement.count(),
+      this.prisma.pickupPoint.count(),
       this.prisma.user.count({
         where: {
           OR: [
@@ -66,7 +66,6 @@ export class AdminService {
         phone: true,
         fullName: true,
         role: true,
-        settlementId: true,
         pickupPointId: true,
         createdAt: true,
       },
@@ -75,10 +74,10 @@ export class AdminService {
 
   async listOrders() {
     const orders = await this.prisma.order.findMany({
-      include: { items: true, round: { include: { route: true } } },
+      include: orderDetailInclude,
       orderBy: { createdAt: 'desc' },
     });
-    return orders.map((o) => mapOrderDetail(o as OrderWithRelations));
+    return orders.map((o) => mapOrderDetail(o));
   }
 
   async listProducts() {
@@ -107,7 +106,6 @@ export class AdminService {
     const email = dto.email.trim().toLowerCase();
     const pickupPoint = await this.prisma.pickupPoint.findUnique({
       where: { id: dto.pickupPointId },
-      include: { settlement: true },
     });
     if (!pickupPoint) {
       throw new NotFoundException('Пункт выдачи не найден');
@@ -126,9 +124,8 @@ export class AdminService {
         data: {
           email,
           hashedPassword,
-          fullName: dto.fullName?.trim() || `Сотрудник ${pickupPoint.coordinatorName}`,
+          fullName: dto.fullName?.trim() || `Сотрудник ${pickupPoint.name}`,
           role: UserRole.employee,
-          settlementId: pickupPoint.settlementId,
           pickupPointId: pickupPoint.id,
           mustChangePassword: true,
         },
@@ -146,8 +143,8 @@ export class AdminService {
         temporaryPassword,
         pickupPoint: {
           id: pickupPoint.id,
-          name: pickupPoint.coordinatorName,
-          settlementName: pickupPoint.settlement.name,
+          name: pickupPoint.name,
+          settlementName: pickupPoint.name,
         },
       };
     } catch (error) {
@@ -161,19 +158,28 @@ export class AdminService {
     }
   }
 
-  createRoute(dto: CreateRouteDto) {
-    return this.prisma.route.create({
+  async createSettlement(dto: CreateSettlementDto) {
+    const name = dto.name.trim();
+    const existing = await this.prisma.pickupPoint.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' } },
+    });
+    if (existing) {
+      throw new ConflictException('Населённый пункт с таким названием уже есть');
+    }
+
+    return this.prisma.pickupPoint.create({
       data: {
-        title: dto.title.trim(),
-        description: dto.description?.trim() || null,
-        transportType: dto.transportType,
-        seasonNote: dto.seasonNote?.trim() || null,
+        name,
+        ulus: dto.ulus?.trim() || null,
+        district: dto.district?.trim() || dto.ulus?.trim() || null,
+        address: dto.address?.trim() || null,
+        phone: dto.phone?.trim() || null,
       },
     });
   }
 
   listSettlements() {
-    return this.prisma.settlement.findMany({ orderBy: { name: 'asc' } });
+    return this.prisma.pickupPoint.findMany({ orderBy: { name: 'asc' } });
   }
 
   listDrivers() {
@@ -190,7 +196,6 @@ export class AdminService {
         fullName: true,
         phone: true,
         role: true,
-        settlementId: true,
         pickupPointId: true,
       },
     });
@@ -198,9 +203,8 @@ export class AdminService {
 
   listPickupPoints() {
     return this.prisma.pickupPoint.findMany({
-      orderBy: { coordinatorName: 'asc' },
+      orderBy: { name: 'asc' },
       include: {
-        settlement: { select: { id: true, name: true, ulus: true } },
         users: {
           where: { role: UserRole.employee },
           select: { id: true, email: true, fullName: true, phone: true },
@@ -211,7 +215,7 @@ export class AdminService {
 
   async listRounds() {
     const rounds = await this.prisma.round.findMany({
-      include: { route: true },
+      include: { waypoints: { include: { pickupPoint: true } } },
       orderBy: { closesAt: 'desc' },
     });
     return rounds.map((r) => ({

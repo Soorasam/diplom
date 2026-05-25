@@ -117,15 +117,16 @@ export const mapSettlement = (s: {
 
 export const mapPickupPoint = (p: {
   id: string
-  settlementId: string
-  coordinatorName: string
+  name: string
+  settlementId?: string
+  coordinatorName?: string
   address?: string | null
   phone?: string | null
 }): PickupPoint => ({
   id: p.id,
-  settlementId: p.settlementId,
-  name: p.coordinatorName,
-  coordinatorName: p.coordinatorName,
+  settlementId: p.settlementId ?? p.id,
+  name: p.name ?? p.coordinatorName ?? "",
+  coordinatorName: p.coordinatorName ?? p.name ?? "",
   address: p.address ?? "",
   coordinatorPhone: p.phone ?? "",
   coordinates: { lat: 0, lng: 0 },
@@ -137,8 +138,8 @@ export const mapUser = (u: BackendUser): User => ({
   phone: u.phone ?? "",
   email: u.email,
   role: mapBackendRole(u.role),
-  settlementId: u.settlementId ?? "",
-  pickupPointId: u.pickupPointId ?? undefined,
+  settlementId: u.settlementId ?? u.pickupPointId ?? "",
+  pickupPointId: u.pickupPointId ?? u.settlementId ?? undefined,
   mustChangePassword: u.mustChangePassword ?? false,
 })
 
@@ -171,15 +172,19 @@ export const mapRound = (r: BackendRound): Procurement => ({
   title: r.title ?? r.route.title,
   routeId: r.routeId,
   status:
-    r.status === "open"
-      ? "open"
-      : r.status === "fulfilled"
-        ? "shipped"
-        : r.status === "closed"
-          ? "closed"
-          : "closing",
+    r.status === "open" && r.emergencyCloseAt
+      ? "closing"
+      : r.status === "open"
+        ? "open"
+        : r.status === "fulfilled"
+          ? "shipped"
+          : r.status === "closed"
+            ? "closed"
+            : "closing",
   createdAt: r.createdAt ?? r.closesAt,
   closesAt: r.closesAt,
+  emergencyCloseAt: r.emergencyCloseAt ?? null,
+  organizerUserId: r.route.createdByUserId ?? r.createdByUserId ?? null,
   minVolumePercent: Math.max(
     10,
     Math.round((r.minParticipants / Math.max(r.targetParticipants, 1)) * 100),

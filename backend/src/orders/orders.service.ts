@@ -6,21 +6,18 @@ import {
 } from '@nestjs/common';
 import { OrderStatus, RoundStatus, User, UserRole } from '@prisma/client';
 import { assertOrderStatusTransition } from '../common/order-status-transitions';
-import { mapOrderDetail, mapOrderListItem, OrderWithRelations } from '../common/order-mapper';
+import {
+  mapOrderDetail,
+  mapOrderListItem,
+  orderInclude,
+  OrderWithRelations,
+} from '../common/order-mapper';
 import { ORDER_STATUS_LABELS } from '../common/order-labels';
 import { DeliveryStopsService } from '../logistics/delivery-stops.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 
-const orderInclude = {
-  items: true,
-  round: { include: { route: true } },
-  user: { select: { id: true, fullName: true, phone: true, email: true } },
-} as const;
-
-type OrderWithUser = OrderWithRelations & {
-  user?: { id: string; fullName: string | null; phone: string | null; email: string };
-};
+type OrderWithUser = OrderWithRelations;
 
 @Injectable()
 export class OrdersService {
@@ -35,7 +32,7 @@ export class OrdersService {
       include: orderInclude,
     });
     if (!order) throw new NotFoundException('Заказ не найден');
-    return order as OrderWithUser;
+    return order;
   }
 
   private withCustomer(order: OrderWithUser) {
@@ -54,7 +51,7 @@ export class OrdersService {
       include: orderInclude,
       orderBy: { createdAt: 'desc' },
     });
-    return orders.map((o) => mapOrderListItem(o as OrderWithRelations));
+    return orders.map((o) => mapOrderListItem(o));
   }
 
   async listAll() {
@@ -62,7 +59,7 @@ export class OrdersService {
       include: orderInclude,
       orderBy: { createdAt: 'desc' },
     });
-    return orders.map((o) => this.withCustomer(o as OrderWithUser));
+    return orders.map((o) => this.withCustomer(o));
   }
 
   async listByPickupPoint(pickupPointId: string) {
@@ -81,7 +78,7 @@ export class OrdersService {
       include: orderInclude,
       orderBy: { createdAt: 'desc' },
     });
-    return orders.map((o) => this.withCustomer(o as OrderWithUser));
+    return orders.map((o) => this.withCustomer(o));
   }
 
   async getOne(user: User, orderId: string) {
@@ -90,7 +87,7 @@ export class OrdersService {
       include: orderInclude,
     });
     if (!order) throw new NotFoundException('Заказ не найден');
-    return this.withCustomer(order as OrderWithUser);
+    return this.withCustomer(order);
   }
 
   async getOneForStaff(user: User, orderId: string) {
@@ -119,7 +116,7 @@ export class OrdersService {
       dto.status,
     );
 
-    return this.withCustomer(updated as OrderWithUser);
+    return this.withCustomer(updated);
   }
 
   

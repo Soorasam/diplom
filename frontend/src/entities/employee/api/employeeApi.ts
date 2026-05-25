@@ -1,6 +1,8 @@
 import { http } from "@/shared/api/client"
+import { mapBackendOrderStatus } from "@/shared/api/mappers"
 import type { Order } from "@/shared/api/mock-db"
 export interface EmployeeOrderView extends Order {
+  publicNumber?: string
   userName: string
   userPhone: string
   itemsText: string
@@ -11,7 +13,8 @@ export type DeliveryStopStatus = "pending" | "in_progress" | "completed"
 
 export interface EmployeeWorkspaceOrder {
   id: string
-  status: Order["status"]
+  publicNumber?: string
+  status: string
   totalAmount: number
   roundId: string | null
   roundTitle: string | null
@@ -52,9 +55,10 @@ function mapWorkspaceOrder(o: EmployeeWorkspaceOrder): EmployeeOrderView {
   const itemsText = o.items.map((i) => `${i.name} × ${i.quantity} ${i.unit}`).join(", ")
   return {
     id: o.id,
+    publicNumber: o.publicNumber,
     userId: "",
     procurementId: o.roundId ?? "",
-    status: o.status,
+    status: mapBackendOrderStatus(o.status),
     total: o.totalAmount,
     pickupPointId: "",
     createdAt: "",

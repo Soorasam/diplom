@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { DeliveryStopStatus, OrderStatus, Prisma } from '@prisma/client';
 import { ORDER_STATUS_LABELS } from '../common/order-labels';
 import { PrismaService } from '../prisma/prisma.service';
@@ -7,8 +11,6 @@ import { PrismaService } from '../prisma/prisma.service';
 export class DeliveryStopsService {
   constructor(private prisma: PrismaService) {}
 
-  
-  
   async dispatchRound(roundId: string) {
     await this.syncStopsForRound(roundId);
 
@@ -23,7 +25,23 @@ export class DeliveryStopsService {
     const { count } = await this.prisma.order.updateMany({
       where: {
         roundId,
-        status: { in: [OrderStatus.confirmed, OrderStatus.submitted] },
+        status: OrderStatus.submitted,
+      },
+      data: {
+        status: OrderStatus.confirmed,
+        statusNote: ORDER_STATUS_LABELS.confirmed,
+      },
+    });
+
+    return { ordersDispatched: count, awaitingProcurement: true };
+  }
+
+  /** После всех точек закупа — заказы в пути к ПВЗ. */
+  async releaseOrdersToTransit(roundId: string) {
+    const { count } = await this.prisma.order.updateMany({
+      where: {
+        roundId,
+        status: OrderStatus.confirmed,
       },
       data: {
         status: OrderStatus.in_transit,
@@ -31,38 +49,83 @@ export class DeliveryStopsService {
       },
     });
 
+    await this.markInTransitStopsInProgress(roundId);
+
     return { ordersDispatched: count };
   }
 
   async syncStopsForRound(roundId: string) {
-    const orders = await this.prisma.order.findMany({
-      where: {
-        roundId,
-        pickupPointId: { not: null },
-        status: { not: OrderStatus.cancelled },
+    const round = await this.prisma.round.findUnique({
+      where: { id: roundId },
+      include: {
+        waypoints: { orderBy: { sortOrder: 'asc' } },
+        orders: {
+          where: {
+            pickupPointId: { not: null },
+            status: { not: OrderStatus.cancelled },
+          },
+          select: { pickupPointId: true },
+        },
       },
-      select: { pickupPointId: true },
-      distinct: ['pickupPointId'],
     });
+    if (!round) return;
+
+    const orderedIds: string[] = [];
+    const seen = new Set<string>();
+    const push = (id: string) => {
+      if (!seen.has(id)) {
+        seen.add(id);
+        orderedIds.push(id);
+      }
+    };
+
+    for (const wp of round.waypoints) {
+      push(wp.pickupPointId);
+    }
+
+    for (const order of round.orders) {
+      if (order.pickupPointId) push(order.pickupPointId);
+    }
+
+    const procurementIds = new Set(
+      round.waypoints.filter((w) => w.isProcurementPoint).map((w) => w.pickupPointId),
+    );
 
     let sortOrder = 0;
-    for (const row of orders) {
-      if (!row.pickupPointId) continue;
+    for (const pickupPointId of orderedIds) {
+      const isProcurementStop = procurementIds.has(pickupPointId);
       await this.prisma.roundDeliveryStop.upsert({
         where: {
           uq_round_delivery_stop: {
             roundId,
-            pickupPointId: row.pickupPointId,
+            pickupPointId,
           },
         },
         create: {
           roundId,
-          pickupPointId: row.pickupPointId,
+          pickupPointId,
           sortOrder: sortOrder++,
           status: DeliveryStopStatus.pending,
+          isProcurementStop,
         },
-        update: {},
+        update: { sortOrder: sortOrder++, isProcurementStop },
       });
+    }
+  }
+
+  private async markInTransitStopsInProgress(roundId: string) {
+    const inTransitByPvz = await this.prisma.order.groupBy({
+      by: ['pickupPointId'],
+      where: {
+        roundId,
+        status: OrderStatus.in_transit,
+        pickupPointId: { not: null },
+      },
+    });
+
+    for (const row of inTransitByPvz) {
+      if (!row.pickupPointId) continue;
+      await this.markStopInProgress(roundId, row.pickupPointId);
     }
   }
 
@@ -77,8 +140,69 @@ export class DeliveryStopsService {
     });
   }
 
-  
+  async completeStopByDriver(roundId: string, pickupPointId: string) {
+    const stop = await this.prisma.roundDeliveryStop.findUnique({
+      where: { uq_round_delivery_stop: { roundId, pickupPointId } },
+    });
+    if (!stop) throw new NotFoundException('Точка маршрута не найдена');
+
+    const ordersAtStop = await this.prisma.order.count({
+      where: {
+        roundId,
+        pickupPointId,
+        status: { not: OrderStatus.cancelled },
+      },
+    });
+    if (ordersAtStop > 0) {
+      throw new BadRequestException(
+        'На этой точке ожидают заказы — завершение подтверждает сотрудник ПВЗ',
+      );
+    }
+
+    if (stop.isProcurementStop && !stop.procurementCompletedAt) {
+      throw new BadRequestException(
+        'Сначала завершите закупку: чек-лист и кнопка «В пути»',
+      );
+    }
+
+    if (stop.status === DeliveryStopStatus.completed) {
+      return { stopCompleted: true, roundCompleted: await this.isRoundFullyCompleted(roundId) };
+    }
+
+    await this.prisma.roundDeliveryStop.update({
+      where: { uq_round_delivery_stop: { roundId, pickupPointId } },
+      data: {
+        status: DeliveryStopStatus.completed,
+        completedAt: new Date(),
+      },
+    });
+
+    const roundCompleted = await this.isRoundFullyCompleted(roundId);
+    return { stopCompleted: true, roundCompleted };
+  }
+
+  private async isRoundFullyCompleted(roundId: string) {
+    const openStops = await this.prisma.roundDeliveryStop.count({
+      where: {
+        roundId,
+        status: { not: DeliveryStopStatus.completed },
+      },
+    });
+    return openStops === 0;
+  }
+
   async refreshStopCompletion(roundId: string, pickupPointId: string) {
+    const ordersAtStop = await this.prisma.order.count({
+      where: {
+        roundId,
+        pickupPointId,
+        status: { not: OrderStatus.cancelled },
+      },
+    });
+    if (ordersAtStop === 0) {
+      return { stopCompleted: false, roundCompleted: false };
+    }
+
     const inTransit = await this.prisma.order.count({
       where: {
         roundId,
@@ -114,25 +238,43 @@ export class DeliveryStopsService {
       },
     });
 
-    const openStops = await this.prisma.roundDeliveryStop.count({
-      where: {
-        roundId,
-        status: { not: DeliveryStopStatus.completed },
-      },
-    });
+    const roundCompleted = await this.isRoundFullyCompleted(roundId);
 
     return {
       stopCompleted: true,
-      roundCompleted: openStops === 0,
+      roundCompleted,
     };
+  }
+
+  /** Точка закупа без заказов на ПВЗ — закрывается вместе с «В пути». */
+  async completeProcurementStopIfNoOrders(roundId: string, pickupPointId: string) {
+    const ordersAtStop = await this.prisma.order.count({
+      where: {
+        roundId,
+        pickupPointId,
+        status: { not: OrderStatus.cancelled },
+      },
+    });
+    if (ordersAtStop > 0) return;
+
+    const stop = await this.prisma.roundDeliveryStop.findUnique({
+      where: { uq_round_delivery_stop: { roundId, pickupPointId } },
+    });
+    if (!stop || stop.status === DeliveryStopStatus.completed) return;
+
+    await this.prisma.roundDeliveryStop.update({
+      where: { uq_round_delivery_stop: { roundId, pickupPointId } },
+      data: {
+        status: DeliveryStopStatus.completed,
+        completedAt: new Date(),
+      },
+    });
   }
 
   async getStopsForRound(roundId: string) {
     return this.prisma.roundDeliveryStop.findMany({
       where: { roundId },
-      include: {
-        pickupPoint: { include: { settlement: true } },
-      },
+      include: { pickupPoint: true },
       orderBy: { sortOrder: 'asc' },
     });
   }

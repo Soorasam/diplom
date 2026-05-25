@@ -40,15 +40,20 @@ export interface BackendRoute {
   id: string
   title: string
   transportType: "winter_road" | "river" | "highway"
+  createdByUserId?: string | null
 }
 
 export interface BackendRound {
   id: string
   routeId: string
   title: string | null
+  routeTitle?: string | null
+  transportType?: "winter_road" | "river" | "highway"
+  createdByUserId?: string | null
   status: "open" | "closed" | "fulfilled"
   createdAt: string
   closesAt: string
+  emergencyCloseAt?: string | null
   minParticipants: number
   targetParticipants: number
   participantsCount: number

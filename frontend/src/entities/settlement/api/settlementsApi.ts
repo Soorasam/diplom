@@ -2,11 +2,18 @@ import { http } from "@/shared/api/client"
 import type { PickupPoint, Settlement } from "@/shared/api/mock-db"
 import { mapPickupPoint, mapSettlement } from "@/shared/api/mappers"
 
+type LocationDto = {
+  id: string
+  name: string
+  district?: string | null
+  ulus?: string | null
+  address?: string | null
+  phone?: string | null
+}
+
 export const settlementsApi = {
   getAll: async () => {
-    const items = await http.get<{ id: string; name: string; district?: string; ulus?: string }[]>(
-      "/settlements",
-    )
+    const items = await http.get<LocationDto[]>("/settlements")
     return items.map(mapSettlement)
   },
 
@@ -17,18 +24,12 @@ export const settlementsApi = {
     return s
   },
 
-  getPickupPoints: async (settlementId?: string) => {
-    const query = settlementId ? `?settlement_id=${settlementId}` : ""
-    const items = await http.get<
-      {
-        id: string
-        settlementId: string
-        coordinatorName: string
-        address?: string
-        phone?: string
-      }[]
-    >(`/pickup-points${query}`)
-    return items.map(mapPickupPoint) as PickupPoint[]
+  /** НП = ПВЗ: id точки совпадает с id «населённого пункта». */
+  getPickupPoints: async (locationId?: string) => {
+    const items = await http.get<LocationDto[]>("/pickup-points")
+    const mapped = items.map(mapPickupPoint) as PickupPoint[]
+    if (!locationId) return mapped
+    return mapped.filter((p) => p.id === locationId || p.settlementId === locationId)
   },
 }
 

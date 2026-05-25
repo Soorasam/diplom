@@ -9,6 +9,11 @@ export function useEmployeeWorkspace() {
   return useQuery({
     queryKey: queryKeys.employee.workspace,
     queryFn: () => employeeApi.getWorkspace(),
+    refetchInterval: (query) => {
+      const stats = query.state.data?.stats
+      if (stats?.awaitingDriver || stats?.awaitingDispatch) return 5000
+      return false
+    },
   })
 }
 
@@ -30,6 +35,7 @@ export function useEmployeeReceive() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.employee.workspace })
+      void qc.invalidateQueries({ queryKey: ["routes", "driver"] })
     },
   })
 }

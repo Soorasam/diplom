@@ -87,6 +87,8 @@ export interface Procurement {
   status: ProcurementStatus
   createdAt: string
   closesAt: string
+  emergencyCloseAt?: string | null
+  organizerUserId?: string | null
   minVolumePercent: number
   currentVolumePercent: number
   participantsCount: number

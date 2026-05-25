@@ -1,5 +1,5 @@
 import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { User, UserRole } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -13,23 +13,17 @@ export class EmployeeController {
   constructor(private employeeService: EmployeeService) {}
 
   @Get('workspace')
-  getWorkspace(@CurrentUser('id') userId: string) {
-    return this.employeeService.getWorkspace(userId);
+  getWorkspace(@CurrentUser() user: User) {
+    return this.employeeService.getWorkspace(user.id);
   }
 
   @Post('orders/:id/receive')
-  receiveFromDriver(
-    @CurrentUser('id') userId: string,
-    @Param('id') orderId: string,
-  ) {
-    return this.employeeService.receiveFromDriver(userId, orderId);
+  receiveFromDriver(@CurrentUser() user: User, @Param('id') orderId: string) {
+    return this.employeeService.receiveFromDriver(user.id, orderId);
   }
 
   @Post('orders/:id/handout')
-  handoutToResident(
-    @CurrentUser('id') userId: string,
-    @Param('id') orderId: string,
-  ) {
-    return this.employeeService.handoutToResident(userId, orderId);
+  handoutToResident(@CurrentUser() user: User, @Param('id') orderId: string) {
+    return this.employeeService.handoutToResident(user.id, orderId);
   }
 }

@@ -41,8 +41,7 @@ export class ProfileService {
         data: {
           fullName: dto.fullName,
           phone: dto.phone,
-          settlementId: dto.settlementId,
-          pickupPointId: dto.pickupPointId,
+          pickupPointId: dto.pickupPointId ?? dto.settlementId,
         },
       });
       return this.toUserRead(updated);

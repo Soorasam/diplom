@@ -14,7 +14,7 @@ export const AdminPvzPage = () => {
     <div className="flex flex-col gap-4">
       <PageHeader
         title="ПВЗ"
-        subtitle="Пункты выдачи и сотрудники из базы"
+        subtitle="Тот же справочник, что и населённые пункты (1 НП = 1 ПВЗ)"
       />
 
       {isLoading ? (
@@ -32,9 +32,6 @@ export const AdminPvzPage = () => {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-slate-900">{pp.name}</p>
-                    {pp.settlementName ? (
-                      <p className="text-xs text-slate-500">{pp.settlementName}</p>
-                    ) : null}
                     {pp.address ? (
                       <p className="mt-1 text-sm text-slate-600">{pp.address}</p>
                     ) : null}

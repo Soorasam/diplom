@@ -171,6 +171,7 @@ export const ActiveProcurementsPage = () => {
             {filtered.map((p) => {
               const hasJoined = memberships.includes(p.id)
               const atLimit = p.currentWeightKg >= p.targetWeightKg
+              const isOwnRound = Boolean(user?.id && p.organizerUserId === user.id)
               return (
                 <li key={p.id}>
                   <Card className="overflow-hidden !p-0">
@@ -207,13 +208,21 @@ export const ActiveProcurementsPage = () => {
                           type="button"
                           fullWidth
                           size="lg"
-                          disabled={!isAuthenticated || atLimit || join.isPending}
+                          disabled={
+                            !isAuthenticated || atLimit || isOwnRound || join.isPending
+                          }
                           leftIcon={
                             !isAuthenticated ? <Lock size={18} /> : <Package size={18} />
                           }
                           onClick={() => void handleParticipate(p)}
                         >
-                          {atLimit ? "Лимит веса достигнут" : "Участвовать в сборе"}
+                          {isOwnRound
+                            ? "Это ваш сбор"
+                            : atLimit
+                              ? "Лимит веса достигнут"
+                              : p.emergencyCloseAt
+                                ? "Участвовать (осталось мало времени)"
+                                : "Участвовать в сборе"}
                         </Button>
                       )}
                     </div>

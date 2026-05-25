@@ -43,25 +43,45 @@ export const procurementsApi = {
 
   create: async (payload: {
     title: string
-    routeId: string
     closesAt: string
     deliveryMode: DeliveryMode
+    templateRouteId?: string
+    routePlan?: {
+      title: string
+      transportType: "winter_road" | "river" | "highway"
+      waypoints: { pickupPointId: string; sortOrder: number; isProcurementPoint: boolean }[]
+      isTemplate?: boolean
+    }
   }) => {
-    const round = await http.post<BackendRound>(
-      "/rounds",
-      {
-        routeId: payload.routeId,
-        title: payload.title,
-        closesAt: payload.closesAt,
-      },
-      true,
-    )
+    const body: Record<string, unknown> = {
+      title: payload.title,
+      closesAt: payload.closesAt,
+    }
+    if (payload.templateRouteId) body.templateRouteId = payload.templateRouteId
+    else if (payload.routePlan) body.routePlan = payload.routePlan
+
+    const round = await http.post<BackendRound>("/rounds", body, true)
+    return mapRound(round)
+  },
+
+  getDriverActive: async () => {
+    const round = await http.get<BackendRound | null>("/driver/rounds/active", true)
+    return round ? mapRound(round) : null
+  },
+
+  getDriverDelivery: async () => {
+    const round = await http.get<BackendRound | null>("/driver/rounds/delivery", true)
+    return round ? mapRound(round) : null
+  },
+
+  scheduleEmergencyClose: async (id: string) => {
+    const round = await http.post<BackendRound>(`/rounds/${id}/emergency-close`, {}, true)
     return mapRound(round)
   },
 
   close: async (id: string, actorRole: UserRole) => {
-    if (actorRole !== "driver" && actorRole !== "admin") {
-      throw new Error("Закрывать сбор может только водитель или админ")
+    if (actorRole !== "admin") {
+      throw new Error("Немедленно закрыть сбор может только администратор")
     }
     await http.patch(`/rounds/${id}/close`, {}, true)
     return procurementsApi.getById(id)

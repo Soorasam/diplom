@@ -1,32 +1,43 @@
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, Prisma } from '@prisma/client';
 import { ORDER_STATUS_LABELS, decimalToNumber } from './order-labels';
 
-export type OrderWithRelations = {
-  id: string;
-  publicNumber: string;
-  userId: string;
-  roundId: string;
-  pickupPointId: string | null;
-  status: OrderStatus;
-  totalEstimate: { toNumber(): number } | number;
-  statusNote: string | null;
-  expectedAt: Date | null;
-  createdAt: Date;
-  round: { title: string | null; route: { title: string } };
-  items: {
-    productId: string;
-    productName: string;
-    quantity: number;
-    unit: string;
-    priceSnapshot: { toNumber(): number } | number;
-  }[];
-};
+const orderRoundInclude = {
+  waypoints: {
+    orderBy: { sortOrder: 'asc' as const },
+    include: { pickupPoint: true },
+  },
+} satisfies Prisma.RoundInclude;
 
-export function orderTitle(order: OrderWithRelations): string {
-  return `Сбор «${order.round.title ?? order.round.route.title}»`;
+export const orderDetailInclude = {
+  items: true,
+  round: { include: orderRoundInclude },
+} satisfies Prisma.OrderInclude;
+
+export const orderInclude = {
+  ...orderDetailInclude,
+  user: { select: { id: true, fullName: true, phone: true, email: true } },
+} satisfies Prisma.OrderInclude;
+
+export type OrderForMapper = Prisma.OrderGetPayload<{
+  include: typeof orderDetailInclude;
+}>;
+
+export type OrderWithRelations = Prisma.OrderGetPayload<{
+  include: typeof orderInclude;
+}>;
+
+export function orderTitle(order: OrderForMapper): string {
+  const sorted = order.round.waypoints ?? [];
+  const fromWaypoints = sorted.map((w) => w.pickupPoint.name).join(' → ');
+  const chain =
+    order.round.title?.trim() ||
+    order.round.routeTitle?.trim() ||
+    fromWaypoints ||
+    'Сбор';
+  return `Сбор «${chain}»`;
 }
 
-export function mapOrderListItem(order: OrderWithRelations) {
+export function mapOrderListItem(order: OrderForMapper) {
   return {
     id: order.id,
     publicNumber: order.publicNumber,
@@ -44,7 +55,7 @@ export function mapOrderListItem(order: OrderWithRelations) {
   };
 }
 
-export function mapOrderDetail(order: OrderWithRelations) {
+export function mapOrderDetail(order: OrderForMapper) {
   const createdAt = order.createdAt.toISOString();
   return {
     id: order.id,
