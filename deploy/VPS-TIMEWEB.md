@@ -64,9 +64,9 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 Первый запуск БД и миграции:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec api npx prisma migrate deploy
-docker compose -f docker-compose.prod.yml exec api npm run prisma:reset:deploy
-docker compose -f docker-compose.prod.yml exec api npm run storage:seed
+docker compose -f docker-compose.prod.yml --env-file .env.production exec api npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml --env-file .env.production exec api npm run prisma:reset:deploy
+docker compose -f docker-compose.prod.yml --env-file .env.production exec api npm run storage:seed
 ```
 
 Скрипт `prisma:reset:deploy` удаляет все сборы, заказы, маршруты и шаблоны; оставляет каталог, 5 НП, 5 ПВЗ (по 1 на НП) и демо-аккаунты.
