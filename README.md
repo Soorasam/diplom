@@ -106,33 +106,4 @@ npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-us
 
 Чеклист и сценарий: **[deploy/DEFENSE-LAPTOP.md](deploy/DEFENSE-LAPTOP.md)**
 
-URL на защите: **http://localhost:5173/diplom/** (не GitHub Pages — там API без вашего ноутбука не работает).
-
-## GitHub Pages (опционально, витрина UI)
-
-Сайт: **https://soorasam.github.io/diplom/** — каталог и картинки товаров работают без backend (статический `frontend/public/catalog`). Вход, корзина и заказы — только с локальным API; на защите показывайте **localhost**.
-
-### Автодеплой (один раз настроить)
-
-1. **Settings → Pages** → Source: **Deploy from a branch**
-2. Branch: **`gh-pages`**, папка **`/ (root)`** → **Save**
-3. **Settings → Actions → General** → Workflow permissions: **Read and write permissions** → Save
-
-Дальше: любой **`git push` в ветку `backend`** → GitHub Actions собирает `frontend` и обновляет `gh-pages` (workflow `Deploy GitHub Pages`).
-
-Ручной запуск: **Actions** → **Deploy GitHub Pages** → **Run workflow**.
-
-### Локальный деплой frontend в gh-pages (без CI)
-
-```bash
-cd frontend
-npm run build:pages
-npm run deploy
-```
-
-Обновить каталог и картинки в `public/catalog` перед сборкой:
-
-```bash
-cd backend
-npm run catalog:export
-```
+URL на защите: **http://localhost:5173/diplom/**

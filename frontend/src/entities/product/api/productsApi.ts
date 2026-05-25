@@ -3,10 +3,6 @@ import { http } from "@/shared/api/client"
 import type { Product } from "@/shared/api/mock-db"
 import { mapCategory, mapProduct } from "@/shared/api/mappers"
 
-import { loadStaticCatalog } from "./staticCatalog"
-
-const useStaticCatalog = import.meta.env.VITE_STATIC_CATALOG === "true"
-
 export interface ProductFilters {
   categoryId?: string
   search?: string
@@ -28,45 +24,26 @@ function applyFilters(list: Product[], filters?: ProductFilters): Product[] {
   return result
 }
 
-async function getCatalog(): Promise<{
-  categories: BackendCategory[]
-  products: BackendProduct[]
-}> {
-  if (useStaticCatalog) {
-    return loadStaticCatalog()
-  }
-  const [categories, products] = await Promise.all([
-    http.get<BackendCategory[]>("/categories"),
-    http.get<BackendProduct[]>("/products"),
-  ])
-  return { categories, products }
-}
-
 export const productsApi = {
   getCategories: async () => {
-    const { categories } = await getCatalog()
-    return categories.map(mapCategory)
+    const items = await http.get<BackendCategory[]>("/categories")
+    return items.map(mapCategory)
   },
 
   getList: async (filters?: ProductFilters) => {
-    const { products } = await getCatalog()
-    let list = products.map(mapProduct)
-    if (filters?.categoryId) {
-      list = list.filter((p) => p.categoryId === filters.categoryId)
-    }
-    return applyFilters(list, filters)
+    const query = filters?.categoryId ? `?category_id=${filters.categoryId}` : ""
+    const items = await http.get<BackendProduct[]>(`/products${query}`)
+    return applyFilters(items.map(mapProduct), filters)
   },
 
   getById: async (id: string) => {
-    const { products } = await getCatalog()
-    const item = products.find((p) => p.id === id)
-    if (!item) throw new Error("Товар не найден")
+    const item = await http.get<BackendProduct>(`/products/${id}`)
     return mapProduct(item)
   },
 
   getPopular: async () => {
-    const { products } = await getCatalog()
-    return products.slice(0, 4).map(mapProduct)
+    const items = await http.get<BackendProduct[]>("/products")
+    return items.slice(0, 4).map(mapProduct)
   },
 }
 

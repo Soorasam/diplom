@@ -58,10 +58,6 @@ npm run dev
 | API недоступен | Проверить `npm run start:dev`, порт 3000 |
 | 401 / вылетает из аккаунта | Выйти, войти снова; очистить localStorage при необходимости |
 
-## GitHub Pages (опционально)
-
-https://soorasam.github.io/diplom/ — только UI без вашего API. На защите **не используйте** как основной показ, если backend на ноутбуке (там `localhost` в сборке Pages).
-
 ## После защиты
 
 Можно остановить: `Ctrl+C` в терминалах, `docker compose down` (данные в volume сохранятся).
