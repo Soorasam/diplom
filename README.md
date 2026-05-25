@@ -99,3 +99,16 @@ npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-us
 **backend/.env:** `DATABASE_URL`, `JWT_SECRET`, MinIO (`MINIO_*`)
 
 **frontend/.env:** `VITE_API_URL=http://localhost:3000/api/v1`
+
+## GitHub Pages (демо UI)
+
+Сайт: **https://soorasam.github.io/diplom/**
+
+Деплой из папки `frontend` (ветка `gh-pages`):
+
+```bash
+cd frontend
+npm run deploy
+```
+
+Перед деплоем задайте `frontend/.env.production` с URL вашего API, иначе в браузере останется `localhost`.
