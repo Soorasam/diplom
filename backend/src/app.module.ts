@@ -9,6 +9,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ProfileModule } from './profile/profile.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { TicketsModule } from './tickets/tickets.module';
 import { DriverApplicationsModule } from './driver-applications/driver-applications.module';
 import { CoordinatorModule } from './coordinator/coordinator.module';
 import { EmployeeModule } from './employee/employee.module';
@@ -28,6 +29,7 @@ import { StorageModule } from './storage/storage.module';
     ProfileModule,
     AdminModule,
     NotificationsModule,
+    TicketsModule,
     DriverApplicationsModule,
     CoordinatorModule,
     EmployeeModule,

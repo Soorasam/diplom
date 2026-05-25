@@ -17,6 +17,7 @@ import { participateInProcurement } from "@/features/procurement/lib/participate
 import {
   useActiveProcurements,
   useJoinProcurement,
+  useLeaveProcurement,
   useMyProcurementMemberships,
 } from "@/entities/procurement/api/useProcurements"
 import type { Procurement } from "@/shared/api/mock-db"
@@ -43,8 +44,11 @@ export const ActiveProcurementsPage = () => {
   const { data: procurements, isLoading } = useActiveProcurements()
   const { data: memberships = [] } = useMyProcurementMemberships(user?.id)
   const join = useJoinProcurement(user?.id)
+  const leave = useLeaveProcurement(user?.id)
   const { pushDraftItemsToServer } = useCartActions()
   const setProcurement = useCartStore((s) => s.setProcurement)
+  const clearProcurement = useCartStore((s) => s.clearProcurement)
+  const procurementIdInCart = useCartStore((s) => s.procurementId)
 
   const [viewMode, setViewMode] = useState<"list" | "map">("list")
   const [deliveryFilter, setDeliveryFilter] = useState<DeliveryMode | "all">("all")
@@ -93,6 +97,27 @@ export const ActiveProcurementsPage = () => {
     }
   }
 
+  const handleLeave = async (p: Procurement) => {
+    if (!isAuthenticated) return
+    if (
+      !window.confirm(
+        `Выйти из сбора «${p.title}»? Корзина сохранится — для оплаты снова вступите в сбор.`,
+      )
+    ) {
+      return
+    }
+    setLimitMessage(null)
+    try {
+      await leave.mutateAsync(p.id)
+      if (procurementIdInCart === p.id) {
+        clearProcurement()
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Не удалось выйти из сбора"
+      setLimitMessage(msg)
+    }
+  }
+
   const chipClass = (active: boolean) =>
     cn(
       "inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition",
@@ -105,7 +130,7 @@ export const ActiveProcurementsPage = () => {
     <PageShell>
       <PageHeader
         title="Активные сборы"
-        subtitle="Участвуйте в сборе — выберите товары в каталоге и оплатите заказ"
+        subtitle="Вступайте в сбор — выберите товары в каталоге и оплатите заказ"
         className="!mb-0"
       />
 
@@ -186,20 +211,32 @@ export const ActiveProcurementsPage = () => {
                     </Link>
                     <div className="border-t border-slate-200/80 p-4 dark:border-slate-700/60">
                       {hasJoined ? (
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-emerald-700">
-                            <CheckCircle2 size={16} className="shrink-0" />
-                            Участвуете
-                          </p>
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                              <CheckCircle2 size={16} className="shrink-0" />
+                              Вы в сборе
+                            </p>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="!min-h-9 shrink-0 px-3"
+                              rightIcon={<ArrowRight size={14} />}
+                              onClick={() => participateInProcurement(navigate, setProcurement, p.id)}
+                            >
+                              Каталог
+                            </Button>
+                          </div>
                           <Button
                             type="button"
                             size="sm"
-                            variant="outline"
-                            className="!min-h-9 shrink-0 px-3"
-                            rightIcon={<ArrowRight size={14} />}
-                            onClick={() => participateInProcurement(navigate, setProcurement, p.id)}
+                            variant="ghost"
+                            fullWidth
+                            disabled={leave.isPending}
+                            onClick={() => void handleLeave(p)}
                           >
-                            Каталог
+                            Выйти из сбора
                           </Button>
                         </div>
                       ) : (
@@ -213,7 +250,7 @@ export const ActiveProcurementsPage = () => {
                           }
                           onClick={() => void handleParticipate(p)}
                         >
-                          {atLimit ? "Лимит веса достигнут" : "Участвовать в сборе"}
+                          {atLimit ? "Лимит веса достигнут" : "Вступить в сбор"}
                         </Button>
                       )}
                     </div>

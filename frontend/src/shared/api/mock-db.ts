@@ -131,6 +131,7 @@ export interface Order {
 export interface Notification {
   id: string
   userId: string
+  ticketId?: string | null
   title: string
   body: string
   read: boolean

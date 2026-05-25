@@ -80,6 +80,15 @@ export const procurementsApi = {
     return res.roundIds
   },
 
+  leave: async (_userId: string, procurementId: string) => {
+    const res = await http.post<{ roundIds: string[] }>(
+      `/rounds/${procurementId}/leave`,
+      {},
+      true,
+    )
+    return res.roundIds
+  },
+
   getReceiptApprovals: async (procurementId: string) => {
     const round = await http.get<BackendRound>(`/rounds/${procurementId}`)
     if (round.status === "fulfilled") {

@@ -22,7 +22,7 @@ interface CartState {
   setProcurement: (id: string) => void
   clearProcurement: () => void
   setComment: (comment: string) => void
-  setFromServer: (items: CartItem[], procurementId?: string | null) => void
+  setFromServer: (items: CartItem[]) => void
   pruneInvalidProducts: (validProductIds: string[]) => void
   clear: () => void
   reset: () => void
@@ -93,7 +93,7 @@ export const useCartStore = create<CartState>()(
         set({ comment })
       },
 
-      setFromServer: (items, procurementId) => {
+      setFromServer: (items) => {
         logEvent("cart:syncFromServer", { count: items.length })
         set((s) => {
           const serverIds = new Set(items.map((i) => i.productId))
@@ -102,10 +102,7 @@ export const useCartStore = create<CartState>()(
           )
           return {
             items: [...items, ...draftOnly],
-            procurementId:
-              procurementId != null && procurementId !== ""
-                ? procurementId
-                : s.procurementId,
+            procurementId: s.procurementId,
           }
         })
       },

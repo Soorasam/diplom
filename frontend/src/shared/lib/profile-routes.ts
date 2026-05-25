@@ -5,6 +5,7 @@ export type ProfileRouteSet = {
   profile: string
   profileEdit: string
   disputes: string
+  dispute: (id: string) => string
   notifications: string
   support: string
   addresses: string
@@ -16,6 +17,7 @@ const userRoutes: ProfileRouteSet = {
   profile: routes.user.profile,
   profileEdit: routes.user.profileEdit,
   disputes: routes.user.disputes,
+  dispute: routes.user.dispute,
   notifications: routes.user.notifications,
   support: routes.user.support,
   addresses: routes.user.addresses,
@@ -27,6 +29,7 @@ const driverRoutes: ProfileRouteSet = {
   profile: routes.driver.profile,
   profileEdit: routes.driver.profileEdit,
   disputes: routes.driver.disputes,
+  dispute: routes.driver.dispute,
   notifications: routes.driver.notifications,
   support: routes.driver.support,
   addresses: routes.user.addresses,
@@ -38,6 +41,7 @@ const adminRoutes: ProfileRouteSet = {
   profile: routes.admin.profile,
   profileEdit: routes.user.profileEdit,
   disputes: routes.user.disputes,
+  dispute: routes.user.dispute,
   notifications: routes.user.notifications,
   support: routes.user.support,
   addresses: routes.user.addresses,
@@ -49,6 +53,7 @@ const employeeRoutes: ProfileRouteSet = {
   profile: routes.employee.profile,
   profileEdit: routes.employee.profileEdit,
   disputes: routes.user.disputes,
+  dispute: routes.user.dispute,
   notifications: routes.user.notifications,
   support: routes.user.support,
   addresses: routes.user.addresses,

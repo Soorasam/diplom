@@ -1,23 +1,35 @@
+import { useMemo } from "react"
 import { MessageSquare } from "lucide-react"
 
-import { useAdminTickets, useResolveAdminTicket } from "@/entities/admin/api/useAdmin"
-import { formatDate } from "@/shared/lib/format"
-import { Badge } from "@/shared/ui/badge/Badge"
-import { Button } from "@/shared/ui/button/Button"
-import { Card } from "@/shared/ui/card/Card"
+import { useMyTickets } from "@/entities/ticket/api/useTickets"
+import type { TicketSummary } from "@/entities/ticket/model/types"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
+import { AdminTicketListSection } from "@/widgets/admin-ticket-list/ui/AdminTicketListSection"
+
+const isActive = (t: TicketSummary) =>
+  t.status === "open" || t.status === "in_progress"
+
+const isClosed = (t: TicketSummary) =>
+  t.status === "resolved" || t.status === "closed"
 
 export const AdminTicketsPage = () => {
-  const { data: tickets, isLoading } = useAdminTickets()
-  const resolveTicket = useResolveAdminTicket()
+  const { data: tickets, isLoading } = useMyTickets()
+
+  const { active, closed } = useMemo(() => {
+    const list = tickets ?? []
+    return {
+      active: list.filter(isActive),
+      closed: list.filter(isClosed),
+    }
+  }, [tickets])
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <PageHeader
         title="Обращения"
-        subtitle="Споры и заявки, направленные администратору"
+        subtitle="Переписка с жителями по спорам и заказам"
       />
 
       {isLoading ? (
@@ -25,41 +37,18 @@ export const AdminTicketsPage = () => {
           <Spinner />
         </div>
       ) : tickets && tickets.length > 0 ? (
-        <ul className="flex flex-col gap-3">
-          {tickets.map((t) => (
-            <li key={t.id}>
-              <Card className="border-slate-200">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-slate-900">{t.title}</p>
-                    <p className="text-xs text-slate-500">
-                      {t.kind === "dispute" && t.reporterName
-                        ? `От: ${t.reporterName}`
-                        : "Система"}{" "}
-                      · {formatDate(t.createdAt)}
-                    </p>
-                    <p className="mt-2 text-sm text-slate-600">{t.body}</p>
-                  </div>
-                  <Badge variant={t.read ? "default" : "warning"}>
-                    {t.read ? "прочитано" : "новое"}
-                  </Badge>
-                </div>
-                {!t.read && t.kind === "dispute" ? (
-                  <div className="mt-3">
-                    <Button
-                      size="sm"
-                      type="button"
-                      disabled={resolveTicket.isPending}
-                      onClick={() => resolveTicket.mutate(t.id)}
-                    >
-                      Разрешить спор
-                    </Button>
-                  </div>
-                ) : null}
-              </Card>
-            </li>
-          ))}
-        </ul>
+        <>
+          <AdminTicketListSection
+            title="Новые и в работе"
+            tickets={active}
+            emptyText="Нет открытых обращений"
+          />
+          <AdminTicketListSection
+            title="Закрытые и решённые"
+            tickets={closed}
+            emptyText="Нет завершённых обращений"
+          />
+        </>
       ) : (
         <EmptyState
           icon={MessageSquare}

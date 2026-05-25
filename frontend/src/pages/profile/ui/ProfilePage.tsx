@@ -22,7 +22,9 @@ import { useCanUseDriverMode } from "@/features/auth/hooks/useCanUseDriverMode"
 import { ModeSwitchControl } from "@/features/auth/ui/ModeSwitchControl"
 import { ThemeToggle } from "@/features/ui/ThemeToggle"
 import { useMyDriverApplication } from "@/features/driver-application/api/useDriverApplications"
+import { useUnreadNotificationsCount } from "@/entities/notification/api/useNotifications"
 import { useSettlements } from "@/entities/settlement/api/useSettlements"
+import { useUnreadDisputesCount } from "@/entities/ticket/api/useTickets"
 import { routes } from "@/shared/config/routes"
 import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
@@ -57,6 +59,11 @@ export const ProfilePage = () => {
   const isSimpleResident =
     isAuthenticated && user?.role === "client" && !canUseDriverMode
   const isDriverApproved = myApp?.status === "approved"
+
+  const showDisputesMenu =
+    isAuthenticated && !isAdminWorkspace && (isDriverInterface || !isEmployee)
+  const unreadNotifications = useUnreadNotificationsCount()
+  const unreadDisputes = useUnreadDisputesCount(showDisputesMenu)
 
   const menuLinks = isAdminWorkspace
     ? []
@@ -172,7 +179,31 @@ export const ProfilePage = () => {
         {isAuthenticated ? <ThemeToggle /> : null}
       </Card>
 
-      {!isAdminWorkspace && isDriverInterface && (vehicleLines.length > 0 || isDriverApproved) ? (
+      {!isAdminWorkspace && canUseDriverMode && !isDriverInterface ? (
+        <Card className="w-full p-4">
+          <p className="text-sm font-semibold leading-normal text-slate-900 dark:text-slate-100">
+            Режим интерфейса
+          </p>
+          <p className="mt-2 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
+            Переключение между заказами жителя и маршрутами водителя.
+          </p>
+          <ModeSwitchControl className="mt-4" navigateOnSwitch />
+        </Card>
+      ) : null}
+
+      {!isAdminWorkspace && canUseDriverMode && isDriverInterface ? (
+        <Card className="w-full p-4">
+          <p className="text-sm font-semibold leading-normal text-slate-900 dark:text-slate-100">
+            Режим интерфейса
+          </p>
+          <p className="mt-2 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
+            Переключение между заказами жителя и маршрутами водителя.
+          </p>
+          <ModeSwitchControl className="mt-4" navigateOnSwitch />
+        </Card>
+      ) : null}
+
+      {isDriverInterface && (vehicleLines.length > 0 || isDriverApproved) ? (
         <Card className="p-4">
           <div className="flex items-start gap-3">
             <span className="ui-icon-well flex h-10 w-10 shrink-0">
@@ -195,30 +226,6 @@ export const ProfilePage = () => {
               )}
             </div>
           </div>
-        </Card>
-      ) : null}
-
-      {!isAdminWorkspace && canUseDriverMode && !isDriverInterface ? (
-        <Card className="w-full p-4">
-          <p className="text-sm font-semibold leading-normal text-slate-900 dark:text-slate-100">
-            Режим интерфейса
-          </p>
-          <p className="mt-2 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
-            Переключение между заказами жителя и маршрутами водителя.
-          </p>
-          <ModeSwitchControl className="mt-4" navigateOnSwitch />
-        </Card>
-      ) : null}
-
-      {!isAdminWorkspace && canUseDriverMode && isDriverInterface ? (
-        <Card className="w-full p-4">
-          <p className="text-sm font-semibold leading-normal text-slate-900 dark:text-slate-100">
-            Режим интерфейса
-          </p>
-          <p className="mt-2 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
-            Переключение между заказами жителя и маршрутами водителя.
-          </p>
-          <ModeSwitchControl className="mt-4" navigateOnSwitch />
         </Card>
       ) : null}
 
@@ -277,17 +284,32 @@ export const ProfilePage = () => {
 
       {isAuthenticated && menuLinks.length > 0 ? (
         <ul className="flex flex-col gap-2">
-          {menuLinks.map((item) => (
-            <li key={item.to}>
-              <Link to={item.to} className="ui-menu-link">
-                <item.icon size={20} className="text-sky-600 dark:text-sky-400" />
-                <span className="flex-1 text-sm font-medium leading-normal text-slate-900 dark:text-slate-100">
-                  {item.label}
-                </span>
-                <ChevronRight size={18} className="text-slate-400" />
-              </Link>
-            </li>
-          ))}
+          {menuLinks.map((item) => {
+            const hasNew =
+              item.label === "Уведомления"
+                ? unreadNotifications > 0
+                : item.label === "Мои споры"
+                  ? unreadDisputes > 0
+                  : false
+
+            return (
+              <li key={item.to}>
+                <Link to={item.to} className="ui-menu-link">
+                  <item.icon size={20} className="text-sky-600 dark:text-sky-400" />
+                  <span className="flex-1 text-sm font-medium leading-normal text-slate-900 dark:text-slate-100">
+                    {item.label}
+                  </span>
+                  {hasNew ? (
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"
+                      aria-label="Есть новое"
+                    />
+                  ) : null}
+                  <ChevronRight size={18} className="text-slate-400" />
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       ) : null}
 

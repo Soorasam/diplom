@@ -36,4 +36,9 @@ export const queryKeys = {
     users: ["admin", "users"] as const,
     drivers: ["admin", "drivers"] as const,
   },
+  tickets: {
+    list: ["tickets", "list"] as const,
+    detail: (id: string) => ["tickets", "detail", id] as const,
+    byOrder: (orderId: string) => ["tickets", "by-order", orderId] as const,
+  },
 } as const

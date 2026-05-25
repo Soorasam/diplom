@@ -26,7 +26,7 @@ const nav = [
   { label: "Заявки", path: routes.admin.driverApplications, icon: FileText },
   { label: "ПВЗ", path: routes.admin.pvz, icon: MapPin },
   { label: "Сотрудник ПВЗ", path: routes.admin.pvzEmployees, icon: UserPlus },
-  { label: "Споры", path: routes.admin.tickets, icon: MessageSquare },
+  { label: "Обращения", path: routes.admin.tickets, icon: MessageSquare },
   { label: "Насел. пункты", path: routes.admin.settlements, icon: MapPin },
   { label: "Пользователи", path: routes.admin.users, icon: Users },
   { label: "Аналитика", path: routes.admin.analytics, icon: BarChart3 },

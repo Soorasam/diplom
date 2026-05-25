@@ -80,6 +80,35 @@ export class CatalogService {
   }
 
   
+  async leaveRound(user: User, roundId: string) {
+    const participant = await this.prisma.roundParticipant.findUnique({
+      where: {
+        uq_round_participant_user_round: { userId: user.id, roundId },
+      },
+    });
+    if (!participant) {
+      throw new BadRequestException('Вы не состоите в этом сборе');
+    }
+
+    const ordersCount = await this.prisma.order.count({
+      where: { userId: user.id, roundId },
+    });
+    if (ordersCount > 0) {
+      throw new BadRequestException(
+        'Выйти нельзя: по этому сбору уже оформлен заказ.',
+      );
+    }
+
+    await this.prisma.roundParticipant.delete({
+      where: { id: participant.id },
+    });
+
+    return {
+      roundId,
+      roundIds: await this.listUserRoundIds(user.id),
+    };
+  }
+
   async joinRound(user: User, roundId: string) {
     const round = await this.prisma.round.findUnique({ where: { id: roundId } });
     if (!round) throw new NotFoundException('Сбор не найден');

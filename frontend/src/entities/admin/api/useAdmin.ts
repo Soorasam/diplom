@@ -70,22 +70,6 @@ export const useAdminRounds = () =>
     queryFn: () => adminApi.getRounds(),
   })
 
-export const useAdminTickets = () =>
-  useQuery({
-    queryKey: [...queryKeys.admin.stats, "notifications"],
-    queryFn: () => adminApi.getNotifications(),
-  })
-
-export const useResolveAdminTicket = () => {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (id: string) => adminApi.resolveNotification(id),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: [...queryKeys.admin.stats, "notifications"] })
-    },
-  })
-}
-
 export const useCreatePvzEmployee = () => {
   const qc = useQueryClient()
   return useMutation({

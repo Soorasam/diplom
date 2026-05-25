@@ -1,8 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { Injectable, Logger } from '@nestjs/common';
+import {
+  CreateBucketCommand,
+  HeadBucketCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 
 @Injectable()
 export class StorageService {
+  private readonly log = new Logger(StorageService.name);
+  private readonly ensuredBuckets = new Set<string>();
+
   private client(): S3Client {
     return new S3Client({
       endpoint: process.env.MINIO_ENDPOINT ?? 'http://127.0.0.1:9000',
@@ -20,12 +28,37 @@ export class StorageService {
     return `${base}/${bucket}/${key}`;
   }
 
+  async ensureBucket(bucket: string): Promise<void> {
+    if (this.ensuredBuckets.has(bucket)) return;
+    const client = this.client();
+    try {
+      await client.send(new HeadBucketCommand({ Bucket: bucket }));
+    } catch (err: unknown) {
+      const code =
+        err && typeof err === 'object' && 'name' in err
+          ? String((err as { name?: string }).name)
+          : '';
+      const status =
+        err && typeof err === 'object' && '$metadata' in err
+          ? (err as { $metadata?: { httpStatusCode?: number } }).$metadata
+              ?.httpStatusCode
+          : undefined;
+      if (code !== 'NotFound' && code !== 'NoSuchBucket' && status !== 404) {
+        throw err;
+      }
+      await client.send(new CreateBucketCommand({ Bucket: bucket }));
+      this.log.log(`Created MinIO bucket: ${bucket}`);
+    }
+    this.ensuredBuckets.add(bucket);
+  }
+
   async upload(
     bucket: string,
     key: string,
     body: Buffer,
     contentType: string,
   ): Promise<string> {
+    await this.ensureBucket(bucket);
     await this.client().send(
       new PutObjectCommand({
         Bucket: bucket,
@@ -43,5 +76,9 @@ export class StorageService {
 
   driverDocsBucket() {
     return process.env.MINIO_DRIVER_BUCKET ?? 'coop-driver-docs';
+  }
+
+  ticketsBucket() {
+    return process.env.MINIO_TICKETS_BUCKET ?? 'coop-tickets';
   }
 }

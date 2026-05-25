@@ -42,8 +42,10 @@ services:
       mc alias set local http://minio:9000 minioadmin minioadmin &&
       mc mb local/coop-products --ignore-existing &&
       mc mb local/coop-driver-docs --ignore-existing &&
+      mc mb local/coop-tickets --ignore-existing &&
       mc anonymous set download local/coop-products &&
       mc anonymous set download local/coop-driver-docs &&
+      mc anonymous set download local/coop-tickets &&
       echo 'MinIO buckets ready'
       "
 

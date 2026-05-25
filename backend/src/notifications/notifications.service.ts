@@ -1,11 +1,15 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
-import { User, UserRole } from '@prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { TicketsService } from '../tickets/tickets.service';
 import { CreateDisputeDto } from './dto/create-dispute.dto';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private tickets: TicketsService,
+  ) {}
 
   list(user: User) {
     return this.prisma.notification.findMany({
@@ -25,49 +29,19 @@ export class NotificationsService {
     });
   }
 
-  listDisputes(user: User) {
-    return this.prisma.notification.findMany({
-      where: { userId: user.id, title: { startsWith: 'Спор по заказу' } },
-      orderBy: { createdAt: 'desc' },
+  async markAllRead(user: User) {
+    await this.prisma.notification.updateMany({
+      where: { userId: user.id, read: false },
+      data: { read: true },
     });
+    return { ok: true as const };
   }
 
-  async createDispute(user: User, dto: CreateDisputeDto) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: dto.orderId },
-      select: { id: true, userId: true, publicNumber: true },
-    });
-    if (!order) throw new NotFoundException('Заказ не найден');
-    if (order.userId !== user.id) throw new ForbiddenException('Можно открыть спор только по своему заказу');
+  listDisputes(user: User) {
+    return this.tickets.listMine(user);
+  }
 
-    const title = `Спор по заказу ${order.publicNumber}`;
-    const body = dto.message.trim();
-    const admins = await this.prisma.user.findMany({
-      where: { role: UserRole.admin },
-      select: { id: true },
-    });
-
-    const [userNotification] = await this.prisma.$transaction([
-      this.prisma.notification.create({
-        data: {
-          userId: user.id,
-          title,
-          body: `Ваш спор принят: ${body}`,
-          read: false,
-        },
-      }),
-      ...admins.map((a) =>
-        this.prisma.notification.create({
-          data: {
-            userId: a.id,
-            title,
-            body: `Пользователь ${user.fullName ?? user.email} открыл спор: ${body}`,
-            read: false,
-          },
-        }),
-      ),
-    ]);
-
-    return userNotification;
+  createDispute(user: User, dto: CreateDisputeDto) {
+    return this.tickets.create(user, { orderId: dto.orderId, body: dto.message });
   }
 }

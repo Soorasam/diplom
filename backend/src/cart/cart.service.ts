@@ -54,7 +54,6 @@ export class CartService {
       orderBy: { createdAt: 'asc' },
     });
 
-    const round = items[0]?.round ?? null;
     const [settlement, pickupPoint] = await Promise.all([
       user.settlementId
         ? this.prisma.settlement.findUnique({ where: { id: user.settlementId } })
@@ -80,7 +79,7 @@ export class CartService {
     });
 
     return {
-      round: round ? this.mapRound(round) : null,
+      round: null,
       settlement,
       pickupPoint,
       items: mappedItems,
@@ -122,25 +121,14 @@ export class CartService {
     }
 
     const round = await this.resolveOpenRound(dto.roundId);
-
-    const existingRoundRef = await this.prisma.cartItem.findFirst({
-      where: { userId: user.id },
-      select: { roundId: true },
-    });
-
-    if (existingRoundRef && existingRoundRef.roundId !== round.id) {
-      throw new BadRequestException(
-        'В корзине товары другого сбора. Очистите корзину или выберите тот же сбор.',
-      );
-    }
+    await this.assertUserJoinedRound(user.id, round.id);
 
     const quantity = dto.quantity ?? 1;
 
     await this.prisma.cartItem.upsert({
       where: {
-        uq_cart_user_round_product: {
+        uq_cart_user_product: {
           userId: user.id,
-          roundId: round.id,
           productId: product.id,
         },
       },
@@ -150,7 +138,10 @@ export class CartService {
         productId: product.id,
         quantity,
       },
-      update: { quantity: { increment: quantity } },
+      update: {
+        quantity: { increment: quantity },
+        roundId: round.id,
+      },
     });
 
     return this.getCart(user);
@@ -190,12 +181,12 @@ export class CartService {
     });
     if (!items.length) throw new BadRequestException('Корзина пуста');
 
-    const selectedRound = dto?.roundId
-      ? await this.prisma.round.findUnique({ where: { id: dto.roundId } })
-      : null;
-    const round = selectedRound ?? items[0].round;
+    if (!dto?.roundId) {
+      throw new BadRequestException('Выберите сбор для оформления заказа');
+    }
+    const round = await this.prisma.round.findUnique({ where: { id: dto.roundId } });
     if (!round) {
-      throw new BadRequestException('Не выбран сбор для оформления');
+      throw new BadRequestException('Сбор не найден');
     }
     if (round.status !== RoundStatus.open) {
       throw new BadRequestException('Сбор закрыт — новые заказы недоступны');

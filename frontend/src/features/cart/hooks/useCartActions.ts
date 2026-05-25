@@ -20,7 +20,7 @@ export const useCartActions = () => {
 
   const applyServerCart = useCallback(
     async (cart: Awaited<ReturnType<typeof cartApi.get>>) => {
-      setFromServer(mapBackendCartItems(cart), cart.round?.id)
+      setFromServer(mapBackendCartItems(cart))
       await qc.invalidateQueries({ queryKey: queryKeys.cart })
     },
     [setFromServer, qc],

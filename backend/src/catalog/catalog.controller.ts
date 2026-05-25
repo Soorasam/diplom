@@ -49,6 +49,12 @@ export class CatalogController {
     return this.catalog.joinRound(user, id);
   }
 
+  @Post('rounds/:id/leave')
+  @UseGuards(JwtAuthGuard)
+  leaveRound(@CurrentUser() user: User, @Param('id', ParseUUIDPipe) id: string) {
+    return this.catalog.leaveRound(user, id);
+  }
+
   @Get('rounds/memberships/me')
   @UseGuards(JwtAuthGuard)
   myMemberships(@CurrentUser() user: User) {

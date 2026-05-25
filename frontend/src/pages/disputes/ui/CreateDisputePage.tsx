@@ -1,26 +1,57 @@
-import { useState } from "react"
-import { Link, useSearchParams } from "react-router-dom"
+import { useCallback, useEffect, useRef, useState } from "react"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { ImagePlus, MessageSquare } from "lucide-react"
 
-import { useAuthStore } from "@/app/model/auth-store"
-import { useCreateDispute } from "@/entities/notification/api/useNotifications"
+import { useCreateTicket, useTicketByOrder } from "@/entities/ticket/api/useTickets"
+import { TicketLocalFilePreview } from "@/features/tickets/ui/TicketAttachmentView"
 import { useOrder } from "@/entities/order/api/useOrders"
 import { routes } from "@/shared/config/routes"
+import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 
+const MAX_FILES = 5
+const ACCEPT = "image/jpeg,image/png,image/webp,application/pdf"
+
 export const CreateDisputePage = () => {
   const [params] = useSearchParams()
+  const navigate = useNavigate()
+  const profileRoutes = useProfileRoutes()
   const orderId = params.get("orderId") ?? ""
-  const { data: order, isLoading } = useOrder(orderId)
-  const userId = useAuthStore((s) => s.user?.id)
-  const createDispute = useCreateDispute(userId)
+  const { data: order, isLoading: orderLoading } = useOrder(orderId)
+  const { data: existingTicket, isLoading: ticketLoading } = useTicketByOrder(orderId)
+  const createTicket = useCreateTicket()
   const [description, setDescription] = useState("")
-  const [submitted, setSubmitted] = useState(false)
+  const [files, setFiles] = useState<File[]>([])
+  const [previews, setPreviews] = useState<{ file: File; url: string }[]>([])
+  const inputRef = useRef<HTMLInputElement>(null)
+  const previewsRef = useRef(previews)
 
-  if (isLoading) {
+  const revokePreviews = useCallback((items: { url: string }[]) => {
+    for (const p of items) URL.revokeObjectURL(p.url)
+  }, [])
+
+  useEffect(() => {
+    previewsRef.current = previews
+  }, [previews])
+
+  useEffect(() => () => revokePreviews(previewsRef.current), [revokePreviews])
+
+  const setFilesWithPreviews = (next: File[]) => {
+    revokePreviews(previews)
+    setFiles(next)
+    setPreviews(next.map((file) => ({ file, url: URL.createObjectURL(file) })))
+  }
+
+  useEffect(() => {
+    if (existingTicket?.id) {
+      navigate(profileRoutes.dispute(existingTicket.id), { replace: true })
+    }
+  }, [existingTicket?.id, navigate, profileRoutes])
+
+  if (orderLoading || ticketLoading) {
     return (
       <div className="flex justify-center p-12">
         <Spinner />
@@ -42,22 +73,6 @@ export const CreateDisputePage = () => {
     )
   }
 
-  if (submitted) {
-    return (
-      <div className="flex flex-col gap-4 p-4">
-        <PageHeader title="Спор отправлен" backTo={routes.user.disputes} />
-        <Card className="border-emerald-200 bg-emerald-50/50">
-          <p className="text-sm font-semibold text-emerald-900">
-            Обращение принято (статус open). Администратор рассмотрит его в ближайшее время.
-          </p>
-        </Card>
-        <Link to={routes.user.disputes} className="text-center text-sm font-semibold text-blue-700">
-          Мои споры
-        </Link>
-      </div>
-    )
-  }
-
   return (
     <form
       className="flex flex-col gap-4 p-4 pb-8"
@@ -65,8 +80,16 @@ export const CreateDisputePage = () => {
         e.preventDefault()
         if (description.trim().length < 10) return
         if (!orderId) return
-        await createDispute.mutateAsync({ orderId, message: description.trim() })
-        setSubmitted(true)
+        const toSend = [...files]
+        const ticket = await createTicket.mutateAsync({
+          orderId,
+          body: description.trim(),
+          files: toSend,
+        })
+        revokePreviews(previews)
+        setFiles([])
+        setPreviews([])
+        navigate(profileRoutes.dispute(ticket.id), { replace: true })
       }}
     >
       <PageHeader
@@ -89,15 +112,44 @@ export const CreateDisputePage = () => {
         </label>
       </Card>
 
-      <Card className="border-dashed border-slate-300">
-        <div className="flex items-center gap-3 text-slate-600">
-          <ImagePlus size={22} />
-          <p className="text-sm">Фото можно будет прикрепить после подключения API споров</p>
-        </div>
+      <Card>
+        <p className="mb-2 text-sm font-semibold text-slate-900">Вложения</p>
+        <TicketLocalFilePreview
+          items={previews}
+          onRemove={(i) => {
+            const removed = previews[i]
+            if (removed) URL.revokeObjectURL(removed.url)
+            setFiles((prev) => prev.filter((_, j) => j !== i))
+            setPreviews((prev) => prev.filter((_, j) => j !== i))
+          }}
+        />
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPT}
+          multiple
+          className="hidden"
+          onChange={(e) => {
+            const list = e.target.files
+            if (!list?.length) return
+            setFilesWithPreviews([...files, ...Array.from(list)].slice(0, MAX_FILES))
+            e.target.value = ""
+          }}
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          leftIcon={<ImagePlus size={18} />}
+          disabled={files.length >= MAX_FILES}
+          onClick={() => inputRef.current?.click()}
+        >
+          Прикрепить фото или PDF
+        </Button>
+        <p className="mt-2 text-xs text-slate-500">До {MAX_FILES} файлов, макс. 10 МБ каждый</p>
       </Card>
 
       <Button type="submit" fullWidth leftIcon={<MessageSquare size={18} />}>
-        {createDispute.isPending ? "Отправка..." : "Отправить спор"}
+        {createTicket.isPending ? "Отправка..." : "Отправить спор"}
       </Button>
     </form>
   )

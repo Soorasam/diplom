@@ -56,6 +56,13 @@ enum DeliveryStopStatus {
   completed
 }
 
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
 model User {
   id             String   @id @default(uuid()) @db.Uuid
   email          String   @unique
@@ -76,6 +83,8 @@ model User {
   roundParticipations RoundParticipant[]
   notifications       Notification[]
   driverApplications  DriverApplication[]
+  tickets             Ticket[]
+  ticketMessages      TicketMessage[]
 
   @@map("users")
 }
@@ -212,7 +221,7 @@ model CartItem {
   round   Round   @relation(fields: [roundId], references: [id])
   product Product @relation(fields: [productId], references: [id])
 
-  @@unique([userId, roundId, productId], name: "uq_cart_user_round_product")
+  @@unique([userId, productId], name: "uq_cart_user_product")
   @@map("cart_items")
 }
 
@@ -233,6 +242,7 @@ model Order {
   round       Round        @relation(fields: [roundId], references: [id])
   pickupPoint PickupPoint? @relation(fields: [pickupPointId], references: [id])
   items       OrderItem[]
+  tickets     Ticket[]
 
   @@map("orders")
 }
@@ -240,14 +250,63 @@ model Order {
 model Notification {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @map("user_id") @db.Uuid
+  ticketId  String?  @map("ticket_id") @db.Uuid
   title     String
   body      String
   read      Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticket Ticket? @relation(fields: [ticketId], references: [id], onDelete: SetNull)
 
   @@map("notifications")
+}
+
+model Ticket {
+  id             String       @id @default(uuid()) @db.Uuid
+  userId         String       @map("user_id") @db.Uuid
+  orderId        String?      @map("order_id") @db.Uuid
+  subject        String
+  status         TicketStatus @default(open)
+  unreadByAdmin  Boolean      @default(true) @map("unread_by_admin")
+  unreadByUser   Boolean      @default(false) @map("unread_by_user")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order         Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  messages      TicketMessage[]
+  notifications Notification[]
+
+  @@map("tickets")
+}
+
+model TicketMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @map("ticket_id") @db.Uuid
+  authorId  String   @map("author_id") @db.Uuid
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticket      Ticket              @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author      User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  attachments TicketAttachment[]
+
+  @@map("ticket_messages")
+}
+
+model TicketAttachment {
+  id        String   @id @default(uuid()) @db.Uuid
+  messageId String   @map("message_id") @db.Uuid
+  url       String
+  fileName  String   @map("file_name")
+  mimeType  String   @map("mime_type")
+  size      Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  message TicketMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_attachments")
 }
 
 model DriverApplication {

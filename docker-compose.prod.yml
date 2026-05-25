@@ -36,7 +36,10 @@ services:
       mc alias set local http://minio:9000 $$MINIO_ROOT_USER $$MINIO_ROOT_PASSWORD &&
       mc mb local/${MINIO_BUCKET:-coop-products} --ignore-existing &&
       mc mb local/${MINIO_DRIVER_BUCKET:-coop-driver-docs} --ignore-existing &&
+      mc mb local/${MINIO_TICKETS_BUCKET:-coop-tickets} --ignore-existing &&
       mc anonymous set download local/${MINIO_BUCKET:-coop-products} &&
+      mc anonymous set download local/${MINIO_DRIVER_BUCKET:-coop-driver-docs} &&
+      mc anonymous set download local/${MINIO_TICKETS_BUCKET:-coop-tickets} &&
       echo done
       "
     environment:
@@ -44,6 +47,7 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
       MINIO_BUCKET: ${MINIO_BUCKET:-coop-products}
       MINIO_DRIVER_BUCKET: ${MINIO_DRIVER_BUCKET:-coop-driver-docs}
+      MINIO_TICKETS_BUCKET: ${MINIO_TICKETS_BUCKET:-coop-tickets}
 
   api:
     build:

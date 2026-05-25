@@ -71,6 +71,25 @@ export const useJoinProcurement = (userId?: string) => {
   })
 }
 
+export const useLeaveProcurement = (userId?: string) => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (procurementId: string) => {
+      if (!userId) throw new Error("Требуется авторизация")
+      return procurementsApi.leave(userId, procurementId)
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
+      void qc.invalidateQueries({ queryKey: queryKeys.cart })
+      if (userId) {
+        void qc.invalidateQueries({
+          queryKey: queryKeys.procurements.memberships(userId),
+        })
+      }
+    },
+  })
+}
+
 export const useProcurementReceiptApprovals = (procurementId?: string) =>
   useQuery({
     queryKey: ["procurements", "receipt-approvals", procurementId],

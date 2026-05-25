@@ -17,6 +17,7 @@ export const routes = {
     profile: "/user/profile",
     profileEdit: "/user/profile/edit",
     disputes: "/user/disputes",
+    dispute: (id: string) => `/user/disputes/${id}`,
     disputeCreate: (orderId: string) => `/user/disputes/new?orderId=${orderId}`,
     notifications: "/user/notifications",
     support: "/user/support",
@@ -33,6 +34,7 @@ export const routes = {
     profile: "/driver/profile",
     profileEdit: "/driver/profile/edit",
     disputes: "/driver/disputes",
+    dispute: (id: string) => `/driver/disputes/${id}`,
     notifications: "/driver/notifications",
     support: "/driver/support",
   },
@@ -62,6 +64,7 @@ export const routes = {
     pvz: "/admin/pvz",
     pvzEmployees: "/admin/pvz-employees",
     tickets: "/admin/tickets",
+    ticket: (id: string) => `/admin/tickets/${id}`,
     profile: "/admin/profile",
   },
 } as const

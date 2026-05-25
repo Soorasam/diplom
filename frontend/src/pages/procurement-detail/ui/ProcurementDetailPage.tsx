@@ -5,6 +5,7 @@ import { ArrowRight, Map, Package } from "lucide-react"
 import { useAuthStore } from "@/app/model/auth-store"
 import {
   useJoinProcurement,
+  useLeaveProcurement,
   useMyProcurementMemberships,
   useProcurement,
 } from "@/entities/procurement/api/useProcurements"
@@ -29,10 +30,13 @@ export const ProcurementDetailPage = () => {
   const user = useAuthStore((s) => s.user)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
   const setProcurement = useCartStore((s) => s.setProcurement)
+  const clearProcurement = useCartStore((s) => s.clearProcurement)
+  const procurementIdInCart = useCartStore((s) => s.procurementId)
 
   const { data: procurement, isLoading } = useProcurement(id)
   const { data: memberships = [] } = useMyProcurementMemberships(user?.id)
   const join = useJoinProcurement(user?.id)
+  const leave = useLeaveProcurement(user?.id)
   const { pushDraftItemsToServer } = useCartActions()
 
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -62,6 +66,26 @@ export const ProcurementDetailPage = () => {
         msg.includes("лимит") || msg.includes("Лимит") ? "Лимит веса сбора достигнут" : msg,
       )
       setConfirmOpen(false)
+    }
+  }
+
+  const handleLeave = async () => {
+    if (!procurement || !isAuthenticated) return
+    if (
+      !window.confirm(
+        `Выйти из сбора «${procurement.title}»? Корзина сохранится — для оплаты снова вступите в сбор.`,
+      )
+    ) {
+      return
+    }
+    setLimitMessage(null)
+    try {
+      await leave.mutateAsync(procurement.id)
+      if (procurementIdInCart === procurement.id) {
+        clearProcurement()
+      }
+    } catch (e) {
+      setLimitMessage(e instanceof Error ? e.message : "Не удалось выйти из сбора")
     }
   }
 
@@ -126,7 +150,7 @@ export const ProcurementDetailPage = () => {
         </Card>
 
         {hasJoined && !isClosed ? (
-          <AlertBanner variant="success" title="Вы участвуете в сборе">
+          <AlertBanner variant="success" title="Вы в сборе">
             Можно оформлять несколько заказов, пока сбор открыт. Закрытые сборы не принимают
             новые заказы.
           </AlertBanner>
@@ -140,15 +164,26 @@ export const ProcurementDetailPage = () => {
 
       <StickyActionBar>
         {hasJoined && !isClosed ? (
-          <Button
-            type="button"
-            fullWidth
-            size="lg"
-            rightIcon={<ArrowRight size={18} />}
-            onClick={() => participateInProcurement(navigate, setProcurement, procurement.id)}
-          >
-            Перейти в каталог
-          </Button>
+          <div className="flex w-full flex-col gap-2">
+            <Button
+              type="button"
+              fullWidth
+              size="lg"
+              rightIcon={<ArrowRight size={18} />}
+              onClick={() => participateInProcurement(navigate, setProcurement, procurement.id)}
+            >
+              Перейти в каталог
+            </Button>
+            <Button
+              type="button"
+              fullWidth
+              variant="outline"
+              disabled={leave.isPending}
+              onClick={() => void handleLeave()}
+            >
+              Выйти из сбора
+            </Button>
+          </div>
         ) : (
           <Button
             type="button"
@@ -162,7 +197,7 @@ export const ProcurementDetailPage = () => {
               ? "Сбор закрыт"
               : atLimit
                 ? "Лимит веса достигнут"
-                : "Участвовать в сборе"}
+                : "Вступить в сбор"}
           </Button>
         )}
       </StickyActionBar>
@@ -178,7 +213,7 @@ export const ProcurementDetailPage = () => {
             className="ornament-frame w-full max-w-md"
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="text-lg font-bold text-slate-900">Участие в сборе</p>
+            <p className="text-lg font-bold text-slate-900">Вступление в сбор</p>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">
               Откроется каталог «{procurement.title}». Добавьте товары, оплатите заказ — тогда
               вес учтётся в прогрессе сбора.

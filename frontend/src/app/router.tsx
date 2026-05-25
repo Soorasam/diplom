@@ -19,6 +19,7 @@ import { PaymentPage } from "@/pages/payment/ui/PaymentPage"
 import { OrderDetailsPage } from "@/pages/order-details/ui/OrderDetailsPage"
 import { MyDisputesPage } from "@/pages/disputes/ui/MyDisputesPage"
 import { CreateDisputePage } from "@/pages/disputes/ui/CreateDisputePage"
+import { TicketDetailPage } from "@/pages/disputes/ui/TicketDetailPage"
 import { EditProfilePage } from "@/pages/profile-edit/ui/EditProfilePage"
 import { ProfilePage } from "@/pages/profile/ui/ProfilePage"
 import { NotificationsPage } from "@/pages/notifications/ui/NotificationsPage"
@@ -55,6 +56,7 @@ import { EmployeeScanPage } from "@/pages/employee/scan/ui/EmployeeScanPage"
 import { AdminDriverApplicationsPage } from "@/pages/admin/driver-applications/ui/AdminDriverApplicationsPage"
 import { AdminPvzPage } from "@/pages/admin/pvz/ui/AdminPvzPage"
 import { AdminTicketsPage } from "@/pages/admin/tickets/ui/AdminTicketsPage"
+import { AdminTicketDetailPage } from "@/pages/admin/tickets/ui/AdminTicketDetailPage"
 import { routes } from "@/shared/config/routes"
 
 const u = routes.user
@@ -115,6 +117,7 @@ export const router = createBrowserRouter([
           { path: "profile", element: <ProfilePage /> },
           { path: "profile/edit", element: <EditProfilePage /> },
           { path: "disputes", element: <MyDisputesPage /> },
+          { path: "disputes/:id", element: <TicketDetailPage /> },
           { path: "notifications", element: <NotificationsPage /> },
           { path: "support", element: <SupportPage /> },
         ],
@@ -160,6 +163,7 @@ export const router = createBrowserRouter([
           { path: "pvz", element: <AdminPvzPage /> },
           { path: "pvz-employees", element: <AdminPvzEmployeesPage /> },
           { path: "tickets", element: <AdminTicketsPage /> },
+          { path: "tickets/:id", element: <AdminTicketDetailPage /> },
           { path: "profile", element: <ProfilePage /> },
         ],
       },
@@ -183,6 +187,7 @@ export const router = createBrowserRouter([
           { path: "profile/edit", element: <EditProfilePage /> },
           { path: "disputes", element: <MyDisputesPage /> },
           { path: "disputes/new", element: <CreateDisputePage /> },
+          { path: "disputes/:id", element: <TicketDetailPage /> },
           { path: "notifications", element: <NotificationsPage /> },
           { path: "support", element: <SupportPage /> },
           { path: "addresses", element: <AddressesPage /> },

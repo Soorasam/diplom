@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Package, Truck } from "lucide-react"
 
@@ -5,10 +6,12 @@ import { useAuthStore } from "@/app/model/auth-store"
 import {
   useActiveProcurements,
   useJoinProcurement,
+  useLeaveProcurement,
 } from "@/entities/procurement/api/useProcurements"
 import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useProcurementParticipation } from "@/features/procurement/hooks/useProcurementParticipation"
 import { useCartStore } from "@/features/cart/model/cart-store"
+import { ApiError } from "@/shared/api/client"
 import { routes } from "@/shared/config/routes"
 import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
 import { Button } from "@/shared/ui/button/Button"
@@ -16,6 +19,7 @@ import { Card } from "@/shared/ui/card/Card"
 import { ActiveProcurementBanner } from "@/widgets/active-procurement-banner/ui/ActiveProcurementBanner"
 
 export const CartProcurementBlock = () => {
+  const [leaveError, setLeaveError] = useState<string | null>(null)
   const navigate = useNavigate()
   const user = useAuthStore((s) => s.user)
   const setProcurement = useCartStore((s) => s.setProcurement)
@@ -31,6 +35,8 @@ export const CartProcurementBlock = () => {
 
   const { data: activeProcurements } = useActiveProcurements()
   const join = useJoinProcurement(user?.id)
+  const leave = useLeaveProcurement(user?.id)
+  const clearProcurement = useCartStore((s) => s.clearProcurement)
   const { pushDraftItemsToServer } = useCartActions()
 
   const joinedOpen =
@@ -42,6 +48,30 @@ export const CartProcurementBlock = () => {
     if (!procurementId || !isAuthenticated) return
     await join.mutateAsync(procurementId)
     await pushDraftItemsToServer(procurementId)
+  }
+
+  const handleLeaveSelected = async () => {
+    if (!procurementId || !isAuthenticated) return
+    if (
+      !window.confirm(
+        "Выйти из сбора? Корзина сохранится — для оплаты нужно снова вступить в сбор.",
+      )
+    ) {
+      return
+    }
+    try {
+      await leave.mutateAsync(procurementId)
+      clearProcurement()
+      setLeaveError(null)
+    } catch (e) {
+      const msg =
+        e instanceof ApiError
+          ? e.message
+          : e instanceof Error
+            ? e.message
+            : "Не удалось выйти из сбора"
+      setLeaveError(msg)
+    }
   }
 
   const handleSelectRound = (id: string) => {
@@ -71,7 +101,8 @@ export const CartProcurementBlock = () => {
               Сбор не выбран
             </p>
             <p className="mt-2 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
-              Вступите в сбор, чтобы оформить заказ. Товары в корзине сохранятся.
+              Одна корзина на все сборы. Выберите сбор для оформления заказа — товары
+              сохранятся.
             </p>
             {joinedOpen.length > 0 ? (
               <div className="mt-3">
@@ -138,7 +169,8 @@ export const CartProcurementBlock = () => {
           {procurement?.title ?? "Выбранный сбор"}
         </p>
         <p className="mt-2 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
-          Вступите в сбор, чтобы перейти к оформлению заказа.
+          Вступите в этот сбор, чтобы оформить заказ. Товары в корзине общие для всех
+          сборов.
         </p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row">
           <Button
@@ -169,10 +201,25 @@ export const CartProcurementBlock = () => {
 
   return (
     <div className="flex w-full flex-col gap-2">
+      {leaveError ? (
+        <AlertBanner variant="warning" title="Выйти нельзя">
+          {leaveError}
+        </AlertBanner>
+      ) : null}
       <ActiveProcurementBanner procurement={procurement} />
-      {joinedOpen.length > 1 ? (
+      <Button
+        type="button"
+        variant="outline"
+        fullWidth
+        size="sm"
+        loading={leave.isPending}
+        onClick={() => void handleLeaveSelected()}
+      >
+        Выйти из сбора
+      </Button>
+      {joinedOpen.length > 0 ? (
         <label className="block text-xs font-medium text-slate-500 dark:text-slate-400">
-          Другой ваш сбор
+          Сбор для заказа
           <select
             className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
             value={procurementId}
@@ -184,6 +231,9 @@ export const CartProcurementBlock = () => {
               </option>
             ))}
           </select>
+          <span className="mt-1 block text-xs font-normal text-slate-400 dark:text-slate-500">
+            Оформление пойдёт в выбранный сбор
+          </span>
         </label>
       ) : null}
       <Link

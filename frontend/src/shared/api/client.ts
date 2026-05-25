@@ -154,12 +154,16 @@ export const http = {
   upload: <T>(path: string, file: File, auth = true) => {
     const form = new FormData()
     form.append("file", file)
+    return http.postForm<T>(path, form, auth)
+  },
+
+  postForm: <T>(path: string, form: FormData, auth = true) => {
     const headers = new Headers()
     if (auth) {
       const token = getAccessToken()
       if (token) headers.set("Authorization", `Bearer ${token}`)
     }
-    logEvent(`api:upload POST ${path}`, { name: file.name, size: file.size })
+    logEvent(`api:upload POST ${path}`)
     return fetch(`${API_URL}${path}`, { method: "POST", body: form, headers }).then(
       async (res) => {
         if (!res.ok) {

@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router-dom"
 import { MessageSquare, QrCode } from "lucide-react"
 
 import { useOrder } from "@/entities/order/api/useOrders"
+import { useTicketByOrder } from "@/entities/ticket/api/useTickets"
+import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
 import { usePickupPoints } from "@/entities/settlement/api/useSettlements"
 import { useAuthStore } from "@/app/model/auth-store"
 import { routes } from "@/shared/config/routes"
@@ -19,7 +21,9 @@ import { OrderTimeline } from "@/widgets/order-timeline/ui/OrderTimeline"
 export const OrderDetailsPage = () => {
   const { id = "" } = useParams()
   const user = useAuthStore((s) => s.user)
+  const profileRoutes = useProfileRoutes()
   const { data: order, isLoading } = useOrder(id)
+  const { data: existingTicket } = useTicketByOrder(id)
   const { data: pickupPoints } = usePickupPoints(user?.settlementId)
   const [qrOpen, setQrOpen] = useState(false)
 
@@ -124,11 +128,15 @@ export const OrderDetailsPage = () => {
           ) : null}
           {canDispute ? (
             <Link
-              to={routes.user.disputeCreate(order.id)}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-blue-200"
+              to={
+                existingTicket
+                  ? profileRoutes.dispute(existingTicket.id)
+                  : routes.user.disputeCreate(order.id)
+              }
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-blue-200 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
             >
               <MessageSquare size={18} />
-              Открыть спор
+              {existingTicket ? "Перейти к спору" : "Открыть спор"}
             </Link>
           ) : null}
         </Card>
