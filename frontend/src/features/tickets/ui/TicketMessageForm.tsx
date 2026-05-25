@@ -88,9 +88,7 @@ export const TicketMessageForm = ({
     try {
       await onSubmit(body, toSend)
       resetForm()
-    } catch {
-      /* форма не очищается при ошибке — пользователь может повторить */
-    }
+    } catch {}
   }
 
   return (
