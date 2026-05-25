@@ -114,10 +114,16 @@ npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-us
 
 Ручной запуск: **Actions** → **Deploy GitHub Pages** → **Run workflow**.
 
-### API на продакшене (опционально)
+### API на VPS + Pages
 
-**Settings → Secrets and variables → Actions → Variables** → `VITE_API_URL` = `https://ваш-api/api/v1`  
-Без переменной в сборке останется `localhost` (только UI).
+Подробно: **[deploy/VPS.md](deploy/VPS.md)**
+
+Кратко:
+
+1. На VPS: `docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build`
+2. Nginx + Let's Encrypt (`deploy/nginx.example.conf`)
+3. В GitHub **Variables**: `VITE_API_URL` = `https://ВАШ-ДОМЕН/api/v1`
+4. В `.env.production` на VPS: `CORS_ORIGINS` с `https://soorasam.github.io`
 
 ### Локальный деплой (если нужен без CI)
 
