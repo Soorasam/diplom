@@ -2,7 +2,6 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ——— Design system: cold palette, 8px grid, no shadows ——— */
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
@@ -36,7 +35,6 @@ body {
   @apply text-slate-100;
 }
 
-/* Страницы с text-slate-* только для light — читаемость в dark */
 .dark .text-slate-900 {
   color: rgb(241 245 249);
 }
@@ -65,7 +63,6 @@ body {
   color: rgb(125 211 252);
 }
 
-/* ——— Авторизация: градиент на весь экран ——— */
 .auth-page {
   position: relative;
   isolation: isolate;
@@ -118,7 +115,6 @@ body {
   z-index: 1;
 }
 
-/* ——— Block layout: hero + едва заметный орнамент с затуханием ——— */
 .pattern-hero,
 .home-hero {
   position: relative;
@@ -140,7 +136,6 @@ body {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  /* светлый узор на тёмном hero — в light-теме resident.svg почти не виден */
   background-image: url("./shared/assets/ornament-resident-dark.svg");
   background-size: 80px 80px;
   background-repeat: repeat;
@@ -175,7 +170,6 @@ body {
   opacity: 0.38;
 }
 
-/* Kerdeder-кайма (hero, модалки) */
 .ornament-frame {
   position: relative;
 }
@@ -219,7 +213,6 @@ body {
   gap: 8px;
 }
 
-/* ——— Page chrome ——— */
 .page-header-glass {
   @apply border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-[#18202C];
   padding-top: max(1rem, calc(env(safe-area-inset-top, 0px) + 1rem));
@@ -238,7 +231,6 @@ body {
   @apply border-sky-300 bg-sky-50 dark:border-slate-600 dark:bg-slate-800;
 }
 
-/* ——— Semantic UI helpers ——— */
 .ui-card {
   @apply rounded-2xl border border-slate-200/90 bg-white transition-colors dark:border-slate-700/70 dark:bg-[#18202C];
 }
@@ -353,7 +345,6 @@ body {
   @apply bg-gradient-to-r from-emerald-400 to-teal-500 dark:from-emerald-400 dark:to-cyan-300;
 }
 
-/* Сегментированный переключатель: внешний rounded-2xl, внутренний rounded-xl */
 .ui-segment-track {
   @apply grid grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800;
 }
@@ -404,7 +395,6 @@ body {
   @apply flex items-center justify-center rounded-2xl bg-slate-100 text-sky-700 dark:bg-slate-800 dark:text-sky-400;
 }
 
-/* ——— Layout shell ——— */
 .app-canvas {
   @apply relative isolate min-h-dvh font-sans;
   background-color: rgb(241 245 249);
@@ -483,7 +473,6 @@ main,
   padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
 }
 
-/* ——— Motion ——— */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -533,7 +522,6 @@ main {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Ornament divider between sections */
 .ornament-divider {
   @apply h-px w-full border-0 bg-transparent;
   background-image: url("data:image/svg+xml,%3Csvg width='120' height='2' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 1h16M24 1h16M48 1h16M72 1h16M96 1h16' stroke='%23cbd5e1' stroke-width='1'/%3E%3C/svg%3E");

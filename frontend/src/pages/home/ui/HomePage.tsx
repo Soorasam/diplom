@@ -34,7 +34,6 @@ export const HomePage = () => {
 
   return (
     <div className="flex min-h-full flex-col font-sans">
-      {/* Хеддер: на всю ширину колонки, сразу под safe-area */}
       <header className="home-hero ornament-frame relative z-10 w-full shrink-0 overflow-hidden rounded-b-2xl">
         <div className="relative z-10 mx-auto w-full max-w-[480px] px-4 pb-6 pt-[max(1.5rem,calc(env(safe-area-inset-top,0px)+1rem))]">
           <p className="text-[11px] font-semibold uppercase leading-normal tracking-[0.14em] text-sky-200/90">

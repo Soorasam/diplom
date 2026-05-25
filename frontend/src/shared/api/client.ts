@@ -19,9 +19,7 @@ async function parseErrorMessage(res: Response): Promise<string> {
     const body = (await res.json()) as { message?: string | string[] }
     if (Array.isArray(body.message)) return body.message.join(", ")
     if (typeof body.message === "string") return body.message
-  } catch {
-    /* ignore */
-  }
+  } catch {}
   return res.statusText || "Ошибка запроса"
 }
 
