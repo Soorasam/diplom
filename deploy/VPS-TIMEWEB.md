@@ -108,20 +108,29 @@ cp -r dist/* /var/www/coopykt/
 
 ## 6. Nginx + HTTPS
 
+**До certbot** (нет сертификата — иначе `nginx -t` падает):
+
 ```bash
-cp /opt/diplom/deploy/nginx.coopykt.ru.conf /etc/nginx/sites-available/coopykt
+cp /opt/diplom/deploy/nginx.coopykt.ru.http.conf /etc/nginx/sites-available/coopykt
 ln -sf /etc/nginx/sites-available/coopykt /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
-nginx -t
+nginx -t && systemctl reload nginx
 ```
 
-Временно для получения сертификата — закомментируйте в конфиге блоки `listen 443` и строки `ssl_certificate`, оставьте только `listen 80` и `root` / `location`, затем:
+Сайт: **http://coopykt.ru/user** (или с `www`).
+
+**После того как DNS указывает на VPS:**
 
 ```bash
 certbot --nginx -d coopykt.ru -d www.coopykt.ru
 ```
 
-Certbot допишет SSL. Либо верните полный файл из репозитория и снова `nginx -t && systemctl reload nginx`.
+Certbot выдаст SSL. Затем подключите полный конфиг:
+
+```bash
+cp /opt/diplom/deploy/nginx.coopykt.ru.conf /etc/nginx/sites-available/coopykt
+nginx -t && systemctl reload nginx
+```
 
 ```bash
 systemctl enable nginx
