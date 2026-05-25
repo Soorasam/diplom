@@ -74,7 +74,6 @@ export const useMarkAllNotificationsRead = (userId: string | undefined) => {
   })
 }
 
-/** Пометить все прочитанными при открытии экрана уведомлений */
 export const useAutoMarkNotificationsRead = (
   userId: string | undefined,
   enabled: boolean,
@@ -95,7 +94,6 @@ export const useAutoMarkNotificationsRead = (
   }, [enabled, userId, isSuccess, data])
 }
 
-/** @deprecated use useMyTickets from entities/ticket */
 export const useMyDisputes = (userId?: string) =>
   useQuery({
     queryKey: queryKeys.tickets.list,

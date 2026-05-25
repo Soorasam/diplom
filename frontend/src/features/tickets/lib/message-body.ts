@@ -1,4 +1,3 @@
-/** Текст-заглушка для старых сообщений только с вложениями */
 const ATTACHMENT_ONLY_PLACEHOLDERS = new Set(["вложения", "attachments"])
 
 export function shouldShowMessageBody(body: string, attachmentCount: number): boolean {

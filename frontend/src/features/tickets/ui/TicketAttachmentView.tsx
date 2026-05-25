@@ -4,7 +4,6 @@ import type { TicketAttachment } from "@/entities/ticket/model/types"
 
 type Props = {
   attachment: TicketAttachment
-  /** Светлый текст на тёмном пузыре */
   onDarkBubble?: boolean
 }
 
