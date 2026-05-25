@@ -86,6 +86,18 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt install -y nodejs
 cd /opt/diplom/frontend
 cp .env.production.example .env.production
+```
+
+В `.env.production` обязательно:
+
+```
+VITE_BASE=/
+VITE_API_URL=/api/v1
+```
+
+(`/api/v1` — тот же домен через nginx; не ставьте `https://…` до выдачи SSL.)
+
+```bash
 npm ci
 npm run build:prod
 mkdir -p /var/www/coopykt
