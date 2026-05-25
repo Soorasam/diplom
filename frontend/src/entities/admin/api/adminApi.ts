@@ -157,6 +157,14 @@ export const adminApi = {
     return list.map(mapSettlement) as Settlement[]
   },
 
+  createSettlement: (payload: {
+    name: string
+    ulus?: string
+    district?: string
+    address?: string
+    phone?: string
+  }) => http.post("/admin/settlements", payload, true),
+
   getDrivers: async () => {
     const list = await http.get<BackendUser[]>("/admin/drivers", true)
     return list.map(
@@ -202,17 +210,16 @@ export const adminApi = {
     const list = await http.get<
       {
         id: string
-        settlementId: string
-        coordinatorName: string
+        name: string
         address?: string | null
         phone?: string | null
-        settlement?: { id: string; name: string; ulus?: string | null }
+        ulus?: string | null
         users?: { id: string; email: string; fullName: string | null; phone: string | null }[]
       }[]
     >("/admin/pickup-points", true)
     return list.map((p) => ({
-      ...mapPickupPoint(p),
-      settlementName: p.settlement?.name,
+      ...mapPickupPoint({ ...p, settlementId: p.id }),
+      settlementName: p.name,
       employees: (p.users ?? []).map((u) => ({
         id: u.id,
         name: u.fullName ?? u.email,

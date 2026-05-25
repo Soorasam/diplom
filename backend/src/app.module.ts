@@ -15,6 +15,7 @@ import { CoordinatorModule } from './coordinator/coordinator.module';
 import { EmployeeModule } from './employee/employee.module';
 import { LogisticsModule } from './logistics/logistics.module';
 import { StorageModule } from './storage/storage.module';
+import { RoutesModule } from './routes/routes.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { StorageModule } from './storage/storage.module';
     DriverApplicationsModule,
     CoordinatorModule,
     EmployeeModule,
+    RoutesModule,
   ],
   controllers: [HealthController],
 })

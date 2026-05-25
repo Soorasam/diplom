@@ -3,6 +3,7 @@ import { Truck } from "lucide-react"
 import type { Procurement } from "@/shared/api/mock-db"
 import { formatShortDate, formatWeightKg } from "@/shared/lib/format"
 import { Card } from "@/shared/ui/card/Card"
+import { ProcurementClosingCountdown } from "@/widgets/procurement-closing-countdown/ui/ProcurementClosingCountdown"
 import { ProcurementProgress } from "@/widgets/procurement-progress/ui/ProcurementProgress"
 
 interface ActiveProcurementBannerProps {
@@ -28,6 +29,14 @@ export const ActiveProcurementBanner = ({ procurement }: ActiveProcurementBanner
           <p className="mt-1 text-xs font-normal leading-relaxed text-slate-500 dark:text-slate-400">
             до {formatShortDate(procurement.closesAt)} · свободно {formatWeightKg(leftKg)}
           </p>
+          {procurement.emergencyCloseAt ? (
+            <div className="mt-2">
+              <ProcurementClosingCountdown
+                emergencyCloseAt={procurement.emergencyCloseAt}
+                compact
+              />
+            </div>
+          ) : null}
         </div>
       </div>
 

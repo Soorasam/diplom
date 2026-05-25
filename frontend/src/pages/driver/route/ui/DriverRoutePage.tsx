@@ -1,44 +1,20 @@
-import { useQuery } from "@tanstack/react-query"
-import { CheckCircle2, MapPin, Snowflake, Truck } from "lucide-react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { CheckCircle2, MapPin, Truck } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
+import { ProcurementChecklistCard } from "@/features/driver-procurement-checklist/ui/ProcurementChecklistCard"
 import { routesApi } from "@/entities/route/api/routesApi"
 import type { RouteDeliveryStop } from "@/entities/route/api/routesApi"
-import type { DeliveryMode } from "@/shared/types"
 import { queryKeys } from "@/shared/config/query-keys"
 import { Badge } from "@/shared/ui/badge/Badge"
+import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 
-const deliveryModeLabel: Record<DeliveryMode, string> = {
-  winter_road: "Зимник",
-  river: "Речной",
-  air: "Авиа",
-  mixed: "Смешанный",
-}
-
-const routeStatusLabel = {
-  planned: "Запланирован",
-  active: "Активен",
-  completed: "Завершён",
-} as const
-
 type PointStatus = "pending" | "arrived" | "done"
-
-type RouteStop = {
-  label: string
-  subtitle: string
-  coords: { lat: number; lng: number }
-  type: "start" | "stop"
-  status: PointStatus
-  progress?: string
-}
-
-const formatCoords = (coords: { lat: number; lng: number }) =>
-  `${coords.lat.toFixed(2)}°, ${coords.lng.toFixed(2)}°`
 
 const mapStopStatus = (s: RouteDeliveryStop["status"]): PointStatus => {
   if (s === "completed") return "done"
@@ -46,13 +22,34 @@ const mapStopStatus = (s: RouteDeliveryStop["status"]): PointStatus => {
   return "pending"
 }
 
+const stopSubtitle = (ds: RouteDeliveryStop) => {
+  if (ds.isProcurementStop && !ds.procurementCompleted) return "Точка закупа"
+  if (ds.isProcurementStop && ds.procurementCompleted) return "Закупка завершена"
+  if (ds.expectsOrders) return "Передача заказов — подтверждает ПВЗ"
+  return "Остановка по маршруту — отметьте сами"
+}
+
 export const DriverRoutePage = () => {
   const user = useAuthStore((s) => s.user)
   const driverId = user?.role === "driver" ? user.id : "d1"
+  const qc = useQueryClient()
 
   const { data: driverRoutes, isLoading } = useQuery({
     queryKey: queryKeys.routes.driver(driverId),
     queryFn: () => routesApi.getByDriver(driverId),
+  })
+
+  const completeStop = useMutation({
+    mutationFn: ({
+      roundId,
+      pickupPointId,
+    }: {
+      roundId: string
+      pickupPointId: string
+    }) => routesApi.completeRouteStop(roundId, pickupPointId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.routes.driver(driverId) })
+    },
   })
 
   const activeRoute =
@@ -75,44 +72,26 @@ export const DriverRoutePage = () => {
         <EmptyState
           icon={MapPin}
           title="Нет активного маршрута"
-          description="Маршрут появится после закрытия сбора и старта рейса"
+          description="Маршрут появится после закрытия сбора и отправки рейса"
         />
       </PageShell>
     )
   }
 
   const deliveryStops = activeRoute.deliveryStops ?? []
-  const hubCoords = activeRoute.points[0]
 
-  let stops: RouteStop[] = []
-
-  if (deliveryStops.length > 0 && hubCoords) {
-    stops = [
-      {
-        label: activeRoute.hubLabel ?? "Пункт отправления",
-        subtitle: "Отправление",
-        coords: hubCoords,
-        type: "start",
-        status: "done",
-      },
-      ...deliveryStops.map((ds) => ({
-        label: ds.label,
-        subtitle: ds.settlementName,
-        coords: ds.coords,
-        type: "stop" as const,
-        status: mapStopStatus(ds.status),
-        progress: `${ds.receivedOrders}/${ds.totalOrders} принято в ПВЗ`,
-      })),
-    ]
-  } else if (activeRoute.points.length > 0) {
-    stops = activeRoute.points.map((coords, index) => ({
-      label: index === 0 ? (activeRoute.hubLabel ?? "Старт") : `Точка ${index}`,
-      subtitle: index === 0 ? "Отправление" : "ПВЗ",
-      coords,
-      type: index === 0 ? ("start" as const) : ("stop" as const),
-      status: (index === 0 ? "done" : "pending") as PointStatus,
-    }))
-  }
+  const stops = deliveryStops.map((ds) => ({
+    pickupPointId: ds.pickupPointId,
+    label: ds.label,
+    subtitle: stopSubtitle(ds),
+    address: ds.address ?? ds.settlementName,
+    status: mapStopStatus(ds.status),
+    progress: ds.expectsOrders
+      ? `${ds.receivedOrders}/${ds.totalOrders} принято в ПВЗ`
+      : undefined,
+    driverCanComplete: ds.driverCanComplete,
+    expectsOrders: ds.expectsOrders,
+  }))
 
   if (stops.length === 0) {
     return (
@@ -121,38 +100,26 @@ export const DriverRoutePage = () => {
         <EmptyState
           icon={MapPin}
           title="Точки маршрута не заданы"
-          description="После закрытия сбора и старта рейса появятся ПВЗ на маршруте"
+          description="После закрытия сбора и старта рейса появятся точки на маршруте"
         />
       </PageShell>
     )
   }
 
-  const completedStops = stops.filter((s) => s.status === "done").length
   const nextStop = stops.find((s) => s.status !== "done") ?? null
   const tripCompleted = activeRoute.status === "completed"
+  const roundId = activeRoute.activeRoundId
 
   return (
     <PageShell>
       <PageHeader
         title={activeRoute.name}
-        subtitle="Статус точек обновляется, когда сотрудник ПВЗ принимает все заказы"
+        subtitle="Закупка и остановки — водитель; приём заказов — сотрудник ПВЗ"
       />
 
-      <Card className="ui-panel">
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-          <Badge variant="info">{routeStatusLabel[activeRoute.status]}</Badge>
-          <Badge variant="default">
-            <Snowflake size={12} className="mr-1 inline" />
-            {deliveryModeLabel[activeRoute.deliveryMode]}
-          </Badge>
-          <Badge variant={tripCompleted ? "success" : "warning"}>
-            {tripCompleted ? "Рейс завершён" : "В пути"}
-          </Badge>
-          <Badge variant="default">
-            {completedStops}/{stops.length} точек
-          </Badge>
-        </div>
-      </Card>
+      {roundId && activeRoute.status === "active" ? (
+        <ProcurementChecklistCard roundId={roundId} />
+      ) : null}
 
       {nextStop && !tripCompleted ? (
         <Card className="ui-panel-gradient">
@@ -163,17 +130,17 @@ export const DriverRoutePage = () => {
             <div className="min-w-0">
               <p className="text-xs font-medium ui-text-accent">Следующая точка</p>
               <p className="truncate font-semibold text-slate-900">{nextStop.label}</p>
-              <p className="text-xs text-slate-500">{nextStop.subtitle}</p>
+              <p className="text-xs text-slate-500">{nextStop.address}</p>
             </div>
           </div>
         </Card>
       ) : null}
 
       <div>
-        <p className="mb-2 text-sm font-semibold text-slate-800">Точки передачи в ПВЗ</p>
+        <p className="mb-2 text-sm font-semibold text-slate-800">Точки маршрута</p>
         <ol className="flex flex-col gap-2">
           {stops.map((stop, index) => (
-            <li key={`${stop.label}-${index}`}>
+            <li key={stop.pickupPointId}>
               <Card
                 className={
                   stop.status === "arrived"
@@ -198,16 +165,36 @@ export const DriverRoutePage = () => {
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-slate-900">{stop.label}</p>
                     <p className="text-xs text-slate-500">{stop.subtitle}</p>
-                    <p className="text-xs text-slate-400">{formatCoords(stop.coords)}</p>
+                    <p className="mt-0.5 text-sm text-slate-700">{stop.address}</p>
                     {stop.progress ? (
                       <p className="mt-1 text-xs font-medium text-slate-600">{stop.progress}</p>
+                    ) : null}
+                    {stop.driverCanComplete && roundId ? (
+                      <Button
+                        size="sm"
+                        className="mt-2"
+                        disabled={completeStop.isPending}
+                        onClick={() =>
+                          completeStop.mutate({
+                            roundId,
+                            pickupPointId: stop.pickupPointId,
+                          })
+                        }
+                      >
+                        Точка выполнена
+                      </Button>
+                    ) : null}
+                    {stop.expectsOrders && stop.status !== "done" ? (
+                      <p className="mt-2 text-xs text-slate-500">
+                        Закрытие — когда сотрудник ПВЗ примет все заказы
+                      </p>
                     ) : null}
                   </div>
                   <div className="shrink-0">
                     {stop.status === "done" ? (
                       <Badge variant="success">Закрыта</Badge>
                     ) : stop.status === "arrived" ? (
-                      <Badge variant="info">Приём</Badge>
+                      <Badge variant="info">В работе</Badge>
                     ) : (
                       <Badge variant="default">Ожидает</Badge>
                     )}
@@ -222,12 +209,13 @@ export const DriverRoutePage = () => {
       {tripCompleted ? (
         <Card className="ui-panel">
           <p className="text-sm font-semibold ui-text-accent">
-            Рейс завершён: все ПВЗ приняли товар.
+            Рейс завершён: все точки маршрута пройдены.
           </p>
         </Card>
       ) : (
         <p className="text-xs text-slate-500">
-          Точка закрывается автоматически, когда сотрудник ПВЗ отметит все заказы этого сбора.
+          На ПВЗ с заказами точку закрывает сотрудник при приёме. На остальных остановках —
+          кнопка «Точка выполнена».
         </p>
       )}
     </PageShell>

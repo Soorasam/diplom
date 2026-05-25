@@ -11,7 +11,9 @@ import {
   RoundStatus,
   UserRole,
 } from '@prisma/client';
+import { ORDER_STATUS_LABELS } from '../common/order-labels';
 import { assertOrderStatusTransition } from '../common/order-status-transitions';
+import { CatalogService } from '../catalog/catalog.service';
 import { DeliveryStopsService } from '../logistics/delivery-stops.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -20,12 +22,13 @@ export class EmployeeService {
   constructor(
     private prisma: PrismaService,
     private deliveryStops: DeliveryStopsService,
+    private catalog: CatalogService,
   ) {}
 
   private async requirePickupPoint(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { pickupPoint: { include: { settlement: true } } },
+      include: { pickupPoint: true },
     });
     if (!user?.pickupPointId || !user.pickupPoint) {
       throw new ForbiddenException('Сотрудник не привязан к ПВЗ');
@@ -34,13 +37,18 @@ export class EmployeeService {
   }
 
   async getWorkspace(userId: string) {
+    await this.catalog.processDueEmergencyCloses();
+
     const { pickupPointId, pickupPoint } = await this.requirePickupPoint(userId);
+
+    await this.syncStuckOrdersForPickupPoint(pickupPointId);
 
     const orders = await this.prisma.order.findMany({
       where: {
         pickupPointId,
         status: {
           in: [
+            OrderStatus.submitted,
             OrderStatus.in_transit,
             OrderStatus.at_pickup,
             OrderStatus.confirmed,
@@ -81,7 +89,8 @@ export class EmployeeService {
       if (!order.roundId || !order.round) continue;
       if (
         order.status !== OrderStatus.in_transit &&
-        order.status !== OrderStatus.confirmed
+        order.status !== OrderStatus.confirmed &&
+        order.status !== OrderStatus.submitted
       ) {
         continue;
       }
@@ -135,15 +144,33 @@ export class EmployeeService {
       },
     });
 
+    const submittedOnClosedRound = await this.prisma.order.count({
+      where: {
+        pickupPointId,
+        status: OrderStatus.submitted,
+        round: { status: RoundStatus.closed },
+      },
+    });
+
     const hints: string[] = [];
     if (openRoundOrders > 0) {
       hints.push(
-        `В открытых сборах — ${openRoundOrders} заказ(ов). После закрытия сбора админ отправит рейс, и заказы появятся в приёме.`,
+        `В открытых сборах — ${openRoundOrders} заказ(ов) на ваш ПВЗ. Они появятся здесь после закрытия сбора водителем (таймер или админ).`,
+      );
+    }
+    if (submittedOnClosedRound > 0) {
+      hints.push(
+        `Сбор закрыт, но ${submittedOnClosedRound} заказ(ов) ещё не отправлены в рейс. Обновите страницу через несколько секунд.`,
       );
     }
     if (awaitingDispatchCount > 0) {
       hints.push(
         'Сбор закрыт, но заказы ещё не в пути. Админ: «Сборы» → «Закрыть и отправить рейс» (или повторный запуск доставки).',
+      );
+    }
+    if (inTransitCount > 0 && intakeGroups.length === 0) {
+      hints.push(
+        `Ожидается ${inTransitCount} заказ(ов) «в пути» — обновите страницу или проверьте вкладку «Приём».`,
       );
     }
     if (
@@ -161,9 +188,9 @@ export class EmployeeService {
     return {
       pickupPoint: {
         id: pickupPoint.id,
-        name: pickupPoint.coordinatorName,
+        name: pickupPoint.name,
         address: pickupPoint.address,
-        settlementName: pickupPoint.settlement.name,
+        settlementName: pickupPoint.name,
       },
       intakeGroups: intakeGroups.map((g) => ({
         ...g,
@@ -183,6 +210,45 @@ export class EmployeeService {
       },
       hints,
     };
+  }
+
+  /** Заказы на закрытом сборе: submitted → confirmed; после закупки → in_transit. */
+  private async syncStuckOrdersForPickupPoint(pickupPointId: string) {
+    await this.prisma.order.updateMany({
+      where: {
+        pickupPointId,
+        status: OrderStatus.submitted,
+        round: { status: RoundStatus.closed },
+      },
+      data: {
+        status: OrderStatus.confirmed,
+        statusNote: ORDER_STATUS_LABELS.confirmed,
+      },
+    });
+
+    const roundIds = await this.prisma.order.findMany({
+      where: {
+        pickupPointId,
+        status: OrderStatus.confirmed,
+        round: { status: RoundStatus.closed },
+      },
+      select: { roundId: true },
+      distinct: ['roundId'],
+    });
+
+    for (const row of roundIds) {
+      if (!row.roundId) continue;
+      const openProc = await this.prisma.roundDeliveryStop.count({
+        where: {
+          roundId: row.roundId,
+          isProcurementStop: true,
+          procurementCompletedAt: null,
+        },
+      });
+      if (openProc === 0) {
+        await this.deliveryStops.releaseOrdersToTransit(row.roundId);
+      }
+    }
   }
 
   async receiveFromDriver(userId: string, orderId: string) {
@@ -272,19 +338,23 @@ export class EmployeeService {
   private mapOrder(
     order: {
       id: string;
+      publicNumber: string;
       status: OrderStatus;
       totalEstimate: Prisma.Decimal | number;
       roundId: string | null;
       round?: { id: string; title: string | null } | null;
       user: { fullName: string | null; phone: string | null };
       items: {
+        productName: string;
         quantity: number;
+        unit: string;
         product: { name: string; unit: string };
       }[];
     },
   ) {
     return {
       id: order.id,
+      publicNumber: order.publicNumber,
       status: order.status,
       totalAmount: Number(order.totalEstimate),
       roundId: order.roundId,
@@ -292,9 +362,9 @@ export class EmployeeService {
       customerName: order.user.fullName,
       customerPhone: order.user.phone,
       items: order.items.map((i) => ({
-        name: i.product.name,
+        name: i.productName || i.product.name,
         quantity: i.quantity,
-        unit: i.product.unit,
+        unit: i.unit || i.product.unit,
       })),
     };
   }

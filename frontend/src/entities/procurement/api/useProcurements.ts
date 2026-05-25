@@ -9,6 +9,29 @@ export const useActiveProcurements = () =>
   useQuery({
     queryKey: queryKeys.procurements.active,
     queryFn: () => procurementsApi.getActive(),
+    refetchInterval: (query) => {
+      const list = query.state.data
+      if (list?.some((p) => p.emergencyCloseAt)) return 5000
+      return false
+    },
+  })
+
+export const useDriverActiveProcurement = () =>
+  useQuery({
+    queryKey: ["driver", "active-procurement"],
+    queryFn: () => procurementsApi.getDriverActive(),
+    refetchInterval: (query) => {
+      const p = query.state.data
+      if (p?.emergencyCloseAt) return 5000
+      return false
+    },
+  })
+
+export const useDriverDeliveryProcurement = () =>
+  useQuery({
+    queryKey: ["driver", "delivery-procurement"],
+    queryFn: () => procurementsApi.getDriverDelivery(),
+    refetchInterval: 10000,
   })
 
 export const useProcurement = (id: string) =>
@@ -31,6 +54,22 @@ export const useCreateProcurement = () => {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.procurements.all })
       void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
+      void qc.invalidateQueries({ queryKey: ["driver", "active-procurement"] })
+      void qc.invalidateQueries({ queryKey: ["driver", "delivery-procurement"] })
+    },
+  })
+}
+
+export const useScheduleEmergencyClose = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => procurementsApi.scheduleEmergencyClose(id),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.procurements.all })
+      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
+      void qc.invalidateQueries({ queryKey: ["driver", "active-procurement"] })
+      void qc.invalidateQueries({ queryKey: ["driver", "delivery-procurement"] })
+      void qc.invalidateQueries({ queryKey: ["routes", "driver"] })
     },
   })
 }
@@ -42,6 +81,9 @@ export const useCloseProcurement = (actorRole: UserRole) => {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.procurements.all })
       void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
+      void qc.invalidateQueries({ queryKey: ["driver", "active-procurement"] })
+      void qc.invalidateQueries({ queryKey: ["driver", "delivery-procurement"] })
+      void qc.invalidateQueries({ queryKey: ["routes", "driver"] })
     },
   })
 }

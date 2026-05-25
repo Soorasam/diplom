@@ -45,9 +45,14 @@ export const ProcurementDetailPage = () => {
   const [limitMessage, setLimitMessage] = useState<string | null>(null)
 
   const hasJoined = memberships.includes(id)
-  const isClosed = procurement?.status !== "open"
+  const isClosing = procurement?.status === "closing"
+  const isClosed =
+    procurement != null && procurement.status !== "open" && procurement.status !== "closing"
   const atLimit =
     procurement != null && procurement.currentWeightKg >= procurement.targetWeightKg
+  const isOwnRound = Boolean(
+    user?.id && procurement?.organizerUserId && procurement.organizerUserId === user.id,
+  )
 
   const handleParticipate = async () => {
     if (!procurement || atLimit) {
@@ -146,9 +151,22 @@ export const ProcurementDetailPage = () => {
         </Card>
 
         {hasJoined && !isClosed ? (
-          <AlertBanner variant="success" title="Вы в сборе">
-            Можно оформлять несколько заказов, пока сбор открыт. Закрытые сборы не принимают
-            новые заказы.
+          <AlertBanner variant="success" title="Вы участвуете в сборе">
+            {isClosing
+              ? "Сбор скоро закроется — успейте оформить заказ, если ещё не оплатили."
+              : "Можно оформлять несколько заказов, пока сбор открыт. Закрытые сборы не принимают новые заказы."}
+          </AlertBanner>
+        ) : null}
+        {isOwnRound && !hasJoined ? (
+          <AlertBanner variant="info" title="Ваш сбор">
+            Водитель не может участвовать в собственном сборе — управляйте им в интерфейсе
+            водителя.
+          </AlertBanner>
+        ) : null}
+        {isClosing && !hasJoined && !isOwnRound ? (
+          <AlertBanner variant="info" title="Сбор скоро закроется">
+            Успейте участвовать и оформить заказ — приём заказов завершится автоматически по
+            таймеру.
           </AlertBanner>
         ) : null}
         {isClosed ? (
@@ -195,15 +213,19 @@ export const ProcurementDetailPage = () => {
             type="button"
             fullWidth
             size="lg"
-            disabled={!isAuthenticated || atLimit || isClosed || join.isPending}
+            disabled={!isAuthenticated || atLimit || isClosed || isOwnRound || join.isPending}
             leftIcon={<Package size={18} />}
             onClick={() => setConfirmOpen(true)}
           >
-            {isClosed
-              ? "Сбор закрыт"
-              : atLimit
-                ? "Лимит веса достигнут"
-                : "Вступить в сбор"}
+            {isOwnRound
+              ? "Это ваш сбор"
+              : isClosed
+                ? "Сбор закрыт"
+                : atLimit
+                  ? "Лимит веса достигнут"
+                  : isClosing
+                    ? "Участвовать (осталось мало времени)"
+                    : "Участвовать в сборе"}
           </Button>
         )}
       </StickyActionBar>

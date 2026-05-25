@@ -39,7 +39,7 @@ apt update && apt upgrade -y
 apt install -y git nginx certbot python3-certbot-nginx
 ```
 
-Установите Docker: https://docs.docker.com/engine/install/ubuntu/
+Установите Docker: https://docs.docker.com/engine/install/ubuntu/ 
 
 ```bash
 docker compose version
@@ -64,10 +64,12 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 Первый запуск БД и миграции:
 
 ```bash
-docker compose -f docker-compose.prod.yml exec api npx prisma db seed
-docker compose -f docker-compose.prod.yml exec api npx ts-node -P tsconfig.scripts.json prisma/ensure-demo-users.ts
+docker compose -f docker-compose.prod.yml exec api npx prisma migrate deploy
+docker compose -f docker-compose.prod.yml exec api npm run prisma:reset:deploy
 docker compose -f docker-compose.prod.yml exec api npm run storage:seed
 ```
+
+Скрипт `prisma:reset:deploy` удаляет все сборы, заказы, маршруты и шаблоны; оставляет каталог, 5 НП, 5 ПВЗ (по 1 на НП) и демо-аккаунты.
 
 Проверка API:
 
@@ -129,7 +131,7 @@ cd frontend && npm ci && npm run build:prod && cp -r dist/* /var/www/coopykt/
 
 На защите можно показывать **https://coopykt.ru/user** или локально — см. [DEFENSE-LAPTOP.md](DEFENSE-LAPTOP.md).
 
-Демо-аккаунты: `admin@coop.local`, `demo@coop.local`, `employee@coop.local` (пароли в README).
+Демо-аккаунты: см. README (admin, demo, 5 сотрудников ПВЗ — пароль `employee12345`).
 
 ## Частые проблемы
 

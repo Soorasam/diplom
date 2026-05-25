@@ -43,7 +43,9 @@ export const CartProcurementBlock = () => {
 
   const joinedOpen =
     activeProcurements?.filter(
-      (p) => joinedRoundIds.includes(p.id) && p.status === "open",
+      (p) =>
+        joinedRoundIds.includes(p.id) &&
+        (p.status === "open" || p.status === "closing"),
     ) ?? []
 
   const handleJoinSelected = async () => {

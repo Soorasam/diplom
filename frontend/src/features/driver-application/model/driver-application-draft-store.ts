@@ -108,7 +108,7 @@ export const useDriverApplicationDraftStore = create<DraftState>()(
     {
       name: "coop-driver-application-draft",
       version: 2,
-      migrate: (persisted, version) => {
+      migrate: (persisted, _version) => {
         const state = persisted as { draft?: Partial<DriverApplicationDraft> }
         const draft = state.draft ?? {}
         return {

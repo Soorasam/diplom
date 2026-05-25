@@ -52,6 +52,18 @@ export const useAdminSettlements = () =>
     queryFn: () => adminApi.getSettlements(),
   })
 
+export const useCreateSettlement = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: adminApi.createSettlement,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [...queryKeys.admin.stats, "settlements"] })
+      void qc.invalidateQueries({ queryKey: ["settlements", "catalog"] })
+      void qc.invalidateQueries({ queryKey: queryKeys.settlements })
+    },
+  })
+}
+
 export const useAdminDrivers = () =>
   useQuery({
     queryKey: queryKeys.admin.drivers,

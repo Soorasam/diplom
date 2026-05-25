@@ -1,7 +1,9 @@
-import { CheckCircle2, Package, Search, WifiOff } from "lucide-react"
+import { CheckCircle2, Package, PackageCheck, Search, WifiOff } from "lucide-react"
 import { useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 
 import { employeeApi } from "@/entities/employee/api/employeeApi"
+import { routes } from "@/shared/config/routes"
 import {
   useEmployeeHandout,
   useEmployeeWorkspace,
@@ -48,6 +50,31 @@ export const EmployeeOrdersPage = () => {
         title="Выдача жителям"
         subtitle="Заказы, принятые от водителя и готовые к получению"
       />
+
+      {(workspace?.stats.awaitingDriver ?? 0) > 0 ? (
+        <Card className="border-sky-200 bg-sky-50/60">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+              <PackageCheck size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-slate-900">
+                {workspace?.stats.awaitingDriver} заказ(ов) ждут приёма от водителя
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                Сначала примите товар во вкладке «Приём» — после этого заказы появятся здесь на
+                выдачу жителям.
+              </p>
+              <Link
+                to={routes.employee.intake}
+                className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl bg-sky-600 px-4 text-sm font-semibold text-white hover:bg-sky-700"
+              >
+                Перейти в приём
+              </Link>
+            </div>
+          </div>
+        </Card>
+      ) : null}
 
       {!isOnline ? (
         <Card className="border-amber-200 bg-amber-50/40">

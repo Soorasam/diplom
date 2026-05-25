@@ -39,7 +39,6 @@ import { AdminDashboardPage } from "@/pages/admin/dashboard/ui/AdminDashboardPag
 import { AdminUsersPage } from "@/pages/admin/users/ui/AdminUsersPage"
 import { AdminOrdersPage } from "@/pages/admin/orders/ui/AdminOrdersPage"
 import { AdminProductsPage } from "@/pages/admin/products/ui/AdminProductsPage"
-import { AdminRoutesPage } from "@/pages/admin/routes/ui/AdminRoutesPage"
 import { AdminProcurementsPage } from "@/pages/admin/procurements/ui/AdminProcurementsPage"
 import { AdminDriversPage } from "@/pages/admin/drivers/ui/AdminDriversPage"
 import { AdminDriverDetailPage } from "@/pages/admin/drivers/ui/AdminDriverDetailPage"
@@ -155,7 +154,6 @@ export const router = createBrowserRouter([
           { path: "users", element: <AdminUsersPage /> },
           { path: "orders", element: <AdminOrdersPage /> },
           { path: "products", element: <AdminProductsPage /> },
-          { path: "routes", element: <AdminRoutesPage /> },
           { path: "procurements", element: <AdminProcurementsPage /> },
           { path: "drivers", element: <AdminDriversPage /> },
           { path: "drivers/:id", element: <AdminDriverDetailPage /> },

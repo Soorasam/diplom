@@ -49,19 +49,15 @@ export class CartService {
       where: { userId: user.id },
       include: {
         product: true,
-        round: { include: { route: true } },
+        round: { include: { waypoints: { include: { pickupPoint: true } } } },
       },
       orderBy: { createdAt: 'asc' },
     });
 
-    const [settlement, pickupPoint] = await Promise.all([
-      user.settlementId
-        ? this.prisma.settlement.findUnique({ where: { id: user.settlementId } })
-        : null,
-      user.pickupPointId
-        ? this.prisma.pickupPoint.findUnique({ where: { id: user.pickupPointId } })
-        : null,
-    ]);
+    const round = items[0]?.round ?? null;
+    const pickupPoint = user.pickupPointId
+      ? await this.prisma.pickupPoint.findUnique({ where: { id: user.pickupPointId } })
+      : null;
 
     let totalEstimate = 0;
     const mappedItems = items.map((item) => {
@@ -79,8 +75,8 @@ export class CartService {
     });
 
     return {
-      round: null,
-      settlement,
+      round: round ? this.mapRound(round) : null,
+      settlement: pickupPoint,
       pickupPoint,
       items: mappedItems,
       itemsCount: items.reduce((s, i) => s + i.quantity, 0),
@@ -177,7 +173,10 @@ export class CartService {
 
     const items = await this.prisma.cartItem.findMany({
       where: { userId: user.id },
-      include: { product: true, round: { include: { route: true } } },
+      include: {
+        product: true,
+        round: { include: { waypoints: { include: { pickupPoint: true } } } },
+      },
     });
     if (!items.length) throw new BadRequestException('Корзина пуста');
 
@@ -247,7 +246,10 @@ export class CartService {
           statusNote: ORDER_STATUS_LABELS.submitted,
           items: { create: orderItemsData },
         },
-        include: { items: true, round: { include: { route: true } } },
+        include: {
+          items: true,
+          round: { include: { waypoints: { include: { pickupPoint: true } } } },
+        },
       });
       await tx.cartItem.deleteMany({ where: { userId: user.id } });
       await tx.round.update({
@@ -260,7 +262,14 @@ export class CartService {
       return created;
     });
 
-    const title = order.round.title ?? order.round.route.title;
+    const title =
+      order.round.title ??
+      order.round.routeTitle ??
+      order.round.waypoints
+        ?.sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((w) => w.pickupPoint.name)
+        .join(' → ') ??
+      'Сбор';
     return {
       id: order.id,
       publicNumber: order.publicNumber,

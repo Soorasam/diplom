@@ -9,7 +9,9 @@ export const useOpenSelectedProcurement = (selectedRoundId: string) => {
   const { data: procurement, isLoading } = useProcurement(selectedRoundId)
 
   const openProcurement =
-    procurement?.status === "open" ? procurement : undefined
+    procurement?.status === "open" || procurement?.status === "closing"
+      ? procurement
+      : undefined
   const closedProcurement =
     procurement && procurement.status !== "open" ? procurement : undefined
 

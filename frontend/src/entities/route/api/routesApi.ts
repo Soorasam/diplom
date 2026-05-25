@@ -7,11 +7,16 @@ export type RouteDeliveryStop = {
   pickupPointId: string
   label: string
   settlementName: string
+  address?: string
   status: "pending" | "in_progress" | "completed"
   totalOrders: number
   receivedOrders: number
   inTransitOrders: number
   coords: { lat: number; lng: number }
+  isProcurementStop?: boolean
+  procurementCompleted?: boolean
+  expectsOrders?: boolean
+  driverCanComplete?: boolean
 }
 
 export type CoordinatorRoute = DeliveryRoute & {
@@ -46,6 +51,16 @@ export const routesApi = {
   getByDriver: async (_driverId: string): Promise<CoordinatorRoute[]> => {
     return http.get<CoordinatorRoute[]>("/coordinator/routes", true)
   },
+
+  completeRouteStop: (
+    roundId: string,
+    pickupPointId: string,
+  ) =>
+    http.post<{ stopCompleted: boolean; roundCompleted: boolean }>(
+      `/coordinator/rounds/${roundId}/stops/${pickupPointId}/complete`,
+      {},
+      true,
+    ),
 
   getDriverOrders: async (_driverId: string): Promise<Order[]> => {
     const list = await http.get<
