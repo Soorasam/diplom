@@ -49,7 +49,7 @@ docker compose version
 
 ```bash
 cd /opt
-git clone https://github.com/Soorasam/diplom.git
+git clone -b main https://github.com/Soorasam/diplom.git
 cd diplom
 cp deploy/.env.production.example .env.production
 nano .env.production
@@ -120,7 +120,16 @@ systemctl reload nginx
 
 ## 7. Обновление после git pull
 
-На VPS (ветка `backend` или `frontend` — сейчас одинаковые):
+На VPS всегда ветка **`main`** (прод и финальные релизы).
+
+Если клонировали раньше с `backend` / `frontend`:
+
+```bash
+cd /opt/diplom
+git fetch origin
+git checkout main
+git pull origin main
+```
 
 ```bash
 cd /opt/diplom
@@ -131,7 +140,7 @@ bash deploy/update-vps.sh
 
 ```bash
 cd /opt/diplom
-git pull origin backend
+git pull origin main
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 docker compose -f docker-compose.prod.yml --env-file .env.production exec api npx prisma migrate deploy
 cd frontend && npm ci && npm run build:prod && sudo cp -r dist/* /var/www/coopykt/

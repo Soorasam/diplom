@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-BRANCH="${DEPLOY_BRANCH:-backend}"
+BRANCH="${DEPLOY_BRANCH:-main}"
 
 echo "==> git pull ($BRANCH)"
 git fetch origin

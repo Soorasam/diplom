@@ -118,6 +118,8 @@ URL на защите: **http://localhost:5173/coopykt/user**
 
 ## Продакшен (Timeweb + coopykt.ru)
 
+Финальная версия и деплой на VPS — ветка **`main`**.
+
 Пошаговый деплой: **[deploy/VPS-TIMEWEB.md](deploy/VPS-TIMEWEB.md)**
 
 - VPS: Timeweb Cloud (Ubuntu, от 2 ГБ RAM)
