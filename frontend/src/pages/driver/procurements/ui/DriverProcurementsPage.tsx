@@ -11,6 +11,7 @@ import {
   useScheduleEmergencyClose,
 } from "@/entities/procurement/api/useProcurements"
 import { routes } from "@/shared/config/routes"
+import { randomId } from "@/shared/lib/random-id"
 import { EmergencyCloseModal } from "@/features/driver-procurement/ui/EmergencyCloseModal"
 import {
   driverRoutesApi,
@@ -99,7 +100,7 @@ export const DriverProcurementsPage = () => {
     setTransportType(t.transportType as CreateRoutePlanPayload["transportType"])
     setRows(
       t.waypoints.map((w) => ({
-        key: crypto.randomUUID(),
+        key: randomId(),
         settlementId: w.pickupPointId ?? w.settlementId ?? "",
         isProcurementPoint: w.isProcurementPoint,
       })),

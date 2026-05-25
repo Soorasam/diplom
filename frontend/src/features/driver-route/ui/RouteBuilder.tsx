@@ -5,6 +5,7 @@ import type { LocationCatalogItem } from "@/entities/route/api/driverRoutesApi"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { cn } from "@/shared/lib/cn"
+import { randomId } from "@/shared/lib/random-id"
 
 export type RouteBuilderRow = {
   key: string
@@ -22,7 +23,7 @@ const selectClass =
   "min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
 
 export const createEmptyRouteRow = (isFirst: boolean): RouteBuilderRow => ({
-  key: crypto.randomUUID(),
+  key: randomId(),
   settlementId: "",
   isProcurementPoint: isFirst,
 })
