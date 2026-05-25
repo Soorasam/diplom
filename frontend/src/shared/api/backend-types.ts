@@ -46,6 +46,7 @@ export interface BackendRound {
   routeId: string
   title: string | null
   status: "open" | "closed" | "fulfilled"
+  createdAt: string
   closesAt: string
   minParticipants: number
   targetParticipants: number

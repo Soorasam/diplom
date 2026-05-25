@@ -83,6 +83,7 @@ export interface Procurement {
   title: string
   routeId: string
   status: ProcurementStatus
+  createdAt: string
   closesAt: string
   minVolumePercent: number
   currentVolumePercent: number

@@ -171,7 +171,7 @@ export class CatalogService {
     const rounds = await this.prisma.round.findMany({
       where: status ? { status } : undefined,
       include: { route: true },
-      orderBy: { closesAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
     });
     return rounds.map((r) => this.enrichRound(r));
   }
