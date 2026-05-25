@@ -38,10 +38,10 @@ export const PaymentPage = () => {
   if (!state?.items?.length) {
     return (
       <PageShell>
-        <PageHeader title="Оплата" backTo={routes.checkout} />
+        <PageHeader title="Оплата" backTo={routes.user.checkout} />
         <Card>
           <p className="text-sm text-slate-600">Нет данных для оплаты.</p>
-          <Button className="mt-4" onClick={() => navigate(routes.checkout)}>
+          <Button className="mt-4" onClick={() => navigate(routes.user.checkout)}>
             К оформлению
           </Button>
         </Card>
@@ -69,7 +69,7 @@ export const PaymentPage = () => {
       void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
       void qc.invalidateQueries({ queryKey: queryKeys.procurements.all })
       resetCart()
-      navigate(routes.order(order.id), { replace: true })
+      navigate(routes.user.order(order.id), { replace: true })
     } catch {
       setPaying(false)
       setFailed(true)
@@ -80,7 +80,7 @@ export const PaymentPage = () => {
     <PageShell>
       <PageHeader
         title="Оплата"
-        backTo={routes.checkout}
+        backTo={routes.user.checkout}
         subtitle="Демо-оплата · после успеха вес заказа учтётся в сборе"
         className="mb-0!"
       />
@@ -145,7 +145,7 @@ export const PaymentPage = () => {
           Симулировать отказ
         </Button>
         {failed ? (
-          <Button variant="ghost" fullWidth onClick={() => navigate(routes.cart)}>
+          <Button variant="ghost" fullWidth onClick={() => navigate(routes.user.cart)}>
             Вернуться в корзину
           </Button>
         ) : null}

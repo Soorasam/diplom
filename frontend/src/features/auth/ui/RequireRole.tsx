@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { Navigate, useLocation } from "react-router-dom"
 
-import { useAuthStore } from "@/app/model/auth-store"
+import { homeRouteForRole, useAuthStore } from "@/app/model/auth-store"
 import { routes } from "@/shared/config/routes"
 import type { UserRole } from "@/shared/types"
 
@@ -21,7 +21,7 @@ export const RequireRole = ({
   }
 
   if (!roles.includes(user.role)) {
-    return <Navigate to={routes.home} replace />
+    return <Navigate to={homeRouteForRole(user.role)} replace />
   }
 
   return children

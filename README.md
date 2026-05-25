@@ -30,7 +30,7 @@ npm install
 npm run dev
 ```
 
-Приложение: `http://localhost:5173/diplom` (см. `basename` в Vite).
+Приложение: `http://localhost:5173/coopykt/user` (локально `VITE_BASE=/coopykt/`; на VPS — корень домена, см. ниже).
 
 API: `http://localhost:3000/api/v1`
 
@@ -98,7 +98,7 @@ npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-us
 
 **backend/.env:** `DATABASE_URL`, `JWT_SECRET`, MinIO (`MINIO_*`)
 
-**frontend/.env:** `VITE_API_URL=http://localhost:3000/api/v1`
+**frontend/.env:** `VITE_API_URL`, `VITE_BASE` (см. `frontend/.env.example`; прод — `frontend/.env.production.example` с `VITE_BASE=/`)
 
 ## Защита диплома (с ноутбука)
 
@@ -106,4 +106,13 @@ npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-us
 
 Чеклист и сценарий: **[deploy/DEFENSE-LAPTOP.md](deploy/DEFENSE-LAPTOP.md)**
 
-URL на защите: **http://localhost:5173/diplom/**
+URL на защите: **http://localhost:5173/coopykt/user**
+
+## Продакшен (Timeweb + coopykt.ru)
+
+Пошаговый деплой: **[deploy/VPS-TIMEWEB.md](deploy/VPS-TIMEWEB.md)**
+
+- VPS: Timeweb Cloud (Ubuntu, от 2 ГБ RAM)
+- Домен: **coopykt.ru** (Reg.ru, только DNS → IP VPS)
+- HTTPS: Let's Encrypt на nginx (Reg.ru DomainSSL не обязателен)
+- Сайт: **https://coopykt.ru/user** (статика в корне домена, без префикса `/coopykt/`)

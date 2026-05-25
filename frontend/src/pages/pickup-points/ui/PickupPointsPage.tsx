@@ -2,7 +2,7 @@ import { MapPin, Phone, User } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { usePickupPoints } from "@/entities/settlement/api/useSettlements"
-import { routes } from "@/shared/config/routes"
+import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
 import type { MapMarker } from "@/shared/types"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { Card } from "@/shared/ui/card/Card"
@@ -10,6 +10,7 @@ import { Spinner } from "@/shared/ui/spinner/Spinner"
 import { MapView } from "@/shared/ui/map/MapView"
 
 export const PickupPointsPage = () => {
+  const profileRoutes = useProfileRoutes()
   const user = useAuthStore((s) => s.user)
   const { data: points, isLoading } = usePickupPoints(user?.settlementId)
 
@@ -24,7 +25,7 @@ export const PickupPointsPage = () => {
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-8">
-      <PageHeader title="Пункты выдачи" backTo={routes.profile} />
+      <PageHeader title="Пункты выдачи" backTo={profileRoutes.profile} />
 
       <MapView title="Пункты на карте" markers={markers} height="220px" />
 

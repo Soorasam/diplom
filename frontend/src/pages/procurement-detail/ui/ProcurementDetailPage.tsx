@@ -76,7 +76,7 @@ export const ProcurementDetailPage = () => {
   if (!procurement) {
     return (
       <PageShell>
-        <PageHeader title="Сбор не найден" backTo={routes.activeProcurements} />
+        <PageHeader title="Сбор не найден" backTo={routes.user.activeProcurements} />
       </PageShell>
     )
   }
@@ -84,7 +84,7 @@ export const ProcurementDetailPage = () => {
   return (
     <>
       <PageShell withStickyFooter className="!pb-36">
-        <PageHeader title="Детали сбора" backTo={routes.activeProcurements} className="!mb-0" />
+        <PageHeader title="Детали сбора" backTo={routes.user.activeProcurements} className="!mb-0" />
 
         <ProcurementCard procurement={procurement} />
 

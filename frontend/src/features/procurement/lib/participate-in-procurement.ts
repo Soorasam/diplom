@@ -9,5 +9,5 @@ export const participateInProcurement = (
   procurementId: string,
 ) => {
   setProcurement(procurementId)
-  navigate(`${routes.catalog}?round=${procurementId}`)
+  navigate(`${routes.user.catalog}?round=${procurementId}`)
 }

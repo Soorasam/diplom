@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 
 import { homeRouteForRole, useAuthStore } from "@/app/model/auth-store"
+import { routes } from "@/shared/config/routes"
 import { loginSchema, type LoginFormValues } from "@/features/auth/model/login-schema"
 import { ApiError } from "@/shared/api/client"
 import { Button } from "@/shared/ui/button/Button"
@@ -28,7 +29,7 @@ export const LoginForm = () => {
     try {
       await login(data.email, data.password)
       const user = useAuthStore.getState().user
-      navigate(user ? homeRouteForRole(user.role) : "/")
+      navigate(user ? homeRouteForRole(user.role) : routes.user.root)
     } catch (err) {
       setApiError(err instanceof ApiError ? err.message : "Не удалось войти")
     }

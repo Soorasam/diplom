@@ -63,7 +63,7 @@ export const AuthPage = () => {
         </div>
 
         <Link
-          to={routes.home}
+          to={routes.user.root}
           className="mt-8 block text-center text-sm font-medium text-sky-400 underline-offset-4 hover:text-sky-300 hover:underline"
         >
           Вернуться на главную

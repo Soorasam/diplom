@@ -1,14 +1,20 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 
 import { useAuthStore } from "@/app/model/auth-store"
-import { routes } from "@/shared/config/routes"
+import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
+import { applyApiErrorToForm } from "@/shared/lib/api-form-errors"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { Input } from "@/shared/ui/input/Input"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
-import { formatRuPhoneInput, isValidFullName, normalizeRuPhone } from "@/shared/lib/validation"
+import {
+  formatRuPhoneInput,
+  getRuPhoneValidationMessage,
+  isValidFullName,
+  normalizeRuPhone,
+} from "@/shared/lib/validation"
 
 type EditProfileForm = {
   fullName: string
@@ -17,33 +23,47 @@ type EditProfileForm = {
 
 export const EditProfilePage = () => {
   const navigate = useNavigate()
+  const profileRoutes = useProfileRoutes()
   const user = useAuthStore((s) => s.user)
   const updateProfile = useAuthStore((s) => s.updateProfile)
+  const [formError, setFormError] = useState<string | null>(null)
 
   const {
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { isSubmitting, errors },
   } = useForm<EditProfileForm>()
 
   useEffect(() => {
     if (user) {
-      reset({ fullName: user.name, phone: user.phone })
+      reset({
+        fullName: user.name,
+        phone: user.phone ? formatRuPhoneInput(user.phone) : "",
+      })
     }
   }, [user, reset])
 
   const onSubmit = async (values: EditProfileForm) => {
-    await updateProfile({
-      fullName: values.fullName.trim(),
-      phone: normalizeRuPhone(values.phone.trim()) ?? undefined,
-    })
-    navigate(routes.profile)
+    setFormError(null)
+    try {
+      await updateProfile({
+        fullName: values.fullName.trim(),
+        phone: normalizeRuPhone(values.phone.trim()) ?? undefined,
+      })
+      navigate(profileRoutes.profile)
+    } catch (err) {
+      applyApiErrorToForm(err, setError, {
+        setFormError,
+        fallback: "Не удалось сохранить профиль",
+      })
+    }
   }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 p-4 pb-8">
-      <PageHeader title="Редактирование профиля" backTo={routes.profile} />
+      <PageHeader title="Редактирование профиля" backTo={profileRoutes.profile} />
 
       <Card className="flex flex-col gap-3">
         <label className="text-sm font-medium text-slate-700">
@@ -70,8 +90,7 @@ export const EditProfilePage = () => {
               onChange: (e) => {
                 e.target.value = formatRuPhoneInput(e.target.value)
               },
-              validate: (v) =>
-                !v || normalizeRuPhone(v) !== null || "Введите номер в формате +7",
+              validate: (v) => getRuPhoneValidationMessage(v) ?? true,
             })}
           />
         </label>
@@ -79,6 +98,8 @@ export const EditProfilePage = () => {
           <p className="text-xs text-slate-500">Email: {user.email} (изменяется через поддержку)</p>
         ) : null}
       </Card>
+
+      {formError ? <p className="text-sm text-red-600">{formError}</p> : null}
 
       <Button type="submit" fullWidth loading={isSubmitting}>
         Сохранить

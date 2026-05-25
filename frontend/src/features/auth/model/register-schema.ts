@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { isValidFullName, normalizeRuPhone } from "@/shared/lib/validation"
+import { getRuPhoneValidationMessage, isValidFullName } from "@/shared/lib/validation"
 
 export const registerSchema = z
   .object({
@@ -17,7 +17,12 @@ export const registerSchema = z
       .string()
       .trim()
       .optional()
-      .refine((v) => !v || normalizeRuPhone(v) !== null, "Введите номер в формате +7"),
+      .superRefine((v, ctx) => {
+        const msg = getRuPhoneValidationMessage(v ?? "")
+        if (msg) {
+          ctx.addIssue({ code: "custom", message: msg })
+        }
+      }),
     password: z.string().min(8, "Минимум 8 символов").max(128),
     confirmPassword: z.string(),
     settlementId: z.string().uuid("Выберите населённый пункт"),

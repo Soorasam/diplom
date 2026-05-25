@@ -43,7 +43,7 @@ export const ProductPage = () => {
   if (!product) {
     return (
       <PageShell>
-        <PageHeader title="Товар не найден" backTo={routes.catalog} />
+        <PageHeader title="Товар не найден" backTo={routes.user.catalog} />
       </PageShell>
     )
   }
@@ -55,7 +55,7 @@ export const ProductPage = () => {
 
   return (
     <PageShell>
-      <PageHeader title={product.name} backTo={routes.catalog} className="!mb-0" />
+      <PageHeader title={product.name} backTo={routes.user.catalog} className="!mb-0" />
 
       <ProductImage
         src={product.imageUrl}
@@ -120,7 +120,7 @@ export const ProductPage = () => {
         ) : null}
       </Card>
 
-      <Link to={routes.cart} className="ui-link block text-center text-sm">
+      <Link to={routes.user.cart} className="ui-link block text-center text-sm">
         Перейти в корзину
       </Link>
     </PageShell>

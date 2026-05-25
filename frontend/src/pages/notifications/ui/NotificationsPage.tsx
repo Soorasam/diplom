@@ -11,16 +11,17 @@ import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { cn } from "@/shared/lib/cn"
-import { routes } from "@/shared/config/routes"
+import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
 
 export const NotificationsPage = () => {
+  const profileRoutes = useProfileRoutes()
   const user = useAuthStore((s) => s.user)
   const { data: notifications, isLoading } = useNotifications(user?.id)
   const markRead = useMarkNotificationRead(user?.id ?? "")
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <PageHeader title="Уведомления" backTo={routes.profile} />
+      <PageHeader title="Уведомления" backTo={profileRoutes.profile} />
 
       {isLoading ? (
         <div className="flex justify-center py-10">

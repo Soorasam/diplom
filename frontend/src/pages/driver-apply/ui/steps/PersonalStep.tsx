@@ -1,7 +1,7 @@
 import { Check } from "lucide-react"
 
 import { useDriverApplicationDraftStore } from "@/features/driver-application/model/driver-application-draft-store"
-import { formatRuPhoneInput } from "@/shared/lib/validation"
+import { formatRuPhoneInput, getRuPhoneValidationMessage } from "@/shared/lib/validation"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { Input } from "@/shared/ui/input/Input"
@@ -15,6 +15,7 @@ export const PersonalStep = ({ canContinue, onContinue }: Props) => {
   const draft = useDriverApplicationDraftStore((s) => s.draft)
   const setPersonal = useDriverApplicationDraftStore((s) => s.setPersonal)
   const touchSaved = useDriverApplicationDraftStore((s) => s.touchSaved)
+  const phoneError = getRuPhoneValidationMessage(draft.personal.phone, { required: true })
 
   return (
     <Card className="border-slate-200">
@@ -47,6 +48,7 @@ export const PersonalStep = ({ canContinue, onContinue }: Props) => {
           }}
           placeholder="+7 (999) 000-00-00"
           autoComplete="tel"
+          error={phoneError ?? undefined}
         />
         <Input
           label="Email"

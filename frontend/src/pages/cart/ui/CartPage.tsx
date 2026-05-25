@@ -117,7 +117,7 @@ export const CartPage = () => {
                 ))}
               </select>
               <Link
-                to={routes.pickupPoints}
+                to={routes.user.pickupPoints}
                 className="ui-link mt-2 inline-block text-xs"
               >
                 Карта пунктов выдачи
@@ -145,7 +145,7 @@ export const CartPage = () => {
             title="Корзина пуста"
             description="Выберите товары в каталоге активного сбора"
             actionLabel="В каталог"
-            onAction={() => navigate(routes.catalog)}
+            onAction={() => navigate(routes.user.catalog)}
           />
         ) : (
           <>
@@ -220,7 +220,7 @@ export const CartPage = () => {
               <span className="ui-price text-lg">{formatPrice(total)}</span>
             </div>
             {canCheckout ? (
-              <Link to={routes.checkout} className="block">
+              <Link to={routes.user.checkout} className="block">
                 <Button type="button" fullWidth size="lg">
                   Оформить и оплатить
                 </Button>

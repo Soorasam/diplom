@@ -8,7 +8,7 @@ export const DriverApplyPending = () => (
     <PageHeader
       title="Стать водителем"
       subtitle="Заявка отправлена и ожидает проверки"
-      backTo={routes.profile}
+      backTo={routes.user.profile}
     />
 
     <Card className="border-amber-200 bg-amber-50/40">

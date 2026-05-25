@@ -37,7 +37,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       padding="none"
       className="ui-card-interactive flex h-full flex-col overflow-hidden"
     >
-      <Link to={routes.product(product.id)} className="block">
+      <Link to={routes.user.product(product.id)} className="block">
         <ProductImage
           src={product.imageUrl}
           alt={product.name}
@@ -47,7 +47,7 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       </Link>
 
       <div className="flex min-h-0 flex-1 flex-col p-3">
-        <Link to={routes.product(product.id)} className="block min-h-0 flex-1">
+        <Link to={routes.user.product(product.id)} className="block min-h-0 flex-1">
           {product.popular ? (
             <Badge variant="warning" className="mb-2 w-fit shrink-0">
               Популярное

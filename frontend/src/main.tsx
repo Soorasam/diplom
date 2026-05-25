@@ -1,18 +1,20 @@
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
-import { registerSW } from 'virtual:pwa-register';
+import { registerSW } from "virtual:pwa-register"
+
+import { appBasePath, appPath } from "@/shared/config/app-base"
 import App from "./App.tsx"
 
-const normalizeBasePath = () => {
+const redirectRootToUser = () => {
   const path = window.location.pathname
-  if (path === "/diplom") {
-    window.history.replaceState(null, "", "/diplom/")
+  if (path === appBasePath || path === `${appBasePath}/`) {
+    window.history.replaceState(null, "", appPath("user/"))
   }
 }
 
-normalizeBasePath()
+redirectRootToUser()
 
-registerSW({ immediate: true });
+registerSW({ immediate: true })
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

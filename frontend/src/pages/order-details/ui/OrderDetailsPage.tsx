@@ -34,7 +34,7 @@ export const OrderDetailsPage = () => {
   if (!order) {
     return (
       <div className="p-4">
-        <PageHeader title="Заказ не найден" backTo={routes.orders} />
+        <PageHeader title="Заказ не найден" backTo={routes.user.orders} />
       </div>
     )
   }
@@ -60,7 +60,7 @@ export const OrderDetailsPage = () => {
     <div className="flex flex-col gap-4 p-4 pb-8">
       <PageHeader
         title={`Заказ #${order.id.slice(0, 8)}`}
-        backTo={routes.orders}
+        backTo={routes.user.orders}
         subtitle={formatDate(order.createdAt)}
       />
 
@@ -124,7 +124,7 @@ export const OrderDetailsPage = () => {
           ) : null}
           {canDispute ? (
             <Link
-              to={routes.disputeCreate(order.id)}
+              to={routes.user.disputeCreate(order.id)}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-blue-200"
             >
               <MessageSquare size={18} />

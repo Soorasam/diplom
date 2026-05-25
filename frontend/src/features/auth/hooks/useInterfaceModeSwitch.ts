@@ -20,7 +20,7 @@ export const useInterfaceModeSwitch = (navigateOnSwitch = true) => {
       const nextRole = mode === "driver" ? "driver" : "client"
       await switchRole(nextRole)
       if (navigateOnSwitch) {
-        navigate(mode === "driver" ? routes.driver.profile : routes.profile, { replace: true })
+        navigate(mode === "driver" ? routes.driver.profile : routes.user.profile, { replace: true })
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Не удалось переключить режим")

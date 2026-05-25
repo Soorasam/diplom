@@ -145,7 +145,7 @@ export const CatalogPage = () => {
 
             «{closedProcurement.title}» больше не принимает заказы.{" "}
 
-            <Link to={routes.activeProcurements} className="ui-link font-semibold underline">
+            <Link to={routes.user.activeProcurements} className="ui-link font-semibold underline">
 
               Выберите открытый сбор
 
@@ -171,7 +171,7 @@ export const CatalogPage = () => {
 
             Товары можно добавить в корзину. Сбор выберите в корзине или в разделе{" "}
 
-            <Link to={routes.activeProcurements} className="ui-link font-semibold underline">
+            <Link to={routes.user.activeProcurements} className="ui-link font-semibold underline">
 
               Сборы
 

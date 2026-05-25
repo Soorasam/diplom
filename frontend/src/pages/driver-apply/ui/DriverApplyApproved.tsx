@@ -9,7 +9,7 @@ export const DriverApplyApproved = () => (
     <PageHeader
       title="Стать водителем"
       subtitle="Заявка одобрена — включите режим водителя, когда будете на маршруте"
-      backTo={routes.profile}
+      backTo={routes.user.profile}
     />
 
     <Card className="border-emerald-200 bg-emerald-50/40">

@@ -1,30 +1,64 @@
 const FULL_NAME_PART_RE = /^[A-ZА-ЯЁ][a-zа-яё]+(?:-[A-ZА-ЯЁ][a-zа-яё]+)?$/
 
-export const normalizeRuPhone = (value: string): string | null => {
-  const raw = value.replace(/\D/g, "")
-  if (!raw) return null
+export const getRuPhoneDigits = (value: string): string => {
+  let raw = value.replace(/\D/g, "")
+  if (!raw) return ""
 
-  let digits = raw
-  if (digits.length === 10 && digits.startsWith("9")) {
-    digits = `7${digits}`
-  } else if (digits.length === 11 && digits.startsWith("8")) {
-    digits = `7${digits.slice(1)}`
+  if (raw.length === 10 && raw.startsWith("9")) {
+    raw = `7${raw}`
+  } else if (raw.length === 11 && raw.startsWith("8")) {
+    raw = `7${raw.slice(1)}`
+  } else if (!raw.startsWith("7")) {
+    raw = `7${raw}`
   }
 
-  if (digits.length !== 11 || !digits.startsWith("7")) return null
-  return `+${digits}`
+  return raw.slice(0, 11)
+}
+
+export type RuPhoneValidateOptions = {
+  required?: boolean
+}
+
+export const getRuPhoneValidationMessage = (
+  value: string,
+  options: RuPhoneValidateOptions = {},
+): string | null => {
+  const trimmed = value.trim()
+  if (!trimmed) {
+    return options.required ? "Укажите номер телефона" : null
+  }
+
+  const digits = getRuPhoneDigits(trimmed)
+  if (!digits.startsWith("7")) {
+    return "Номер должен начинаться с +7"
+  }
+
+  if (digits.length < 11) {
+    const missing = 11 - digits.length
+    const word = missing === 1 ? "цифры" : "цифр"
+    return `В номере не хватает ${missing} ${word}`
+  }
+
+  if (digits.length > 11) {
+    return "Номер содержит лишние цифры"
+  }
+
+  return null
+}
+
+export const normalizeRuPhone = (value: string): string | null => {
+  const err = getRuPhoneValidationMessage(value)
+  if (err) return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  return `+${getRuPhoneDigits(trimmed)}`
 }
 
 export const formatRuPhoneInput = (value: string): string => {
   const raw = value.replace(/\D/g, "")
   if (!raw) return ""
 
-  let digits = raw
-  if (digits.startsWith("8")) digits = `7${digits.slice(1)}`
-  if (digits.startsWith("9")) digits = `7${digits}`
-  if (!digits.startsWith("7")) digits = `7${digits}`
-  digits = digits.slice(0, 11)
-
+  const digits = getRuPhoneDigits(value)
   const local = digits.slice(1)
   const p1 = local.slice(0, 3)
   const p2 = local.slice(3, 6)

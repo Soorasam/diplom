@@ -79,7 +79,7 @@ export const HomePage = () => {
         ) : null}
 
         {activeOrder ? (
-          <Link to={routes.order(activeOrder.id)} className="w-full">
+          <Link to={routes.user.order(activeOrder.id)} className="w-full">
             <Card className="ui-card-interactive w-full p-4 transition-colors">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -102,7 +102,7 @@ export const HomePage = () => {
           <div className="ornament-divider mb-4" aria-hidden />
           <div className="mb-3 flex w-full items-center justify-between gap-2">
             <h2 className="ui-section-title">Активные сборы</h2>
-            <Link to={routes.activeProcurements} className="ui-link">
+            <Link to={routes.user.activeProcurements} className="ui-link">
               Все
             </Link>
           </div>
@@ -113,7 +113,7 @@ export const HomePage = () => {
           ) : (
             <div className="flex w-full flex-col gap-2">
               {procurements?.slice(0, 2).map((p) => (
-                <Link key={p.id} to={routes.procurement(p.id)} className="w-full">
+                <Link key={p.id} to={routes.user.procurement(p.id)} className="w-full">
                   <ProcurementCard procurement={p} compact />
                 </Link>
               ))}
@@ -121,7 +121,7 @@ export const HomePage = () => {
           )}
         </section>
 
-        <Link to={routes.activeProcurements} className="ui-cta ui-cta-primary">
+        <Link to={routes.user.activeProcurements} className="ui-cta ui-cta-primary">
           <Truck size={18} />
           Активные сборы
           <ArrowRight size={18} />
@@ -131,7 +131,7 @@ export const HomePage = () => {
           <div className="ornament-divider mb-4" aria-hidden />
           <div className="mb-3 flex w-full items-center justify-between gap-2">
             <h2 className="ui-section-title">Популярное</h2>
-            <Link to={routes.catalog} className="ui-link">
+            <Link to={routes.user.catalog} className="ui-link">
               Каталог
             </Link>
           </div>
@@ -155,7 +155,7 @@ export const HomePage = () => {
               {categories.map((cat) => (
                 <Link
                   key={cat.id}
-                  to={`${routes.catalog}?category=${cat.id}`}
+                  to={`${routes.user.catalog}?category=${cat.id}`}
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-sky-700 transition-colors hover:border-sky-200 hover:bg-sky-50 dark:border-slate-700 dark:bg-slate-800 dark:text-sky-400 dark:hover:border-slate-600 dark:hover:bg-slate-700"
                 >
                   {cat.name}
@@ -165,7 +165,7 @@ export const HomePage = () => {
           </section>
         ) : null}
 
-        <Link to={routes.catalog} className="ui-cta ui-cta-outline">
+        <Link to={routes.user.catalog} className="ui-cta ui-cta-outline">
           <ShoppingBag size={18} />
           Каталог
           <ArrowRight size={18} />

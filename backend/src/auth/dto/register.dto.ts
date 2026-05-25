@@ -35,7 +35,9 @@ export class RegisterDto {
   @IsString()
   @MaxLength(32)
   @Transform(({ value }) => normalizePhone(value))
-  @Matches(/^\+7\d{10}$/, { message: 'Телефон должен быть в формате +7XXXXXXXXXX' })
+  @Matches(/^\+7\d{10}$/, {
+    message: 'Введите полный номер: +7 и 10 цифр',
+  })
   phone?: string;
 
   @IsOptional()

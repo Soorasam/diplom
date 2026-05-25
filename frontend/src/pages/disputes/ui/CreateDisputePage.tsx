@@ -31,10 +31,10 @@ export const CreateDisputePage = () => {
   if (!order) {
     return (
       <div className="p-4">
-        <PageHeader title="Спор" backTo={routes.orders} />
+        <PageHeader title="Спор" backTo={routes.user.orders} />
         <Card>
           <p className="text-sm text-slate-600">Заказ не найден</p>
-          <Link to={routes.orders} className="mt-2 text-sm font-semibold text-blue-700">
+          <Link to={routes.user.orders} className="mt-2 text-sm font-semibold text-blue-700">
             К заказам
           </Link>
         </Card>
@@ -45,13 +45,13 @@ export const CreateDisputePage = () => {
   if (submitted) {
     return (
       <div className="flex flex-col gap-4 p-4">
-        <PageHeader title="Спор отправлен" backTo={routes.disputes} />
+        <PageHeader title="Спор отправлен" backTo={routes.user.disputes} />
         <Card className="border-emerald-200 bg-emerald-50/50">
           <p className="text-sm font-semibold text-emerald-900">
             Обращение принято (статус open). Администратор рассмотрит его в ближайшее время.
           </p>
         </Card>
-        <Link to={routes.disputes} className="text-center text-sm font-semibold text-blue-700">
+        <Link to={routes.user.disputes} className="text-center text-sm font-semibold text-blue-700">
           Мои споры
         </Link>
       </div>
@@ -71,7 +71,7 @@ export const CreateDisputePage = () => {
     >
       <PageHeader
         title="Открыть спор"
-        backTo={routes.order(order.id)}
+        backTo={routes.user.order(order.id)}
         subtitle={`Заказ № ${order.id.slice(0, 8)}`}
       />
 

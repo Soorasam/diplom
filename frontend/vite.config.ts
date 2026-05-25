@@ -4,6 +4,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 import tailwindcss from '@tailwindcss/vite'
 import path from 'path'
 
+const rawBase = process.env.VITE_BASE ?? '/coopykt/'
+const appBase = rawBase.endsWith('/') ? rawBase : `${rawBase}/`
+const appBaseSlash = appBase
+
 const normalizeBaseSlashPlugin = (basePath: string) => ({
   name: 'normalize-base-slash',
   configureServer(server: { middlewares: { use: (cb: (req: { url?: string }, res: { statusCode: number; setHeader: (n: string, v: string) => void; end: () => void }, next: () => void) => void) => void } }) {
@@ -12,7 +16,13 @@ const normalizeBaseSlashPlugin = (basePath: string) => ({
       const normalized = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath
       if (url === normalized || url.startsWith(`${normalized}?`)) {
         res.statusCode = 302
-        res.setHeader('Location', `${normalized}/`)
+        res.setHeader('Location', `${normalized}/user/`)
+        res.end()
+        return
+      }
+      if (url === `${normalized}/` || url === `${normalized}/?`) {
+        res.statusCode = 302
+        res.setHeader('Location', `${normalized}/user/`)
         res.end()
         return
       }
@@ -22,9 +32,9 @@ const normalizeBaseSlashPlugin = (basePath: string) => ({
 })
 
 export default defineConfig({
-  base: '/diplom/',
+  base: appBase,
   plugins: [
-    normalizeBaseSlashPlugin('/diplom/'),
+    normalizeBaseSlashPlugin(appBase),
     react(),
     tailwindcss(),
     VitePWA({
@@ -43,29 +53,29 @@ export default defineConfig({
         background_color: '#F8FAFC',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/diplom/',
-        scope: '/diplom/',
+        start_url: `${appBaseSlash}user/`,
+        scope: appBaseSlash,
         icons: [
           {
-            src: "/diplom/icons/pwa-192x192.png",
+            src: `${appBaseSlash}icons/pwa-192x192.png`,
             sizes: "192x192",
             type: "image/png",
             purpose: "any"
           },
           {
-            src: "/diplom/icons/pwa-512x512.png",
+            src: `${appBaseSlash}icons/pwa-512x512.png`,
             sizes: "512x512",
             type: "image/png",
             purpose: "any"
           },
           {
-            src: "/diplom/icons/pwa-192x192.png",
+            src: `${appBaseSlash}icons/pwa-192x192.png`,
             sizes: "192x192",
             type: "image/png",
             purpose: "maskable"
           },
           {
-            src: "/diplom/icons/pwa-512x512.png",
+            src: `${appBaseSlash}icons/pwa-512x512.png`,
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable"

@@ -9,6 +9,7 @@ import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { Input } from "@/shared/ui/input/Input"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
+import { getApiErrorMessage } from "@/shared/lib/api-form-errors"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 
 type CreatedEmployee = {
@@ -51,7 +52,7 @@ export const AdminPvzEmployeesPage = () => {
       setEmail("")
       setFullName("")
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Не удалось создать сотрудника")
+      setFormError(getApiErrorMessage(err, "Не удалось создать сотрудника"))
     }
   }
 

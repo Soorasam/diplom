@@ -24,30 +24,15 @@ import { ThemeToggle } from "@/features/ui/ThemeToggle"
 import { useMyDriverApplication } from "@/features/driver-application/api/useDriverApplications"
 import { useSettlements } from "@/entities/settlement/api/useSettlements"
 import { routes } from "@/shared/config/routes"
+import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Card } from "@/shared/ui/card/Card"
 import { Button } from "@/shared/ui/button/Button"
 
-const residentMenuLinks = [
-  { to: routes.orders, label: "Мои заказы", icon: Package },
-  { to: routes.profileEdit, label: "Редактировать данные", icon: Pencil },
-  { to: routes.disputes, label: "Мои споры", icon: MessageSquare },
-  { to: routes.addresses, label: "Населённый пункт", icon: MapPin },
-  { to: routes.notifications, label: "Уведомления", icon: Bell },
-  { to: routes.support, label: "Поддержка", icon: Headphones },
-  { to: routes.pickupPoints, label: "Пункты выдачи", icon: MapPin },
-] as const
-
-const driverMenuLinks = [
-  { to: routes.profileEdit, label: "Редактировать данные", icon: Pencil },
-  { to: routes.disputes, label: "Мои споры", icon: MessageSquare },
-  { to: routes.notifications, label: "Уведомления", icon: Bell },
-  { to: routes.support, label: "Поддержка", icon: Headphones },
-] as const
-
 export const ProfilePage = () => {
   const { pathname } = useLocation()
+  const profileRoutes = useProfileRoutes()
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
   const refreshUser = useAuthStore((s) => s.refreshUser)
@@ -62,12 +47,39 @@ export const ProfilePage = () => {
     [settlements, user?.settlementId],
   )
 
+  const isAdmin = user?.role === "admin"
+  const isEmployee = user?.role === "employee"
+  const isAdminWorkspace = isAdmin && pathname.startsWith(routes.admin.root)
+  const isEmployeeWorkspace = isEmployee && pathname.startsWith(routes.employee.root)
+  const isUserWorkspace =
+    pathname === routes.user.root || pathname.startsWith(`${routes.user.root}/`)
   const isDriverInterface = user?.role === "driver"
   const isSimpleResident =
     isAuthenticated && user?.role === "client" && !canUseDriverMode
   const isDriverApproved = myApp?.status === "approved"
 
-  const menuLinks = isDriverInterface ? driverMenuLinks : residentMenuLinks
+  const menuLinks = isAdminWorkspace
+    ? []
+    : isDriverInterface
+      ? [
+          ...(isAdmin
+            ? []
+            : [{ to: profileRoutes.profileEdit, label: "Редактировать данные", icon: Pencil }]),
+          { to: profileRoutes.disputes, label: "Мои споры", icon: MessageSquare },
+          { to: profileRoutes.notifications, label: "Уведомления", icon: Bell },
+          { to: profileRoutes.support, label: "Поддержка", icon: Headphones },
+        ]
+      : [
+          { to: profileRoutes.orders, label: "Мои заказы", icon: Package },
+          ...(isAdmin
+            ? []
+            : [{ to: profileRoutes.profileEdit, label: "Редактировать данные", icon: Pencil }]),
+          { to: profileRoutes.disputes, label: "Мои споры", icon: MessageSquare },
+          { to: profileRoutes.addresses, label: "Населённый пункт", icon: MapPin },
+          { to: profileRoutes.notifications, label: "Уведомления", icon: Bell },
+          { to: profileRoutes.support, label: "Поддержка", icon: Headphones },
+          { to: profileRoutes.pickupPoints, label: "Пункты выдачи", icon: MapPin },
+        ]
 
   const vehicleLines = useMemo(() => {
     if (!myApp?.vehicleSummary) return []
@@ -83,22 +95,35 @@ export const ProfilePage = () => {
     }
   }, [isDriverApproved, refreshUser])
 
-  const workspaceLink =
-    user?.role === "admin"
-      ? pathname.startsWith(routes.admin.root)
+  const workspaceLink = isAdmin
+    ? isAdminWorkspace
+      ? {
+          to: routes.user.root,
+          label: "Интерфейс жителя",
+          icon: LayoutDashboard,
+        }
+      : isUserWorkspace
         ? {
-            to: routes.home,
-            label: "Переключиться на клиентский интерфейс",
-            icon: LayoutDashboard,
-          }
-        : {
             to: routes.admin.root,
             label: "Панель администратора",
             icon: LayoutDashboard,
           }
-      : user?.role === "employee"
-        ? { to: routes.employee.root, label: "Интерфейс ПВЗ", icon: MapPin }
         : null
+    : isEmployee
+      ? isEmployeeWorkspace
+        ? {
+            to: routes.user.root,
+            label: "Переключиться на интерфейс жителя",
+            icon: LayoutDashboard,
+          }
+        : isUserWorkspace
+          ? {
+              to: routes.employee.root,
+              label: "Интерфейс ПВЗ",
+              icon: MapPin,
+            }
+          : null
+      : null
 
   return (
     <PageShell>
@@ -117,7 +142,18 @@ export const ProfilePage = () => {
               <p className="mt-1 text-sm font-normal leading-relaxed text-slate-600 dark:text-slate-300">
                 {user?.phone}
               </p>
-              {!isDriverInterface ? (
+              {isAdminWorkspace ? (
+                <>
+                  {user?.email ? (
+                    <p className="mt-0.5 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
+                      {user.email}
+                    </p>
+                  ) : null}
+                  <p className="mt-0.5 text-sm font-normal leading-relaxed text-sky-700 dark:text-cyan-300">
+                    Администратор
+                  </p>
+                </>
+              ) : !isDriverInterface ? (
                 <p className="mt-0.5 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
                   {settlementName ?? "Населённый пункт не выбран"}
                 </p>
@@ -136,7 +172,7 @@ export const ProfilePage = () => {
         {isAuthenticated ? <ThemeToggle /> : null}
       </Card>
 
-      {isDriverInterface && (vehicleLines.length > 0 || isDriverApproved) ? (
+      {!isAdminWorkspace && isDriverInterface && (vehicleLines.length > 0 || isDriverApproved) ? (
         <Card className="p-4">
           <div className="flex items-start gap-3">
             <span className="ui-icon-well flex h-10 w-10 shrink-0">
@@ -162,7 +198,7 @@ export const ProfilePage = () => {
         </Card>
       ) : null}
 
-      {canUseDriverMode && !isDriverInterface ? (
+      {!isAdminWorkspace && canUseDriverMode && !isDriverInterface ? (
         <Card className="w-full p-4">
           <p className="text-sm font-semibold leading-normal text-slate-900 dark:text-slate-100">
             Режим интерфейса
@@ -174,7 +210,7 @@ export const ProfilePage = () => {
         </Card>
       ) : null}
 
-      {canUseDriverMode && isDriverInterface ? (
+      {!isAdminWorkspace && canUseDriverMode && isDriverInterface ? (
         <Card className="w-full p-4">
           <p className="text-sm font-semibold leading-normal text-slate-900 dark:text-slate-100">
             Режим интерфейса
@@ -196,7 +232,7 @@ export const ProfilePage = () => {
         </Link>
       ) : null}
 
-      {isSimpleResident ? (
+      {!isAdminWorkspace && isSimpleResident ? (
         <Card className="ui-panel p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
@@ -239,7 +275,7 @@ export const ProfilePage = () => {
         </Link>
       ) : null}
 
-      {isAuthenticated ? (
+      {isAuthenticated && menuLinks.length > 0 ? (
         <ul className="flex flex-col gap-2">
           {menuLinks.map((item) => (
             <li key={item.to}>

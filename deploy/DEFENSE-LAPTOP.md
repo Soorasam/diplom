@@ -25,7 +25,7 @@ npm install
 npm run dev
 ```
 
-Проверка: http://localhost:5173/diplom/
+Проверка: http://localhost:5173/coopykt/user
 
 ## День защиты (порядок запуска)
 
@@ -33,7 +33,7 @@ npm run dev
 2. `docker compose up -d` (из корня репозитория).
 3. Терминал 1: `cd backend && npm run start:dev`
 4. Терминал 2: `cd frontend && npm run dev`
-5. Браузер: **http://localhost:5173/diplom/**
+5. Браузер: **http://localhost:5173/coopykt/user**
 
 Не закрывайте терминалы во время показа.
 

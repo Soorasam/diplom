@@ -1,25 +1,28 @@
 
 export const routes = {
   auth: "/auth",
+  driverApply: "/driver-apply",
 
-  home: "/",
-  catalog: "/catalog",
-  product: (id: string) => `/product/${id}`,
-  cart: "/cart",
-  checkout: "/checkout",
-  orders: "/orders",
-  order: (id: string) => `/orders/${id}`,
-  activeProcurements: "/active-procurements",
-  procurement: (id: string) => `/procurements/${id}`,
-  profile: "/profile",
-  profileEdit: "/profile/edit",
-  notifications: "/notifications",
-  disputes: "/disputes",
-  disputeCreate: (orderId: string) => `/disputes/new?orderId=${orderId}`,
-  payment: "/payment",
-  support: "/support",
-  addresses: "/addresses",
-  pickupPoints: "/pickup-points",
+  user: {
+    root: "/user",
+    catalog: "/user/catalog",
+    product: (id: string) => `/user/product/${id}`,
+    cart: "/user/cart",
+    checkout: "/user/checkout",
+    orders: "/user/orders",
+    order: (id: string) => `/user/orders/${id}`,
+    activeProcurements: "/user/active-procurements",
+    procurement: (id: string) => `/user/procurements/${id}`,
+    payment: "/user/payment",
+    profile: "/user/profile",
+    profileEdit: "/user/profile/edit",
+    disputes: "/user/disputes",
+    disputeCreate: (orderId: string) => `/user/disputes/new?orderId=${orderId}`,
+    notifications: "/user/notifications",
+    support: "/user/support",
+    addresses: "/user/addresses",
+    pickupPoints: "/user/pickup-points",
+  },
 
   driver: {
     root: "/driver",
@@ -28,9 +31,11 @@ export const routes = {
     orders: "/driver/orders",
     map: "/driver/map",
     profile: "/driver/profile",
+    profileEdit: "/driver/profile/edit",
+    disputes: "/driver/disputes",
+    notifications: "/driver/notifications",
+    support: "/driver/support",
   },
-
-  driverApply: "/driver-apply",
 
   employee: {
     root: "/employee",
@@ -40,6 +45,7 @@ export const routes = {
     orders: "/employee/handout",
     scan: "/employee/scan",
     profile: "/employee/profile",
+    profileEdit: "/employee/profile/edit",
   },
 
   admin: {

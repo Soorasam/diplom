@@ -4,6 +4,7 @@ import { ChevronRight, Package } from "lucide-react"
 import { useAuthStore } from "@/app/model/auth-store"
 import { useOrders } from "@/entities/order/api/useOrders"
 import { routes } from "@/shared/config/routes"
+import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
 import { formatDate, formatPrice } from "@/shared/lib/format"
 import { orderStatusLabel, orderStatusVariant } from "@/shared/lib/order-status"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
@@ -14,6 +15,7 @@ import { Spinner } from "@/shared/ui/spinner/Spinner"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 
 export const OrdersPage = () => {
+  const profileRoutes = useProfileRoutes()
   const user = useAuthStore((s) => s.user)
   const { data: orders, isLoading } = useOrders(user?.id)
 
@@ -22,7 +24,7 @@ export const OrdersPage = () => {
       <PageHeader
         title="Мои заказы"
         subtitle="История и статус сборов"
-        backTo={routes.profile}
+        backTo={profileRoutes.profile}
       />
 
       {isLoading ? (
@@ -33,7 +35,7 @@ export const OrdersPage = () => {
         <ul className="flex flex-col gap-3">
           {orders.map((order) => (
             <li key={order.id}>
-              <Link to={routes.order(order.id)}>
+              <Link to={routes.user.order(order.id)}>
                 <Card className="ui-card-interactive transition">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">

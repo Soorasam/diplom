@@ -7,9 +7,9 @@ import { cn } from "@/shared/lib/cn"
 export type CheckoutStepId = "cart" | "checkout" | "payment"
 
 const STEPS: { id: CheckoutStepId; label: string; path: string }[] = [
-  { id: "cart", label: "Корзина", path: routes.cart },
-  { id: "checkout", label: "Оформление", path: routes.checkout },
-  { id: "payment", label: "Оплата", path: routes.payment },
+  { id: "cart", label: "Корзина", path: routes.user.cart },
+  { id: "checkout", label: "Оформление", path: routes.user.checkout },
+  { id: "payment", label: "Оплата", path: routes.user.payment },
 ]
 
 type CheckoutStepsProps = {

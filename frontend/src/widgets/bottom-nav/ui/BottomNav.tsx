@@ -11,46 +11,46 @@ import {
 const buildTabs = (cartBadge: number, notifyBadge: number): MobileNavTab[] => [
   {
     label: "Главная",
-    path: routes.home,
+    path: routes.user.root,
     icon: Home,
-    match: (p) => p === routes.home,
+    match: (p) => p === routes.user.root,
   },
   {
     label: "Сборы",
-    path: routes.activeProcurements,
+    path: routes.user.activeProcurements,
     icon: Truck,
-    match: (p) => p === routes.activeProcurements || p.startsWith("/procurements/"),
+    match: (p) => p === routes.user.activeProcurements || p.startsWith("/user/procurements/"),
   },
   {
     label: "Каталог",
-    path: routes.catalog,
+    path: routes.user.catalog,
     icon: LayoutGrid,
-    match: (p) => p.startsWith(routes.catalog) || p.startsWith("/product/"),
+    match: (p) => p.startsWith(routes.user.catalog) || p.startsWith("/user/product/"),
   },
   {
     label: "Корзина",
-    path: routes.cart,
+    path: routes.user.cart,
     icon: ShoppingCart,
     badge: cartBadge,
     match: (p) =>
-      p.startsWith(routes.cart) ||
-      p.startsWith(routes.checkout) ||
-      p.startsWith(routes.payment),
+      p.startsWith(routes.user.cart) ||
+      p.startsWith(routes.user.checkout) ||
+      p.startsWith(routes.user.payment),
   },
   {
     label: "Профиль",
-    path: routes.profile,
+    path: routes.user.profile,
     icon: User,
     badge: notifyBadge,
     match: (p) =>
-      p === routes.profile ||
-      p.startsWith(routes.profileEdit) ||
-      p.startsWith(routes.orders) ||
-      p.startsWith(routes.notifications) ||
-      p.startsWith(routes.disputes) ||
-      p.startsWith(routes.support) ||
-      p.startsWith(routes.addresses) ||
-      p.startsWith(routes.pickupPoints),
+      p === routes.user.profile ||
+      p.startsWith(routes.user.profileEdit) ||
+      p.startsWith(routes.user.orders) ||
+      p.startsWith(routes.user.notifications) ||
+      p.startsWith(routes.user.disputes) ||
+      p.startsWith(routes.user.support) ||
+      p.startsWith(routes.user.addresses) ||
+      p.startsWith(routes.user.pickupPoints),
   },
 ]
 

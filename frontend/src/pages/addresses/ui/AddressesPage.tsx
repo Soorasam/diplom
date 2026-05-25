@@ -2,13 +2,14 @@ import { Check, MapPin } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { useSettlements } from "@/entities/settlement/api/useSettlements"
-import { routes } from "@/shared/config/routes"
+import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 import { cn } from "@/shared/lib/cn"
 
 export const AddressesPage = () => {
+  const profileRoutes = useProfileRoutes()
   const user = useAuthStore((s) => s.user)
   const updateSettlement = useAuthStore((s) => s.updateSettlement)
   const { data: settlements, isLoading } = useSettlements()
@@ -17,7 +18,7 @@ export const AddressesPage = () => {
     <div className="flex flex-col gap-4 p-4 pb-8">
       <PageHeader
         title="Населённый пункт"
-        backTo={routes.profile}
+        backTo={profileRoutes.profile}
         subtitle="От пункта зависят маршруты и пункты выдачи"
       />
 

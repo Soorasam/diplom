@@ -73,7 +73,7 @@ export const DriverApplyWizard = ({ myApp }: Props) => {
       userId: user.id,
       vehicleSummary: vehicleSummary || "—",
     })
-    navigate(routes.profile)
+    navigate(routes.user.profile)
   }
 
   return (
@@ -81,7 +81,7 @@ export const DriverApplyWizard = ({ myApp }: Props) => {
       <PageHeader
         title="Стать водителем"
         subtitle="Заявка с автосохранением и проверкой документов"
-        backTo={routes.profile}
+        backTo={routes.user.profile}
       />
 
       {!isOnline ? <DriverApplyOfflineBanner /> : null}

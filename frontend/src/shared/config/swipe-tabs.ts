@@ -2,49 +2,49 @@ import { routes } from "@/shared/config/routes"
 
 
 export const swipeTabRoutes = [
-  routes.home,
-  routes.activeProcurements,
-  routes.catalog,
-  routes.cart,
-  routes.profile,
+  routes.user.root,
+  routes.user.activeProcurements,
+  routes.user.catalog,
+  routes.user.cart,
+  routes.user.profile,
 ] as const
 
 export type SwipeTabRoute = (typeof swipeTabRoutes)[number]
 
 
 export function resolveSwipeTabIndex(pathname: string): number | null {
-  if (pathname === routes.home) {
+  if (pathname === routes.user.root) {
     return 0
   }
 
   if (
-    pathname === routes.activeProcurements ||
-    pathname.startsWith("/procurements/")
+    pathname === routes.user.activeProcurements ||
+    pathname.startsWith("/user/procurements/")
   ) {
     return 1
   }
 
-  if (pathname === routes.catalog || pathname.startsWith("/product/")) {
+  if (pathname === routes.user.catalog || pathname.startsWith("/user/product/")) {
     return 2
   }
 
   if (
-    pathname === routes.cart ||
-    pathname.startsWith(routes.checkout) ||
-    pathname.startsWith(routes.payment)
+    pathname === routes.user.cart ||
+    pathname.startsWith(routes.user.checkout) ||
+    pathname.startsWith(routes.user.payment)
   ) {
     return 3
   }
 
   if (
-    pathname === routes.profile ||
-    pathname.startsWith(routes.profileEdit) ||
-    pathname.startsWith(routes.orders) ||
-    pathname.startsWith(routes.notifications) ||
-    pathname.startsWith(routes.disputes) ||
-    pathname.startsWith(routes.support) ||
-    pathname.startsWith(routes.addresses) ||
-    pathname.startsWith(routes.pickupPoints)
+    pathname === routes.user.profile ||
+    pathname.startsWith(routes.user.profileEdit) ||
+    pathname.startsWith(routes.user.orders) ||
+    pathname.startsWith(routes.user.notifications) ||
+    pathname.startsWith(routes.user.disputes) ||
+    pathname.startsWith(routes.user.support) ||
+    pathname.startsWith(routes.user.addresses) ||
+    pathname.startsWith(routes.user.pickupPoints)
   ) {
     return 4
   }

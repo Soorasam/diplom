@@ -1,6 +1,6 @@
 import { Headphones, Mail, Phone } from "lucide-react"
 
-import { routes } from "@/shared/config/routes"
+import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { Card } from "@/shared/ui/card/Card"
 
@@ -20,9 +20,11 @@ const faq = [
 ]
 
 export const SupportPage = () => {
+  const profileRoutes = useProfileRoutes()
+
   return (
     <div className="flex flex-col gap-4 p-4 pb-8">
-      <PageHeader title="Поддержка" backTo={routes.profile} />
+      <PageHeader title="Поддержка" backTo={profileRoutes.profile} />
 
       <Card className="border-blue-100 bg-blue-50/40">
         <div className="flex items-center gap-3">

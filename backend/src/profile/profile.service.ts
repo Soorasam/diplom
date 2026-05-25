@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   UnauthorizedException,
@@ -7,6 +8,7 @@ import {
 import * as bcrypt from 'bcrypt';
 import { DriverApplicationStatus, User, UserRole } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
+import { throwUserUniqueConflict } from '../common/user-unique.conflict';
 import { PrismaService } from '../prisma/prisma.service';
 import { SetPasswordDto } from './dto/set-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -24,16 +26,29 @@ export class ProfileService {
   }
 
   async update(user: User, dto: UpdateProfileDto) {
-    const updated = await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        fullName: dto.fullName,
-        phone: dto.phone,
-        settlementId: dto.settlementId,
-        pickupPointId: dto.pickupPointId,
-      },
-    });
-    return this.toUserRead(updated);
+    if (dto.phone) {
+      const phoneTaken = await this.prisma.user.findFirst({
+        where: { phone: dto.phone, NOT: { id: user.id } },
+      });
+      if (phoneTaken) {
+        throw new ConflictException('Этот номер телефона уже используется');
+      }
+    }
+
+    try {
+      const updated = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          fullName: dto.fullName,
+          phone: dto.phone,
+          settlementId: dto.settlementId,
+          pickupPointId: dto.pickupPointId,
+        },
+      });
+      return this.toUserRead(updated);
+    } catch (error) {
+      throwUserUniqueConflict(error);
+    }
   }
 
   async setPassword(user: User, dto: SetPasswordDto) {

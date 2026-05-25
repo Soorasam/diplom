@@ -175,7 +175,7 @@ export const ActiveProcurementsPage = () => {
                 <li key={p.id}>
                   <Card className="overflow-hidden !p-0">
                     <Link
-                      to={routes.procurement(p.id)}
+                      to={routes.user.procurement(p.id)}
                       className="group block p-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50"
                     >
                       <ProcurementCard procurement={p} embedded />

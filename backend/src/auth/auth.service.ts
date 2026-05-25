@@ -5,8 +5,9 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Prisma, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import { throwUserUniqueConflict } from '../common/user-unique.conflict';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -57,13 +58,13 @@ export class AuthService {
 
     const exists = await this.prisma.user.findUnique({ where: { email } });
     if (exists) {
-      throw new ConflictException('Email уже зарегистрирован');
+      throw new ConflictException('Этот email уже используется');
     }
 
     if (phone) {
       const phoneTaken = await this.prisma.user.findUnique({ where: { phone } });
       if (phoneTaken) {
-        throw new ConflictException('Телефон уже зарегистрирован');
+        throw new ConflictException('Этот номер телефона уже используется');
       }
     }
 
@@ -84,26 +85,8 @@ export class AuthService {
       const tokens = this.signTokens(user.id);
       return { ...tokens, token_type: 'bearer', user: this.toUserRead(user) };
     } catch (error) {
-      this.rethrowUniqueConflict(error);
+      throwUserUniqueConflict(error);
     }
-  }
-
-  private rethrowUniqueConflict(error: unknown): never {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2002'
-    ) {
-      const target = error.meta?.target;
-      const fields = Array.isArray(target) ? target : [];
-      if (fields.includes('email')) {
-        throw new ConflictException('Email уже зарегистрирован');
-      }
-      if (fields.includes('phone')) {
-        throw new ConflictException('Телефон уже зарегистрирован');
-      }
-      throw new ConflictException('Такой пользователь уже существует');
-    }
-    throw error;
   }
 
   async login(dto: LoginDto) {

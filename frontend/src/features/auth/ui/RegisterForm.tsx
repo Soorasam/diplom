@@ -9,7 +9,8 @@ import {
   type RegisterFormValues,
 } from "@/features/auth/model/register-schema"
 import { usePickupPoints, useSettlements } from "@/entities/settlement/api/useSettlements"
-import { ApiError } from "@/shared/api/client"
+import { applyApiErrorToForm } from "@/shared/lib/api-form-errors"
+import { routes } from "@/shared/config/routes"
 import { Button } from "@/shared/ui/button/Button"
 import { Input } from "@/shared/ui/input/Input"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
@@ -27,6 +28,7 @@ export const RegisterForm = () => {
     register,
     handleSubmit,
     control,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -58,9 +60,12 @@ export const RegisterForm = () => {
         pickupPointId: data.pickupPointId || undefined,
       })
       const user = useAuthStore.getState().user
-      navigate(user ? homeRouteForRole(user.role) : "/")
+      navigate(user ? homeRouteForRole(user.role) : routes.user.root)
     } catch (err) {
-      setApiError(err instanceof ApiError ? err.message : "Не удалось зарегистрироваться")
+      applyApiErrorToForm(err, setError, {
+        setFormError: setApiError,
+        fallback: "Не удалось зарегистрироваться",
+      })
     }
   }
 

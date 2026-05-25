@@ -23,6 +23,7 @@ logs/
 
 .env
 .env.production
+frontend/.env.production
 .env.local
 .env.*.local
 backend/.env

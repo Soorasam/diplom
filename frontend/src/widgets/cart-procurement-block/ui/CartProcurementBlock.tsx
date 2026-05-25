@@ -98,7 +98,7 @@ export const CartProcurementBlock = () => {
               type="button"
               fullWidth
               className="mt-3"
-              onClick={() => navigate(routes.activeProcurements)}
+              onClick={() => navigate(routes.user.activeProcurements)}
             >
               Перейти к сборам
             </Button>
@@ -123,7 +123,7 @@ export const CartProcurementBlock = () => {
           variant="outline"
           fullWidth
           className="mt-3"
-          onClick={() => navigate(routes.activeProcurements)}
+          onClick={() => navigate(routes.user.activeProcurements)}
         >
           Открытые сборы
         </Button>
@@ -154,7 +154,7 @@ export const CartProcurementBlock = () => {
             type="button"
             variant="outline"
             fullWidth
-            onClick={() => navigate(routes.activeProcurements)}
+            onClick={() => navigate(routes.user.activeProcurements)}
           >
             Другой сбор
           </Button>
@@ -187,7 +187,7 @@ export const CartProcurementBlock = () => {
         </label>
       ) : null}
       <Link
-        to={routes.activeProcurements}
+        to={routes.user.activeProcurements}
         className="ui-link inline-block text-xs hover:underline"
       >
         Все сборы

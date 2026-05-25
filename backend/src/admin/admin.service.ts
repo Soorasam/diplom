@@ -115,7 +115,7 @@ export class AdminService {
 
     const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
-      throw new ConflictException('Пользователь с таким email уже существует');
+      throw new ConflictException('Этот email уже используется');
     }
 
     const temporaryPassword = this.generateTemporaryPassword();
@@ -155,7 +155,7 @@ export class AdminService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        throw new ConflictException('Email уже занят');
+        throw new ConflictException('Этот email уже используется');
       }
       throw error;
     }

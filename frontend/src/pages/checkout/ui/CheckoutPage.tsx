@@ -105,7 +105,7 @@ export const CheckoutPage = () => {
     ) {
       return
     }
-    navigate(routes.payment, {
+    navigate(routes.user.payment, {
       state: {
         userId: authUser.id,
         procurementId,
@@ -130,7 +130,7 @@ export const CheckoutPage = () => {
       <PageShell>
       <PageHeader
         title="Оформление"
-        backTo={routes.cart}
+        backTo={routes.user.cart}
         subtitle="Проверьте пункт выдачи и состав"
         className="mb-0!"
       />

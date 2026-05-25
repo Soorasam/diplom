@@ -2,6 +2,8 @@ import { Link } from "react-router-dom"
 
 import { Home, MapPinOff } from "lucide-react"
 
+import { routes } from "@/shared/config/routes"
+
 export const NotFoundPage = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50 p-4 text-center font-sans safe-top dark:bg-[#0F141C]">
@@ -24,7 +26,7 @@ export const NotFoundPage = () => {
       </div>
 
       <Link
-        to="/"
+        to={routes.user.root}
         className="inline-flex items-center gap-2 rounded-2xl bg-sky-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-400"
       >
         <Home size={18} />
