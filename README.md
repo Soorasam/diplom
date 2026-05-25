@@ -104,20 +104,24 @@ npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-us
 
 Сайт: **https://soorasam.github.io/diplom/**
 
-### Первый запуск (если во вкладке Pages пусто)
+### Автодеплой (один раз настроить)
 
-1. GitHub → репозиторий **diplom** → **Settings** → **Pages**
-2. **Build and deployment** → **Source:** выберите **GitHub Actions** (не «Deploy from a branch», если список пустой)
-3. Вкладка **Actions** → workflow **Deploy GitHub Pages** → **Run workflow** (ветка `backend`)
-4. После зелёной галочки снова откройте **Settings → Pages** — появится URL сайта
+1. **Settings → Pages** → Source: **Deploy from a branch**
+2. Branch: **`gh-pages`**, папка **`/ (root)`** → **Save**
+3. **Settings → Actions → General** → Workflow permissions: **Read and write permissions** → Save
 
-Альтернатива (ветка `gh-pages` уже есть): Source → **Deploy from a branch** → Branch **`gh-pages`** → папка **`/ (root)`** → Save.
+Дальше: любой **`git push` в ветку `backend`** → GitHub Actions собирает `frontend` и обновляет `gh-pages` (workflow `Deploy GitHub Pages`).
 
-### Локальный деплой в ветку gh-pages
+Ручной запуск: **Actions** → **Deploy GitHub Pages** → **Run workflow**.
+
+### API на продакшене (опционально)
+
+**Settings → Secrets and variables → Actions → Variables** → `VITE_API_URL` = `https://ваш-api/api/v1`  
+Без переменной в сборке останется `localhost` (только UI).
+
+### Локальный деплой (если нужен без CI)
 
 ```bash
 cd frontend
 npm run deploy
 ```
-
-Перед деплоем задайте `frontend/.env.production` с URL вашего API, иначе в браузере останется `localhost`.
