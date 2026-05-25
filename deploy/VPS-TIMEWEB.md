@@ -74,7 +74,7 @@ docker compose -f docker-compose.prod.yml exec api npm run storage:seed
 Проверка API:
 
 ```bash
-curl -s http://127.0.0.1:3000/api/v1/health
+curl -s http://127.0.0.1:3000/health
 ```
 
 ## 5. Сборка frontend
@@ -120,12 +120,24 @@ systemctl reload nginx
 
 ## 7. Обновление после git pull
 
+На VPS (ветка `backend` или `frontend` — сейчас одинаковые):
+
 ```bash
 cd /opt/diplom
-git pull
-docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
-cd frontend && npm ci && npm run build:prod && cp -r dist/* /var/www/coopykt/
+bash deploy/update-vps.sh
 ```
+
+Или вручную:
+
+```bash
+cd /opt/diplom
+git pull origin backend
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+docker compose -f docker-compose.prod.yml --env-file .env.production exec api npx prisma migrate deploy
+cd frontend && npm ci && npm run build:prod && sudo cp -r dist/* /var/www/coopykt/
+```
+
+**Важно:** `prisma:reset:deploy` — только при **первом** деплое (чистая БД). При обновлении — только `migrate deploy`, иначе сотрёте заказы и сборы.
 
 ## 8. Защита диплома
 
