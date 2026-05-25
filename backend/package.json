@@ -16,7 +16,8 @@
     "prisma:studio": "prisma studio",
     "assets:fetch": "node scripts/fetch-seed-images.mjs",
     "assets:generate": "node scripts/generate-seed-images.mjs",
-    "storage:seed": "ts-node -P tsconfig.scripts.json scripts/seed-product-images.ts"
+    "storage:seed": "ts-node -P tsconfig.scripts.json scripts/seed-product-images.ts",
+    "catalog:export": "ts-node -P tsconfig.scripts.json scripts/export-static-catalog.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1049.0",

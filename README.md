@@ -110,7 +110,7 @@ URL на защите: **http://localhost:5173/diplom/** (не GitHub Pages — 
 
 ## GitHub Pages (опционально, витрина UI)
 
-Сайт: **https://soorasam.github.io/diplom/** — для ссылки в презентации; на защите показывайте локальный адрес.
+Сайт: **https://soorasam.github.io/diplom/** — каталог и картинки товаров работают без backend (статический `frontend/public/catalog`). Вход, корзина и заказы — только с локальным API; на защите показывайте **localhost**.
 
 ### Автодеплой (один раз настроить)
 
@@ -126,5 +126,13 @@ URL на защите: **http://localhost:5173/diplom/** (не GitHub Pages — 
 
 ```bash
 cd frontend
+npm run build:pages
 npm run deploy
+```
+
+Обновить каталог и картинки в `public/catalog` перед сборкой:
+
+```bash
+cd backend
+npm run catalog:export
 ```

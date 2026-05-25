@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "catalog:sync": "npm run catalog:export --prefix ../backend",
     "build": "tsc -b && vite build",
+    "build:pages": "npm run catalog:sync && tsc -b && vite build --mode pages",
     "postbuild": "node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\"",
     "lint": "eslint .",
     "preview": "vite preview",
