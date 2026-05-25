@@ -1,0 +1,9 @@
+---
+description: Без комментариев в исходниках
+globs:
+  - "**/*.{ts,tsx,js,jsx}"
+  - "backend/**/*.ts"
+  - "frontend/src/**/*.{ts,tsx}"
+---
+
+Не добавляй комментарии в код (`//`, `/* */`, JSDoc). Пояснения и инструкции — только в README.md и deploy/*.md.

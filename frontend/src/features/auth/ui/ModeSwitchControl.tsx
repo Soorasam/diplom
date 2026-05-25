@@ -15,7 +15,7 @@ const modes: { id: InterfaceMode; label: string; icon: typeof Truck }[] = [
   { id: "driver", label: "Водитель", icon: Truck },
 ]
 
-/** Сегментированный переключатель житель / водитель (единые скругления) */
+
 export const ModeSwitchControl = ({
   className,
   navigateOnSwitch = true,

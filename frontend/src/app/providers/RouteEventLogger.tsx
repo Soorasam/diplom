@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom"
 
 import { logEvent } from "@/shared/lib/event-log"
 
-/** Лог переходов по страницам */
+
 export const RouteEventLogger = () => {
   const location = useLocation()
   const prev = useRef(location.pathname)

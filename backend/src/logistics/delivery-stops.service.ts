@@ -7,8 +7,8 @@ import { PrismaService } from '../prisma/prisma.service';
 export class DeliveryStopsService {
   constructor(private prisma: PrismaService) {}
 
-  /** Создаёт точки маршрута по уникальным ПВЗ из заказов сбора */
-  /** Подтверждает заказы и переводит в «в пути», создаёт точки маршрута */
+  
+  
   async dispatchRound(roundId: string) {
     await this.syncStopsForRound(roundId);
 
@@ -77,7 +77,7 @@ export class DeliveryStopsService {
     });
   }
 
-  /** После приёма заказа: если на ПВЗ не осталось «в пути» — точка закрыта */
+  
   async refreshStopCompletion(roundId: string, pickupPointId: string) {
     const inTransit = await this.prisma.order.count({
       where: {

@@ -1,6 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma, UserRole } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { CreateRouteDto } from './dto/create-route.dto';
+import { CreatePvzEmployeeDto } from './dto/create-pvz-employee.dto';
 import { CatalogService } from '../catalog/catalog.service';
 import { calcRoundProgressPercent, decimalToNumber } from '../common/order-labels';
 import { mapOrderDetail, OrderWithRelations } from '../common/order-mapper';
@@ -90,6 +93,74 @@ export class AdminService {
     return this.prisma.route.findMany({ orderBy: { title: 'asc' } });
   }
 
+  private generateTemporaryPassword(length = 12): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    const bytes = crypto.randomBytes(length);
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars[bytes[i]! % chars.length];
+    }
+    return result;
+  }
+
+  async createPvzEmployee(dto: CreatePvzEmployeeDto) {
+    const email = dto.email.trim().toLowerCase();
+    const pickupPoint = await this.prisma.pickupPoint.findUnique({
+      where: { id: dto.pickupPointId },
+      include: { settlement: true },
+    });
+    if (!pickupPoint) {
+      throw new NotFoundException('Пункт выдачи не найден');
+    }
+
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new ConflictException('Пользователь с таким email уже существует');
+    }
+
+    const temporaryPassword = this.generateTemporaryPassword();
+    const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          email,
+          hashedPassword,
+          fullName: dto.fullName?.trim() || `Сотрудник ${pickupPoint.coordinatorName}`,
+          role: UserRole.employee,
+          settlementId: pickupPoint.settlementId,
+          pickupPointId: pickupPoint.id,
+          mustChangePassword: true,
+        },
+      });
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.role,
+          pickupPointId: user.pickupPointId,
+          mustChangePassword: true,
+        },
+        temporaryPassword,
+        pickupPoint: {
+          id: pickupPoint.id,
+          name: pickupPoint.coordinatorName,
+          settlementName: pickupPoint.settlement.name,
+        },
+      };
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Email уже занят');
+      }
+      throw error;
+    }
+  }
+
   createRoute(dto: CreateRouteDto) {
     return this.prisma.route.create({
       data: {
@@ -162,7 +233,7 @@ export class AdminService {
       .then((items) => items.map((n) => this.mapAdminNotification(n)));
   }
 
-  /** Только уведомления админу; для споров — автор и текст отдельно */
+  
   private mapAdminNotification(n: {
     id: string;
     title: string;

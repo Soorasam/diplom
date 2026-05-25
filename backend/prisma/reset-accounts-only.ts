@@ -1,7 +1,4 @@
-/**
- * Полная очистка данных и создание только базовых демо-аккаунтов.
- * Запуск: npm run prisma:reset:accounts
- */
+
 import { PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 

@@ -15,6 +15,8 @@ export interface User {
   settlementId: string
   pickupPointId?: string
   avatarUrl?: string
+  
+  mustChangePassword?: boolean
 }
 
 export interface DriverApplicationDocument {

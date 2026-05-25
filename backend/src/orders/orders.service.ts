@@ -122,7 +122,7 @@ export class OrdersService {
     return this.withCustomer(updated as OrderWithUser);
   }
 
-  /** Синхронизация точек маршрута водителя при смене статуса (в т.ч. из админки) */
+  
   private async syncDeliveryStopAfterStatusChange(
     roundId: string | null | undefined,
     pickupPointId: string | null | undefined,

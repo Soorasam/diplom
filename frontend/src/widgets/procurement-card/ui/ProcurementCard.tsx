@@ -17,7 +17,7 @@ const deliveryLabels: Record<DeliveryMode, string> = {
 interface ProcurementCardProps {
   procurement: Procurement
   compact?: boolean
-  /** Без обёртки Card — для вложения в список */
+  
   embedded?: boolean
 }
 

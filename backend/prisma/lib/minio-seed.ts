@@ -37,7 +37,7 @@ export async function uploadProductImage(
   return publicObjectUrl(key);
 }
 
-/** Локальные файлы из prisma/seed-assets/products/ */
+
 export async function uploadFromAsset(fileName: string, objectKey: string): Promise<string> {
   const filePath = path.join(__dirname, '..', 'seed-assets', 'products', fileName);
   const body = await readFile(filePath);
@@ -47,7 +47,7 @@ export async function uploadFromAsset(fileName: string, objectKey: string): Prom
   return uploadProductImage(objectKey, body, contentType);
 }
 
-/** @deprecated Используйте seed-catalog + файлы по slug из seed-products.ts */
+
 export type SeedProductImage = {
   objectKey: string;
   assetFile: string;

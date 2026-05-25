@@ -2,7 +2,7 @@ const PREFIX = "[coop:event]"
 
 type EventPayload = Record<string, unknown> | unknown[] | string | number | boolean | null | undefined
 
-/** Лог событий для ручного тестирования — фильтр в DevTools: coop:event */
+
 export function logEvent(name: string, payload?: EventPayload) {
   const time = new Date().toLocaleTimeString("ru-RU", { hour12: false })
   if (payload !== undefined) {

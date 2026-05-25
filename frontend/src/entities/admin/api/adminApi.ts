@@ -184,4 +184,20 @@ export const adminApi = {
   },
 
   resolveNotification: (id: string) => http.patch(`/admin/notifications/${id}/resolve`, {}, true),
+
+  createPvzEmployee: (payload: {
+    email: string
+    pickupPointId: string
+    fullName?: string
+  }) =>
+    http.post<{
+      user: {
+        id: string
+        email: string
+        fullName: string | null
+        pickupPointId: string | null
+      }
+      temporaryPassword: string
+      pickupPoint: { id: string; name: string; settlementName: string }
+    }>("/admin/pvz-employees", payload, true),
 }

@@ -79,7 +79,7 @@ export class CatalogService {
     };
   }
 
-  /** Вступление в открытый сбор (можно оформлять несколько заказов, пока сбор open) */
+  
   async joinRound(user: User, roundId: string) {
     const round = await this.prisma.round.findUnique({ where: { id: roundId } });
     if (!round) throw new NotFoundException('Сбор не найден');
@@ -105,7 +105,7 @@ export class CatalogService {
     };
   }
 
-  /** Сборы, в которые пользователь вступил (для каталога и корзины) */
+  
   async listUserRoundIds(userId: string) {
     const rows = await this.prisma.roundParticipant.findMany({
       where: { userId },

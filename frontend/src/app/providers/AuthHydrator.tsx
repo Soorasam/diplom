@@ -3,7 +3,7 @@ import { useEffect } from "react"
 import { useAuthStore } from "@/app/model/auth-store"
 import { ensureValidAccessToken } from "@/shared/api/client"
 
-/** После восстановления сессии подтягивает профиль с сервера */
+
 export const AuthHydrator = () => {
   const hasHydrated = useAuthStore((s) => s._hasHydrated)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)

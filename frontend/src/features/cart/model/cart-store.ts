@@ -6,7 +6,7 @@ import { logEvent } from "@/shared/lib/event-log"
 export interface CartItem {
   productId: string
   quantity: number
-  /** id строки корзины на бэкенде */
+  
   lineId?: string
 }
 

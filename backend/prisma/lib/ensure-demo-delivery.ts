@@ -5,7 +5,7 @@ import {
   RoundStatus,
 } from '@prisma/client';
 
-/** Демо-рейс для ПВЗ: закрытый сбор + заказ «в пути» + точка маршрута */
+
 export async function ensureDemoDelivery(prisma: PrismaClient) {
   const demo = await prisma.user.findUnique({ where: { email: 'demo@coop.local' } });
   const employee = await prisma.user.findUnique({

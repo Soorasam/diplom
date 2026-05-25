@@ -8,7 +8,6 @@ import type { QueryClient } from "@tanstack/react-query"
 type ActionHandler = (a: OfflineAction) => Promise<void>
 
 function setOrderStatusInCache(qc: QueryClient, orderId: string, status: OrderStatus) {
-  // detail cache
   qc.setQueryData<Order>(queryKeys.orders.detail(orderId), (old) =>
     old ? { ...old, status } : old,
   )
@@ -18,7 +17,6 @@ export function createOfflineHandlers(qc: QueryClient): Record<string, ActionHan
   return {
     "employee.order.mark_ready_for_pickup": async (a) => {
       const { orderId } = a.payload as { orderId: string }
-      // optimistic cache update (kept for UI consistency)
       setOrderStatusInCache(qc, orderId, "at_pickup")
       await employeeApi.receiveFromDriver(orderId)
       void qc.invalidateQueries({ queryKey: queryKeys.employee.workspace })

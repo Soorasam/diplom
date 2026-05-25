@@ -5,7 +5,7 @@ import {
 } from "@/entities/procurement/api/useProcurements"
 import { useCartStore } from "@/features/cart/model/cart-store"
 
-/** Выбранный сбор в корзине и статус вступления */
+
 export const useProcurementParticipation = () => {
   const user = useAuthStore((s) => s.user)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)

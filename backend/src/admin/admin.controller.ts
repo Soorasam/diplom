@@ -7,6 +7,7 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { UpdateOrderStatusDto } from '../orders/dto/update-order-status.dto';
 import { OrdersService } from '../orders/orders.service';
 import { AdminService } from './admin.service';
+import { CreatePvzEmployeeDto } from './dto/create-pvz-employee.dto';
 import { CreateRouteDto } from './dto/create-route.dto';
 
 @Controller('admin')
@@ -61,6 +62,11 @@ export class AdminController {
   @Get('pickup-points')
   pickupPoints() {
     return this.admin.listPickupPoints();
+  }
+
+  @Post('pvz-employees')
+  createPvzEmployee(@Body() dto: CreatePvzEmployeeDto) {
+    return this.admin.createPvzEmployee(dto);
   }
 
   @Get('rounds')

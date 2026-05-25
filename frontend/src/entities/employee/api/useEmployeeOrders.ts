@@ -55,7 +55,6 @@ export function useEmployeeOrderStatusActions(pickupPointId?: string) {
     mutationFn: async (vars: { orderId: string; status: "at_pickup" | "delivered" }) => {
       if (!pickupPointId) throw new Error("pickupPointId not ready")
 
-      // optimistic UI right away
       optimisticUpdateEmployeeOrder(qc, pickupPointId, vars.orderId, vars.status)
 
       if (!isOnline) {

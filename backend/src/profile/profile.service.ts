@@ -1,23 +1,26 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { DriverApplicationStatus, User, UserRole } from '@prisma/client';
+import { AuthService } from '../auth/auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { SetPasswordDto } from './dto/set-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { SwitchRoleDto } from './dto/switch-role.dto';
 
 @Injectable()
 export class ProfileService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auth: AuthService,
+  ) {}
 
   private toUserRead(user: User) {
-    return {
-      id: user.id,
-      email: user.email,
-      phone: user.phone,
-      fullName: user.fullName,
-      role: user.role,
-      settlementId: user.settlementId,
-      pickupPointId: user.pickupPointId,
-    };
+    return this.auth.toUserRead(user);
   }
 
   async update(user: User, dto: UpdateProfileDto) {
@@ -28,6 +31,39 @@ export class ProfileService {
         phone: dto.phone,
         settlementId: dto.settlementId,
         pickupPointId: dto.pickupPointId,
+      },
+    });
+    return this.toUserRead(updated);
+  }
+
+  async setPassword(user: User, dto: SetPasswordDto) {
+    if (user.role !== UserRole.employee) {
+      throw new ForbiddenException('Смена пароля через этот метод только для сотрудника ПВЗ');
+    }
+
+    if (user.mustChangePassword) {
+      const updated = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          hashedPassword: await bcrypt.hash(dto.newPassword, 10),
+          mustChangePassword: false,
+        },
+      });
+      return this.toUserRead(updated);
+    }
+
+    if (!dto.currentPassword) {
+      throw new BadRequestException('Укажите текущий пароль');
+    }
+    const valid = await bcrypt.compare(dto.currentPassword, user.hashedPassword);
+    if (!valid) {
+      throw new UnauthorizedException('Неверный текущий пароль');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        hashedPassword: await bcrypt.hash(dto.newPassword, 10),
       },
     });
     return this.toUserRead(updated);

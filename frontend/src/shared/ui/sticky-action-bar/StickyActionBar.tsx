@@ -7,7 +7,7 @@ interface StickyActionBarProps {
   className?: string
 }
 
-/** Панель над нижним таб-баром (bottom ~4.5rem) */
+
 export const StickyActionBar = ({ children, className }: StickyActionBarProps) => (
   <div
     className={cn(

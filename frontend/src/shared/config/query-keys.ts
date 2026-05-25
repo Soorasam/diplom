@@ -1,6 +1,6 @@
 import type { ProductFilters } from "@/entities/product/api/productsApi"
 
-/** Ключи TanStack Query — предотвращают опечатки и упрощают инвалидацию */
+
 export const queryKeys = {
   products: {
     all: ["products"] as const,

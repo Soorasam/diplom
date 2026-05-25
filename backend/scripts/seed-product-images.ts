@@ -1,7 +1,4 @@
-/**
- * Загружает картинки в MinIO и прописывает imageUrl у товаров.
- * npm run storage:seed
- */
+
 import { PrismaClient } from '@prisma/client';
 
 import { uploadSeedProductImages } from '../prisma/lib/seed-catalog';

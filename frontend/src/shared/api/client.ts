@@ -55,7 +55,7 @@ async function refreshAccessToken(): Promise<string | null> {
   return refreshPromise
 }
 
-/** Обновить access по refresh или вернуть false, если сессия протухла */
+
 export async function ensureValidAccessToken(): Promise<boolean> {
   if (getAccessToken()) return true
   const token = await refreshAccessToken()
@@ -133,7 +133,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 }
 
-/** Реальный HTTP-клиент к NestJS API */
+
 export const http = {
   get: <T>(path: string, auth = false) => request<T>(path, { auth }),
 

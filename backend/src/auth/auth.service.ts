@@ -21,7 +21,7 @@ export class AuthService {
     private config: ConfigService,
   ) {}
 
-  private toUserRead(user: User) {
+  toUserRead(user: User) {
     return {
       id: user.id,
       email: user.email,
@@ -30,6 +30,7 @@ export class AuthService {
       role: user.role,
       settlementId: user.settlementId,
       pickupPointId: user.pickupPointId,
+      mustChangePassword: user.mustChangePassword,
     };
   }
 
@@ -109,7 +110,10 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email.toLowerCase() },
     });
-    if (!user || !(await bcrypt.compare(dto.password, user.hashedPassword))) {
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Неверный email или пароль');
+    }
+    if (!(await bcrypt.compare(dto.password, user.hashedPassword))) {
       throw new UnauthorizedException('Неверный email или пароль');
     }
     const tokens = this.signTokens(user.id);

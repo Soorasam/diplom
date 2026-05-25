@@ -102,7 +102,7 @@ export async function uploadSeedProductImages(prisma: PrismaClient) {
   return { uploaded, missing, minioOk };
 }
 
-/** Плейсхолдер URL если файла ещё нет (опционально не используем) */
+
 export function placeholderImageUrl(slug: string): string {
   return publicObjectUrl(seedProductObjectKey(slug));
 }

@@ -10,8 +10,6 @@ export interface DriverDocumentDraft {
   fileName: string
   mimeType: string
   size: number
-  // хранение самого файла в localStorage не делаем: только метаданные.
-  // В реальном проде — IndexedDB + background upload.
   previewUrl?: string
   status: "idle" | "uploading" | "uploaded" | "failed"
   progress: number

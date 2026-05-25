@@ -1,4 +1,4 @@
-/** Централизованные пути — единый источник для router и Link */
+
 export const routes = {
   auth: "/auth",
 
@@ -54,6 +54,7 @@ export const routes = {
     analytics: "/admin/analytics",
     driverApplications: "/admin/driver-applications",
     pvz: "/admin/pvz",
+    pvzEmployees: "/admin/pvz-employees",
     tickets: "/admin/tickets",
     profile: "/admin/profile",
   },

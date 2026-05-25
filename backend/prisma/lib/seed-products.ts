@@ -1,7 +1,4 @@
-/**
- * Каталог демо-товаров: 5 позиций в каждой из 4 категорий.
- * Slug = имя файла картинки: seed-assets/products/{slug}.png
- */
+
 export type SeedProductDef = {
   categoryIndex: 0 | 1 | 2 | 3;
   slug: string;
@@ -13,7 +10,7 @@ export type SeedProductDef = {
   requiresPrescription?: boolean;
 };
 
-/** Прежние slug / названия — удаляются при seed каталога */
+
 export const SLUG_LEGACY_NAMES: Record<string, string> = {
   'grechka-900g': 'Гречка ядрица, 1 кг',
   'black-tea-100g': 'Чай чёрный листовой, 250 г',

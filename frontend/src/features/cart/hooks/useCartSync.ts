@@ -9,10 +9,7 @@ import { mapBackendCartItems } from "@/features/cart/lib/map-backend-cart"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { queryKeys } from "@/shared/config/query-keys"
 
-/**
- * Синхронизация корзины с API после восстановления сессии.
- * Не сбрасывает корзину при F5 — только при явном выходе (logout).
- */
+
 export const useCartSync = () => {
   const authHydrated = useAuthStore((s) => s._hasHydrated)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -58,7 +55,7 @@ export const useCartSync = () => {
   }, [products, pruneInvalidProducts])
 }
 
-/** Количество в бейдже — только товары, которые есть в каталоге */
+
 export const useValidCartItemCount = () => {
   const items = useCartStore((s) => s.items)
   const { data: products } = useProducts()

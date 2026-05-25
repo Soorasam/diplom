@@ -122,10 +122,6 @@ URL на защите: **http://localhost:5173/diplom/** (не GitHub Pages — 
 
 Ручной запуск: **Actions** → **Deploy GitHub Pages** → **Run workflow**.
 
-### API на VPS (не используем для защиты)
-
-По желанию позже: **[deploy/VPS.md](deploy/VPS.md)**
-
 ### Локальный деплой frontend в gh-pages (без CI)
 
 ```bash

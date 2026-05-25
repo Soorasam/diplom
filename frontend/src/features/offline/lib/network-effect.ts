@@ -12,7 +12,6 @@ export function useNetworkEffect() {
     window.addEventListener("online", onOnline)
     window.addEventListener("offline", onOffline)
 
-    // initial sync (in case state changed before mount)
     setOnline(navigator.onLine)
 
     return () => {

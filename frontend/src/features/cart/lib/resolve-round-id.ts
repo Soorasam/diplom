@@ -9,7 +9,7 @@ export const readRoundIdFromUrl = (): string | undefined => {
   return new URLSearchParams(window.location.search).get("round") ?? undefined
 }
 
-/** Текущий сбор для API корзины: store → URL → кэш серверной корзины */
+
 export const resolveRoundIdForCart = (queryClient?: QueryClient): string | undefined => {
   const fromStore = useCartStore.getState().procurementId
   if (fromStore) return fromStore

@@ -22,7 +22,7 @@ interface PageHeaderProps {
 
   className?: string
 
-  /** Без липкой панели (редкие полноэкранные экраны) */
+  
 
   static?: boolean
 

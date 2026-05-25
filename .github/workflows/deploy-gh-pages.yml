@@ -1,5 +1,3 @@
-# Автодеплой frontend → ветка gh-pages при push в backend
-# Сайт: https://soorasam.github.io/diplom/
 name: Deploy GitHub Pages
 
 on:
@@ -34,7 +32,6 @@ jobs:
         run: npm run build
         working-directory: frontend
         env:
-          # Опционально: Settings → Secrets and variables → Actions → Variable VITE_API_URL
           VITE_API_URL: ${{ vars.VITE_API_URL }}
 
       - name: Publish to gh-pages branch

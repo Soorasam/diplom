@@ -43,6 +43,7 @@ import { AdminProcurementsPage } from "@/pages/admin/procurements/ui/AdminProcur
 import { AdminDriversPage } from "@/pages/admin/drivers/ui/AdminDriversPage"
 import { AdminSettlementsPage } from "@/pages/admin/settlements/ui/AdminSettlementsPage"
 import { AdminAnalyticsPage } from "@/pages/admin/analytics/ui/AdminAnalyticsPage"
+import { AdminPvzEmployeesPage } from "@/pages/admin/pvz-employees/ui/AdminPvzEmployeesPage"
 
 import { EmployeeLayout } from "./layouts/EmployeeLayout"
 import { EmployeeDashboardPage } from "@/pages/employee/dashboard/ui/EmployeeDashboardPage"
@@ -122,6 +123,7 @@ export const router = createBrowserRouter([
       { path: "analytics", element: <AdminAnalyticsPage /> },
       { path: "driver-applications", element: <AdminDriverApplicationsPage /> },
       { path: "pvz", element: <AdminPvzPage /> },
+      { path: "pvz-employees", element: <AdminPvzEmployeesPage /> },
       { path: "tickets", element: <AdminTicketsPage /> },
       { path: "profile", element: <ProfilePage /> },
     ],

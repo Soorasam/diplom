@@ -3,7 +3,7 @@ import { useEffect } from "react"
 import { useProcurement } from "@/entities/procurement/api/useProcurements"
 import { useCartStore } from "@/features/cart/model/cart-store"
 
-/** Выбранный сбор только если он открыт; закрытый сбрасывается из store */
+
 export const useOpenSelectedProcurement = (selectedRoundId: string) => {
   const clearProcurement = useCartStore((s) => s.clearProcurement)
   const { data: procurement, isLoading } = useProcurement(selectedRoundId)

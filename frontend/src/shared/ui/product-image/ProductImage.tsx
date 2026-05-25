@@ -5,9 +5,9 @@ import { cn } from "@/shared/lib/cn"
 type ProductImageVariant = "card" | "detail"
 
 const frameClass: Record<ProductImageVariant, string> = {
-  /** Сетка каталога 2 колонки */
+  
   card: "aspect-square w-full p-4",
-  /** Страница товара — широкий блок, не на весь экран */
+  
   detail: "aspect-[4/3] w-full p-6 sm:aspect-[3/2] sm:p-8",
 }
 

@@ -1,6 +1,6 @@
 import { routes } from "@/shared/config/routes"
 
-/** Порядок вкладок нижнего навбара жителя (слева направо) */
+
 export const swipeTabRoutes = [
   routes.home,
   routes.activeProcurements,
@@ -11,7 +11,7 @@ export const swipeTabRoutes = [
 
 export type SwipeTabRoute = (typeof swipeTabRoutes)[number]
 
-/** Индекс вкладки для текущего пути; null — свайп отключён */
+
 export function resolveSwipeTabIndex(pathname: string): number | null {
   if (pathname === routes.home) {
     return 0

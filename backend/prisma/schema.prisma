@@ -65,8 +65,9 @@ model User {
   role           UserRole @default(resident)
   settlementId   String?  @map("settlement_id") @db.Uuid
   pickupPointId  String?  @map("pickup_point_id") @db.Uuid
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at")
+  isActive             Boolean  @default(true) @map("is_active")
+  mustChangePassword   Boolean  @default(false) @map("must_change_password")
+  createdAt            DateTime @default(now()) @map("created_at")
 
   settlement  Settlement?  @relation(fields: [settlementId], references: [id])
   pickupPoint PickupPoint? @relation(fields: [pickupPointId], references: [id])

@@ -1,7 +1,4 @@
-/**
- * Добавляет населённый пункт, если его ещё нет (без сброса БД).
- * Запуск: npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" scripts/add-settlement.ts
- */
+
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();

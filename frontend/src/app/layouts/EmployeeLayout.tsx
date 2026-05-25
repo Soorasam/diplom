@@ -7,6 +7,7 @@ import {
   User,
 } from "lucide-react"
 
+import { EmployeePasswordWelcome } from "@/features/employee/ui/EmployeePasswordWelcome"
 import { routes } from "@/shared/config/routes"
 import { MobilePageLayout } from "@/shared/ui/mobile-page-layout/MobilePageLayout"
 import {
@@ -50,6 +51,7 @@ const tabs: MobileNavTab[] = [
 
 export const EmployeeLayout = () => (
   <MobilePageLayout>
+    <EmployeePasswordWelcome />
     <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col">
       <Outlet />
     </main>

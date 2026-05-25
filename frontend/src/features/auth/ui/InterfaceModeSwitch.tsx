@@ -8,7 +8,7 @@ import { ModeSwitchControl } from "./ModeSwitchControl"
 type Props = {
   className?: string
   navigateOnSwitch?: boolean
-  /** Только переключатель без описания */
+  
   compact?: boolean
 }
 
@@ -59,5 +59,5 @@ export const InterfaceModeSwitch = ({
   )
 }
 
-/** @deprecated используйте InterfaceModeSwitch */
+
 export const DriverRoleSwitch = InterfaceModeSwitch

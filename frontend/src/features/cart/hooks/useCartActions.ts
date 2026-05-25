@@ -26,7 +26,7 @@ export const useCartActions = () => {
     [setFromServer, qc],
   )
 
-  /** Черновик с сервера после вступления в сбор */
+  
   const pushDraftItemsToServer = useCallback(
     async (roundId: string) => {
       const draft = useCartStore

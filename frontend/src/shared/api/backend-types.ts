@@ -1,4 +1,4 @@
-/** Ответы бэкенда (camelCase после сериализации Nest/Prisma) */
+
 export interface BackendUser {
   id: string
   email: string
@@ -7,6 +7,7 @@ export interface BackendUser {
   role: "resident" | "coordinator" | "employee" | "admin"
   settlementId: string | null
   pickupPointId: string | null
+  mustChangePassword?: boolean
 }
 
 export interface AuthResponse {

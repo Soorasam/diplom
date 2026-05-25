@@ -175,7 +175,7 @@ export class CoordinatorService {
     return mapped.filter((route) => this.isRouteVisibleToDriver(route));
   }
 
-  /** Водителю — только маршруты с реальной доставкой, не пустые шаблоны из seed */
+  
   private isRouteVisibleToDriver(route: {
     status: 'planned' | 'active' | 'completed';
     deliveryStops?: { pickupPointId: string }[];
@@ -245,7 +245,7 @@ export class CoordinatorService {
     };
   }
 
-  /** Статус точки для UI: учитывает заказы, если в БД точка ещё не обновлена */
+  
   private deriveStopUiStatus(
     stop: { status: DeliveryStopStatus },
     counts: ReturnType<DeliveryStopsService['orderCountsForStop']>,

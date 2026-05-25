@@ -5,11 +5,11 @@ import { cn } from "@/shared/lib/cn"
 type PatternHeroProps = {
   children: ReactNode
   className?: string
-  /** Внутри колонки приложения, без выхода за max-w */
+  
   contained?: boolean
 }
 
-/** Хедер главной и похожих экранов */
+
 export const PatternHero = ({
   children,
   className,

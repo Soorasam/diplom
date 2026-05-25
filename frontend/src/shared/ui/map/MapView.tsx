@@ -9,14 +9,11 @@ export interface MapViewProps {
   className?: string
   height?: string
   title?: string
-  /** Провайдер карт: yandex | leaflet — подключится позже */
+  
   provider?: "mock" | "yandex" | "leaflet"
 }
 
-/**
- * Абстракция карты: сейчас mock-заглушка с маркерами.
- * При интеграции Yandex Maps / Leaflet меняется только этот компонент.
- */
+
 export const MapView = ({
   markers = [],
   routes = [],

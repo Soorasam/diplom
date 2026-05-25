@@ -9,7 +9,7 @@ type ContentBlockProps = {
   withBottomNav?: boolean
 }
 
-/** Белый блок на всю ширину экрана */
+
 export const ContentBlock = ({
   children,
   className,

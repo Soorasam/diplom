@@ -23,7 +23,7 @@ export interface RegisterPayload {
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
-  /** persist восстановил состояние из localStorage */
+  
   _hasHydrated: boolean
   setHasHydrated: () => void
   login: (email: string, password: string) => Promise<void>
@@ -33,6 +33,7 @@ interface AuthState {
   logout: () => void
   updateSettlement: (settlementId: string) => Promise<void>
   updateProfile: (payload: { fullName?: string; phone?: string }) => Promise<void>
+  setPassword: (payload: { newPassword: string; currentPassword?: string }) => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -112,6 +113,13 @@ export const useAuthStore = create<AuthState>()(
         const user = mapUser(res)
         set({ user })
       },
+
+      setPassword: async (payload) => {
+        logEvent("auth:setPassword")
+        const res = await http.patch<BackendUser>("/profile/password", payload, true)
+        const user = mapUser(res)
+        set({ user })
+      },
     }),
     {
       name: "coop-auth",
@@ -122,7 +130,7 @@ export const useAuthStore = create<AuthState>()(
   ),
 )
 
-/** Куда редиректить после входа по роли */
+
 export const homeRouteForRole = (role: User["role"]) => {
   if (role === "driver") return routes.driver.root
   if (role === "employee") return routes.employee.root

@@ -7,7 +7,7 @@ import {
 } from "@/entities/procurement/api/useProcurements"
 import { useCartStore } from "@/features/cart/model/cart-store"
 
-/** Подставляет только открытый сбор; закрытые не выбираются */
+
 export const useSyncSelectedProcurement = (roundFromUrl?: string) => {
   const user = useAuthStore((s) => s.user)
   const procurementId = useCartStore((s) => s.procurementId)

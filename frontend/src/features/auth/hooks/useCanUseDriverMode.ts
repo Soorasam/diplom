@@ -3,7 +3,7 @@ import { useAuthStore } from "@/app/model/auth-store"
 
 export type InterfaceMode = "resident" | "driver"
 
-/** Одобренная заявка или уже активный режим водителя в API */
+
 export const useCanUseDriverMode = () => {
   const user = useAuthStore((s) => s.user)
   const { data: myApp, isLoading } = useMyDriverApplication()

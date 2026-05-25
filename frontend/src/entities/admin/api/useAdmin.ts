@@ -86,6 +86,17 @@ export const useResolveAdminTicket = () => {
   })
 }
 
+export const useCreatePvzEmployee = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: adminApi.createPvzEmployee,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [...queryKeys.admin.stats, "pickup-points"] })
+      void qc.invalidateQueries({ queryKey: queryKeys.admin.users })
+    },
+  })
+}
+
 export const useUpdateAdminOrderStatus = () => {
   const qc = useQueryClient()
   return useMutation({

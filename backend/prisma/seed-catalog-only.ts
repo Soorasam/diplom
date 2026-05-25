@@ -1,7 +1,4 @@
-/**
- * Только категории и 20 товаров (+ загрузка картинок из seed-assets).
- * Не трогает пользователей и заказы.
- */
+
 import { PrismaClient } from '@prisma/client';
 
 import { ensureSeedProducts, uploadSeedProductImages } from './lib/seed-catalog';

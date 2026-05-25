@@ -139,6 +139,7 @@ export const mapUser = (u: BackendUser): User => ({
   role: mapBackendRole(u.role),
   settlementId: u.settlementId ?? "",
   pickupPointId: u.pickupPointId ?? undefined,
+  mustChangePassword: u.mustChangePassword ?? false,
 })
 
 export const mapCategory = (c: BackendCategory): Category => ({
