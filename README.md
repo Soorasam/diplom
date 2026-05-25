@@ -104,7 +104,16 @@ npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-us
 
 Сайт: **https://soorasam.github.io/diplom/**
 
-Деплой из папки `frontend` (ветка `gh-pages`):
+### Первый запуск (если во вкладке Pages пусто)
+
+1. GitHub → репозиторий **diplom** → **Settings** → **Pages**
+2. **Build and deployment** → **Source:** выберите **GitHub Actions** (не «Deploy from a branch», если список пустой)
+3. Вкладка **Actions** → workflow **Deploy GitHub Pages** → **Run workflow** (ветка `backend`)
+4. После зелёной галочки снова откройте **Settings → Pages** — появится URL сайта
+
+Альтернатива (ветка `gh-pages` уже есть): Source → **Deploy from a branch** → Branch **`gh-pages`** → папка **`/ (root)`** → Save.
+
+### Локальный деплой в ветку gh-pages
 
 ```bash
 cd frontend
