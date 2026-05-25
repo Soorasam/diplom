@@ -28,8 +28,7 @@ import { RoutesService } from '../routes/routes.service';
 import { CreateRoutePlanDto } from '../routes/dto/create-route-plan.dto';
 import { CreateRoundDto } from './dto/create-round.dto';
 
-/** TODO: перед продом вернуть 5 * 60 * 1000 */
-const EMERGENCY_CLOSE_MS = 5 * 1000;
+const EMERGENCY_CLOSE_MS = 5 * 60 * 1000;
 
 @Injectable()
 export class CatalogService {

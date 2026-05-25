@@ -6,7 +6,7 @@
  * npm run prisma:reset:deploy
  */
 import { PrismaClient, UserRole } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 import { ensureSeedProducts, uploadSeedProductImages } from './lib/seed-catalog';
 import {

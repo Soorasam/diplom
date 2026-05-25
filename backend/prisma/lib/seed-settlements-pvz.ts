@@ -1,5 +1,5 @@
 import { UserRole, type PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 /** НП = ПВЗ: одна запись на населённый пункт. */
 export const LOCATIONS = [

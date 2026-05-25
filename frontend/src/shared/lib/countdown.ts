@@ -1,5 +1,4 @@
-/** TODO: перед продом вернуть 5 * 60 * 1000 */
-export const EMERGENCY_CLOSE_MS = 5 * 1000
+export const EMERGENCY_CLOSE_MS = 5 * 60 * 1000
 
 export function emergencyCloseDurationLabel(ms = EMERGENCY_CLOSE_MS): string {
   if (ms >= 60_000) {

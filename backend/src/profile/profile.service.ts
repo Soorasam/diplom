@@ -5,7 +5,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { DriverApplicationStatus, User, UserRole } from '@prisma/client';
 import { AuthService } from '../auth/auth.service';
 import { throwUserUniqueConflict } from '../common/user-unique.conflict';

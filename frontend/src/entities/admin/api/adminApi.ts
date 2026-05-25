@@ -1,6 +1,6 @@
 import { http } from "@/shared/api/client"
 import type { BackendRound, BackendUser } from "@/shared/api/backend-types"
-import type { DeliveryRoute, Order, PickupPoint, Product, Settlement, User } from "@/shared/api/mock-db"
+import type { Order, PickupPoint, Product, Settlement, User } from "@/shared/api/mock-db"
 import {
   mapBackendOrder,
   mapBackendRole,
@@ -33,43 +33,6 @@ export type AdminPickupPoint = PickupPoint & {
   settlementName?: string
   employees: { id: string; name: string; email: string; phone: string }[]
 }
-
-export type AdminRouteRow = {
-  id: string
-  title: string
-  transportType: string
-  description?: string | null
-  seasonNote?: string | null
-}
-
-export type CreateRoutePayload = {
-  title: string
-  description?: string
-  transportType: "winter_road" | "river" | "highway"
-  seasonNote?: string
-}
-
-const mapAdminRoute = (r: AdminRouteRow): DeliveryRoute & {
-  description?: string | null
-  seasonNote?: string | null
-  transportType: string
-} => ({
-  id: r.id,
-  name: r.title,
-  fromSettlementId: "",
-  toSettlementIds: [],
-  deliveryMode:
-    r.transportType === "river"
-      ? "river"
-      : r.transportType === "winter_road"
-        ? "winter_road"
-        : "mixed",
-  status: "planned",
-  points: [],
-  description: r.description,
-  seasonNote: r.seasonNote,
-  transportType: r.transportType,
-})
 
 export type AdminDriverDetail = {
   id: string
@@ -141,14 +104,6 @@ export const adminApi = {
       { status: mapFrontOrderStatusToBackend(status) },
       true,
     ),
-
-  getRoutes: async () => {
-    const list = await http.get<AdminRouteRow[]>("/admin/routes", true)
-    return list.map(mapAdminRoute)
-  },
-
-  createRoute: (payload: CreateRoutePayload) =>
-    http.post<AdminRouteRow>("/admin/routes", payload, true).then(mapAdminRoute),
 
   getSettlements: async () => {
     const list = await http.get<

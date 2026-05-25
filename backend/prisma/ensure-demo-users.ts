@@ -1,5 +1,5 @@
 import { PrismaClient, UserRole } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 import { PVZ_EMPLOYEE_ACCOUNTS } from './lib/seed-settlements-pvz';
 

@@ -1,6 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, UserRole } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { CreatePvzEmployeeDto } from './dto/create-pvz-employee.dto';
 import { CreateSettlementDto } from './dto/create-settlement.dto';

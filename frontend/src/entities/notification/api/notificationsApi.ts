@@ -13,15 +13,4 @@ export const notificationsApi = {
   markRead: (id: string) => http.patch<Notification>(`/notifications/${id}/read`, undefined, true),
 
   markAllRead: () => http.patch<{ ok: true }>("/notifications/read-all", undefined, true),
-
-  getDisputes: async () => {
-    const list = await http.get<Notification[]>("/notifications/disputes", true)
-    return list.map((n) => ({
-      ...n,
-      createdAt: typeof n.createdAt === "string" ? n.createdAt : String(n.createdAt),
-    }))
-  },
-
-  createDispute: (payload: { orderId: string; message: string }) =>
-    http.post<Notification>("/notifications/disputes", payload, true),
 }

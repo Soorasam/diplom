@@ -29,23 +29,6 @@ export const useAdminProducts = () =>
     queryFn: () => adminApi.getProducts(),
   })
 
-export const useAdminRoutes = () =>
-  useQuery({
-    queryKey: queryKeys.routes.all,
-    queryFn: () => adminApi.getRoutes(),
-  })
-
-export const useCreateAdminRoute = () => {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: adminApi.createRoute,
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.routes.all })
-      void qc.invalidateQueries({ queryKey: queryKeys.admin.stats })
-    },
-  })
-}
-
 export const useAdminSettlements = () =>
   useQuery({
     queryKey: [...queryKeys.admin.stats, "settlements"],
