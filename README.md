@@ -100,9 +100,17 @@ npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-us
 
 **frontend/.env:** `VITE_API_URL=http://localhost:3000/api/v1`
 
-## GitHub Pages (демо UI)
+## Защита диплома (с ноутбука)
 
-Сайт: **https://soorasam.github.io/diplom/**
+**Рекомендуемый способ показа:** backend + frontend локально, проектор с ноутбука.
+
+Чеклист и сценарий: **[deploy/DEFENSE-LAPTOP.md](deploy/DEFENSE-LAPTOP.md)**
+
+URL на защите: **http://localhost:5173/diplom/** (не GitHub Pages — там API без вашего ноутбука не работает).
+
+## GitHub Pages (опционально, витрина UI)
+
+Сайт: **https://soorasam.github.io/diplom/** — для ссылки в презентации; на защите показывайте локальный адрес.
 
 ### Автодеплой (один раз настроить)
 
@@ -114,18 +122,11 @@ npx ts-node --compiler-options "{\"module\":\"CommonJS\"}" prisma/ensure-demo-us
 
 Ручной запуск: **Actions** → **Deploy GitHub Pages** → **Run workflow**.
 
-### API на VPS + Pages
+### API на VPS (не используем для защиты)
 
-Подробно: **[deploy/VPS.md](deploy/VPS.md)**
+По желанию позже: **[deploy/VPS.md](deploy/VPS.md)**
 
-Кратко:
-
-1. На VPS: `docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build`
-2. Nginx + Let's Encrypt (`deploy/nginx.example.conf`)
-3. В GitHub **Variables**: `VITE_API_URL` = `https://ВАШ-ДОМЕН/api/v1`
-4. В `.env.production` на VPS: `CORS_ORIGINS` с `https://soorasam.github.io`
-
-### Локальный деплой (если нужен без CI)
+### Локальный деплой frontend в gh-pages (без CI)
 
 ```bash
 cd frontend
