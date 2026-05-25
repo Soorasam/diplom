@@ -9,6 +9,8 @@ import {
   UploadedFiles,
   UseGuards,
   UseInterceptors,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { User, UserRole } from '@prisma/client';
@@ -58,6 +60,13 @@ export class TicketsController {
 
   @Post()
   @UseInterceptors(FilesInterceptor('files', 5, fileLimits))
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: false,
+    }),
+  )
   create(
     @CurrentUser() user: User,
     @Body() dto: CreateTicketDto,
@@ -68,6 +77,13 @@ export class TicketsController {
 
   @Post(':id/messages')
   @UseInterceptors(FilesInterceptor('files', 5, fileLimits))
+  @UsePipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: false,
+    }),
+  )
   addMessage(
     @CurrentUser() user: User,
     @Param('id', ParseUUIDPipe) id: string,

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { ImagePlus, MessageSquare } from "lucide-react"
 
+import { ApiError } from "@/shared/api/client"
 import { useCreateTicket, useTicketByOrder } from "@/entities/ticket/api/useTickets"
 import { TicketLocalFilePreview } from "@/features/tickets/ui/TicketAttachmentView"
 import { useOrder } from "@/entities/order/api/useOrders"
@@ -26,6 +27,7 @@ export const CreateDisputePage = () => {
   const [description, setDescription] = useState("")
   const [files, setFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<{ file: File; url: string }[]>([])
+  const [formError, setFormError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const previewsRef = useRef(previews)
 
@@ -78,18 +80,31 @@ export const CreateDisputePage = () => {
       className="flex flex-col gap-4 p-4 pb-8"
       onSubmit={async (e) => {
         e.preventDefault()
-        if (description.trim().length < 10) return
-        if (!orderId) return
-        const toSend = [...files]
-        const ticket = await createTicket.mutateAsync({
-          orderId,
-          body: description.trim(),
-          files: toSend,
-        })
-        revokePreviews(previews)
-        setFiles([])
-        setPreviews([])
-        navigate(profileRoutes.dispute(ticket.id), { replace: true })
+        setFormError(null)
+        const text = description.trim()
+        if (text.length < 10) {
+          setFormError("Описание — минимум 10 символов")
+          return
+        }
+        if (!orderId) {
+          setFormError("Заказ не указан")
+          return
+        }
+        try {
+          const ticket = await createTicket.mutateAsync({
+            orderId,
+            body: text,
+            files: [...files],
+          })
+          revokePreviews(previews)
+          setFiles([])
+          setPreviews([])
+          navigate(profileRoutes.dispute(ticket.id), { replace: true })
+        } catch (err) {
+          setFormError(
+            err instanceof ApiError ? err.message : "Не удалось отправить спор",
+          )
+        }
       }}
     >
       <PageHeader
@@ -148,7 +163,19 @@ export const CreateDisputePage = () => {
         <p className="mt-2 text-xs text-slate-500">До {MAX_FILES} файлов, макс. 10 МБ каждый</p>
       </Card>
 
-      <Button type="submit" fullWidth leftIcon={<MessageSquare size={18} />}>
+      {formError ? (
+        <p className="text-sm text-red-600" role="alert">
+          {formError}
+        </p>
+      ) : null}
+
+      <Button
+        type="submit"
+        fullWidth
+        leftIcon={<MessageSquare size={18} />}
+        loading={createTicket.isPending}
+        disabled={createTicket.isPending}
+      >
         {createTicket.isPending ? "Отправка..." : "Отправить спор"}
       </Button>
     </form>

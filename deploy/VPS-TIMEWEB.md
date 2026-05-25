@@ -173,5 +173,6 @@ cd frontend && npm ci && npm run build:prod && sudo cp -r dist/* /var/www/coopyk
 | Сайт не открывается | DNS A-запись, firewall 80/443 на Timeweb |
 | API 502 | `docker compose ... ps`, логи `docker compose ... logs api` |
 | Нет картинок / ORB в Firefox | `storage:seed`; `MINIO_PUBLIC_URL=` (пусто — относительные `/coop-products/...`); пересобрать фронт; заходить с одного хоста (`www` или без) |
+| Фото в спорах не грузятся / 404 при клике | В nginx добавить `location /coop-tickets/` и `client_max_body_size 25M` для `/api/` (см. `deploy/nginx.coopykt.ru.conf`) |
 | CORS ошибка | В `.env.production` добавьте точный origin `https://coopykt.ru` |
 | 1 ГБ RAM, контейнеры падают | Увеличьте тариф до 2 ГБ |

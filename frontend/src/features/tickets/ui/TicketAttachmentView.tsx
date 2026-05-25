@@ -1,28 +1,48 @@
+import { useState } from "react"
 import { FileText } from "lucide-react"
 
 import type { TicketAttachment } from "@/entities/ticket/model/types"
+import { normalizeMediaUrl } from "@/shared/lib/normalize-media-url"
 
 type Props = {
   attachment: TicketAttachment
   onDarkBubble?: boolean
 }
 
+const fileLinkClass = (onDarkBubble?: boolean) =>
+  `inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
+    onDarkBubble
+      ? "border-white/30 bg-white/10 text-white hover:bg-white/20"
+      : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+  }`
+
 export const TicketAttachmentView = ({ attachment, onDarkBubble }: Props) => {
-  const isImage = attachment.mimeType.startsWith("image/")
+  const [imageFailed, setImageFailed] = useState(false)
+  const url = normalizeMediaUrl(attachment.url)
+  const isImage = attachment.mimeType.startsWith("image/") && !imageFailed
+
+  if (!url) {
+    return (
+      <span className="text-xs opacity-70">
+        {attachment.fileName}
+      </span>
+    )
+  }
 
   if (isImage) {
     return (
       <a
-        href={attachment.url}
+        href={url}
         target="_blank"
-        rel="noreferrer"
+        rel="noopener noreferrer"
         className="block overflow-hidden rounded-lg"
       >
         <img
-          src={attachment.url}
+          src={url}
           alt={attachment.fileName}
           className="max-h-56 max-w-full rounded-lg object-contain"
           loading="lazy"
+          onError={() => setImageFailed(true)}
         />
       </a>
     )
@@ -30,14 +50,11 @@ export const TicketAttachmentView = ({ attachment, onDarkBubble }: Props) => {
 
   return (
     <a
-      href={attachment.url}
+      href={url}
       target="_blank"
-      rel="noreferrer"
-      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-        onDarkBubble
-          ? "border-white/30 bg-white/10 text-white hover:bg-white/20"
-          : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50"
-      }`}
+      rel="noopener noreferrer"
+      download={attachment.fileName}
+      className={fileLinkClass(onDarkBubble)}
     >
       <FileText size={18} className="shrink-0" />
       <span className="max-w-[200px] truncate">{attachment.fileName}</span>

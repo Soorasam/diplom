@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ImagePlus } from "lucide-react"
 
+import { ApiError } from "@/shared/api/client"
 import { Button } from "@/shared/ui/button/Button"
 
 import { TicketLocalFilePreview } from "./TicketAttachmentView"
@@ -33,6 +34,7 @@ export const TicketMessageForm = ({
   const [text, setText] = useState("")
   const [files, setFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<PreviewItem[]>([])
+  const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const previewsRef = useRef<PreviewItem[]>([])
 
@@ -85,10 +87,13 @@ export const TicketMessageForm = ({
     if (!canSend) return
     const body = text.trim()
     const toSend = [...files]
+    setError(null)
     try {
       await onSubmit(body, toSend)
       resetForm()
-    } catch {}
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Не удалось отправить сообщение")
+    }
   }
 
   return (
@@ -108,6 +113,12 @@ export const TicketMessageForm = ({
           }
         }}
       />
+
+      {error ? (
+        <p className="text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <div className="flex items-center justify-between gap-2">
         <div className="flex gap-2">
