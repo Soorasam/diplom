@@ -10,7 +10,7 @@ import {
   seedProductAssetFile,
   seedProductObjectKey,
 } from './seed-products';
-const ASSETS_DIR = path.join(__dirname, '..', 'seed-assets', 'products');
+const ASSETS_DIR = path.join(process.cwd(), 'prisma', 'seed-assets', 'products');
 
 function resolveAssetFile(slug: string): string | null {
   for (const ext of ['.png', '.jpg', '.jpeg', '.webp']) {

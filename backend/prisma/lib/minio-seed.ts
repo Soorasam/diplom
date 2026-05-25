@@ -39,7 +39,7 @@ export async function uploadProductImage(
 
 
 export async function uploadFromAsset(fileName: string, objectKey: string): Promise<string> {
-  const filePath = path.join(__dirname, '..', 'seed-assets', 'products', fileName);
+  const filePath = path.join(process.cwd(), 'prisma', 'seed-assets', 'products', fileName);
   const body = await readFile(filePath);
   const ext = path.extname(fileName).toLowerCase();
   const contentType =
