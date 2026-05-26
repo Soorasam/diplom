@@ -42,7 +42,5 @@ frontend/.env.*.local
 
 VKR_word
 
-backend/prisma/seed-assets/products/assets.zip
-
 *.tsbuildinfo
 deploy/.env

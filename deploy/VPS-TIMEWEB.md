@@ -125,12 +125,21 @@ nginx -t && systemctl reload nginx
 certbot --nginx -d coopykt.ru -d www.coopykt.ru
 ```
 
-Certbot выдаст SSL. Затем подключите полный конфиг:
+Certbot выдаст SSL. Затем подключите полный конфиг (обязательно с `coop-tickets`, иначе вложения споров отдают React 404):
 
 ```bash
 cp /opt/diplom/deploy/nginx.coopykt.ru.conf /etc/nginx/sites-available/coopykt
 nginx -t && systemctl reload nginx
+curl -sI "https://coopykt.ru/coop-tickets/" | head -3
 ```
+
+Проверка файла вложения (подставьте свой путь из чата):
+
+```bash
+curl -sI "https://coopykt.ru/coop-tickets/messages/MESSAGE_ID/file.jpg" | head -5
+```
+
+Должно быть `HTTP/2 200` и `content-type: image/jpeg`, не HTML.
 
 ```bash
 systemctl enable nginx

@@ -30,12 +30,13 @@ export const TicketAttachmentView = ({ attachment, onDarkBubble }: Props) => {
   }
 
   if (isImage) {
+    const openImage = () => window.open(url, "_blank", "noopener,noreferrer")
     return (
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block overflow-hidden rounded-lg"
+      <button
+        type="button"
+        className="block cursor-zoom-in overflow-hidden rounded-lg border-0 bg-transparent p-0"
+        onClick={openImage}
+        title="Открыть в новой вкладке"
       >
         <img
           src={url}
@@ -44,7 +45,7 @@ export const TicketAttachmentView = ({ attachment, onDarkBubble }: Props) => {
           loading="lazy"
           onError={() => setImageFailed(true)}
         />
-      </a>
+      </button>
     )
   }
 
