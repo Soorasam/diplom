@@ -1,4 +1,4 @@
-import type { Procurement } from "@/shared/api/mock-db"
+import type { Procurement } from "@/shared/api/api-types"
 import { formatWeightKg } from "@/shared/lib/format"
 import { cn } from "@/shared/lib/cn"
 

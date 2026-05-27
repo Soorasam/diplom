@@ -1,7 +1,5 @@
-
 import { PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
-
 
 const prisma = new PrismaClient();
 
@@ -45,25 +43,17 @@ async function wipeAllData() {
       "products",
       "categories",
       "users",
-      "pickup_points",
-      "settlements"
+      "pickup_points"
     RESTART IDENTITY CASCADE;
   `);
 }
 
 async function seedBaseAccounts() {
-  const settlement = await prisma.settlement.create({
+  const pickupPoint = await prisma.pickupPoint.create({
     data: {
       name: 'с. Хандыга',
       district: 'Томпонский',
       ulus: 'Томпонский',
-    },
-  });
-
-  const pickupPoint = await prisma.pickupPoint.create({
-    data: {
-      settlementId: settlement.id,
-      coordinatorName: 'Демо ПВЗ',
       address: 'ул. Ленина, 1',
       phone: '+7 914 000-00-01',
     },
@@ -78,14 +68,13 @@ async function seedBaseAccounts() {
         phone: 'phone' in demo ? demo.phone : null,
         hashedPassword,
         role: demo.role,
-        settlementId: settlement.id,
         pickupPointId: pickupPoint.id,
         isActive: true,
       },
     });
   }
 
-  return { settlement, pickupPoint };
+  return { pickupPoint };
 }
 
 async function main() {
@@ -93,11 +82,10 @@ async function main() {
   await wipeAllData();
 
   console.log('Создание базовых аккаунтов…');
-  const { settlement, pickupPoint } = await seedBaseAccounts();
+  const { pickupPoint } = await seedBaseAccounts();
 
   console.log('\nГотово. В БД только:');
-  console.log(`  НП: ${settlement.name}`);
-  console.log(`  ПВЗ: ${pickupPoint.address}`);
+  console.log(`  ПВЗ: ${pickupPoint.name}, ${pickupPoint.address}`);
   console.log('\n  admin@coop.local      / admin12345');
   console.log('  demo@coop.local       / demo12345');
   console.log('  employee@coop.local / employee12345');

@@ -8,7 +8,7 @@ import { isVehicleValid } from "@/features/driver-application/lib/vehicle-valida
 import { driverDocumentKeys } from "@/features/driver-application/model/doc-meta"
 import { useDriverApplicationDraftStore } from "@/features/driver-application/model/driver-application-draft-store"
 import { useNetworkStore } from "@/features/offline/model/network-store"
-import type { DriverApplication } from "@/shared/api/mock-db"
+import type { DriverApplication } from "@/shared/api/api-types"
 import { routes } from "@/shared/config/routes"
 import { isValidFullName, normalizeRuPhone } from "@/shared/lib/validation"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"

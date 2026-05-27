@@ -6,7 +6,7 @@ import type {
   Procurement,
   Settlement,
   User,
-} from "@/shared/api/mock-db"
+} from "@/shared/api/api-types"
 import type {
   BackendCategory,
   BackendProduct,

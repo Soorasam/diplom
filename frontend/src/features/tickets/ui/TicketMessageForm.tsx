@@ -16,6 +16,7 @@ type Props = {
   disabled?: boolean
   loading?: boolean
   placeholder?: string
+  onPreviewImage?: (url: string, fileName: string) => void
 }
 
 function buildPreviews(files: File[]): PreviewItem[] {
@@ -30,6 +31,7 @@ export const TicketMessageForm = ({
   disabled,
   loading,
   placeholder = "Напишите сообщение…",
+  onPreviewImage,
 }: Props) => {
   const [text, setText] = useState("")
   const [files, setFiles] = useState<File[]>([])
@@ -98,7 +100,11 @@ export const TicketMessageForm = ({
 
   return (
     <div className="flex flex-col gap-2 border-t border-slate-200 bg-white pt-3 dark:border-slate-700 dark:bg-slate-900">
-      <TicketLocalFilePreview items={previews} onRemove={removeFile} />
+      <TicketLocalFilePreview
+        items={previews}
+        onRemove={removeFile}
+        onPreviewImage={onPreviewImage}
+      />
 
       <textarea
         className="min-h-20 w-full resize-none rounded-xl border border-slate-200 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"

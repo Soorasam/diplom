@@ -1,8 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
-import { logEvent } from "@/shared/lib/event-log"
-
 export type OfflineActionStatus = "queued" | "processing" | "done" | "failed"
 
 export type OfflineActionType =
@@ -56,12 +54,10 @@ export const useOfflineQueueStore = create<OfflineQueueState>()(
           attempts: 0,
         }
         set((s) => ({ actions: [full, ...s.actions] }))
-        logEvent("offline:enqueue", { id, type: action.type, status: "queued" })
         return id
       },
 
       markProcessing: (id) => {
-        logEvent("offline:processing", { id })
         set((s) => ({
           actions: s.actions.map((a) =>
             a.id === id
@@ -78,7 +74,6 @@ export const useOfflineQueueStore = create<OfflineQueueState>()(
       },
 
       markDone: (id) => {
-        logEvent("offline:done", { id })
         set((s) => ({
           actions: s.actions.map((a) =>
             a.id === id ? { ...a, status: "done", updatedAt: nowIso() } : a,
@@ -87,7 +82,6 @@ export const useOfflineQueueStore = create<OfflineQueueState>()(
       },
 
       markFailed: (id, error) => {
-        logEvent("offline:failed", { id, error })
         set((s) => ({
           actions: s.actions.map((a) =>
             a.id === id
@@ -113,4 +107,3 @@ export const useOfflineQueueStore = create<OfflineQueueState>()(
     { name: "coop-offline-queue" },
   ),
 )
-

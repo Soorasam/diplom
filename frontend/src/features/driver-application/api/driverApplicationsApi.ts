@@ -1,5 +1,5 @@
 import { http } from "@/shared/api/client"
-import type { DriverApplication, DriverApplicationDocument, User } from "@/shared/api/mock-db"
+import type { DriverApplication, DriverApplicationDocument, User } from "@/shared/api/api-types"
 import { mapBackendRole } from "@/shared/api/mappers"
 import type { BackendUser } from "@/shared/api/backend-types"
 import type { DriverDocumentKey } from "@/features/driver-application/model/driver-application-draft-store"

@@ -1,6 +1,6 @@
 import { http } from "@/shared/api/client"
-import type { DeliveryRoute } from "@/shared/api/mock-db"
-import type { Order } from "@/shared/api/mock-db"
+import type { DeliveryRoute } from "@/shared/api/api-types"
+import type { Order } from "@/shared/api/api-types"
 import { mapBackendOrder } from "@/shared/api/mappers"
 
 export type RouteDeliveryStop = {

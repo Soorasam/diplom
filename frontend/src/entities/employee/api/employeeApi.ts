@@ -1,6 +1,6 @@
 import { http } from "@/shared/api/client"
 import { mapBackendOrderStatus } from "@/shared/api/mappers"
-import type { Order } from "@/shared/api/mock-db"
+import type { Order } from "@/shared/api/api-types"
 export interface EmployeeOrderView extends Order {
   publicNumber?: string
   userName: string

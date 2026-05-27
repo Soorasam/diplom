@@ -1,6 +1,6 @@
 import { Check } from "lucide-react"
 
-import type { Order } from "@/shared/api/mock-db"
+import type { Order } from "@/shared/api/api-types"
 import { formatShortDate } from "@/shared/lib/format"
 import { cn } from "@/shared/lib/cn"
 

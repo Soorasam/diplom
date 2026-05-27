@@ -39,7 +39,6 @@ export class CatalogService {
     private routesService: RoutesService,
   ) {}
 
-  /** Вызывать при запросах ПВЗ/водителя, чтобы сработал таймер экстренного закрытия. */
   async processDueEmergencyCloses() {
     const due = await this.prisma.round.findMany({
       where: {

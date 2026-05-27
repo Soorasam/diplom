@@ -1,8 +1,8 @@
 import { clearTokens, getAccessToken, getRefreshToken, saveTokens } from "@/shared/api/auth-storage"
 import type { AuthResponse } from "@/shared/api/backend-types"
-import { logEvent, logEventError } from "@/shared/lib/event-log"
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api/v1"
+const API_URL =
+  import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? "/api/v1" : "http://localhost:3000/api/v1")
 
 export class ApiError extends Error {
   status: number
@@ -53,7 +53,6 @@ async function refreshAccessToken(): Promise<string | null> {
   return refreshPromise
 }
 
-
 export async function ensureValidAccessToken(): Promise<boolean> {
   if (getAccessToken()) return true
   const token = await refreshAccessToken()
@@ -64,7 +63,6 @@ type RequestOptions = RequestInit & { auth?: boolean; _retried?: boolean }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { auth, headers: initHeaders, _retried, ...init } = options
-  const method = init.method ?? "GET"
   const headers = new Headers(initHeaders)
 
   if (init.body && !headers.has("Content-Type")) {
@@ -75,62 +73,27 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     if (token) headers.set("Authorization", `Bearer ${token}`)
   }
 
-  let bodyPreview: unknown
-  if (init.body && typeof init.body === "string") {
-    try {
-      bodyPreview = JSON.parse(init.body)
-    } catch {
-      bodyPreview = init.body
+  const res = await fetch(`${API_URL}${path}`, { ...init, headers })
+
+  if (res.status === 401 && auth && !_retried) {
+    const newToken = await refreshAccessToken()
+    if (newToken) {
+      return request<T>(path, { ...options, _retried: true })
     }
+    clearTokens()
   }
 
-  logEvent(`api:request ${method} ${path}`, { auth: Boolean(auth), body: bodyPreview })
-  const started = performance.now()
-
-  try {
-    const res = await fetch(`${API_URL}${path}`, { ...init, headers })
-
-    if (res.status === 401 && auth && !_retried) {
-      const newToken = await refreshAccessToken()
-      if (newToken) {
-        return request<T>(path, { ...options, _retried: true })
-      }
-      clearTokens()
-    }
-
-    if (!res.ok) {
-      const message = await parseErrorMessage(res)
-      logEventError(`api:error ${method} ${path}`, message, {
-        status: res.status,
-        ms: Math.round(performance.now() - started),
-      })
-      throw new ApiError(res.status, message)
-    }
-
-    if (res.status === 204) {
-      logEvent(`api:ok ${method} ${path}`, {
-        status: 204,
-        ms: Math.round(performance.now() - started),
-      })
-      return undefined as T
-    }
-
-    const data = (await res.json()) as T
-    logEvent(`api:ok ${method} ${path}`, {
-      status: res.status,
-      ms: Math.round(performance.now() - started),
-    })
-    return data
-  } catch (err) {
-    if (!(err instanceof ApiError)) {
-      logEventError(`api:network ${method} ${path}`, err, {
-        ms: Math.round(performance.now() - started),
-      })
-    }
-    throw err
+  if (!res.ok) {
+    const message = await parseErrorMessage(res)
+    throw new ApiError(res.status, message)
   }
+
+  if (res.status === 204) {
+    return undefined as T
+  }
+
+  return (await res.json()) as T
 }
-
 
 export const http = {
   get: <T>(path: string, auth = false) => request<T>(path, { auth }),
@@ -163,7 +126,6 @@ export const http = {
       const token = getAccessToken()
       if (token) headers.set("Authorization", `Bearer ${token}`)
     }
-    logEvent(`api:upload POST ${path}`)
     return fetch(`${API_URL}${path}`, { method: "POST", body: form, headers }).then(
       async (res) => {
         if (!res.ok) {

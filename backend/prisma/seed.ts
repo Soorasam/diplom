@@ -12,17 +12,17 @@ import {
 const prisma = new PrismaClient();
 
 async function main() {
-  const settlementCount = await prisma.settlement.count();
+  const locationCount = await prisma.pickupPoint.count();
   const productCount = await prisma.product.count();
 
-  if (settlementCount > 0 && productCount === 0) {
+  if (locationCount > 0 && productCount === 0) {
     console.log('БД с НП/пользователями без каталога — создаём товары…');
     await ensureSeedProducts(prisma);
     await uploadSeedProductImages(prisma);
     return;
   }
 
-  if (settlementCount > 0) {
+  if (locationCount > 0) {
     console.log('БД уже содержит данные — обновление каталога и фото…');
     await ensureSeedProducts(prisma);
     await uploadSeedProductImages(prisma);

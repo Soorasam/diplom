@@ -96,7 +96,7 @@ export async function uploadSeedProductImages(prisma: PrismaClient) {
   }
 
   if (missing > 0 && minioOk) {
-    console.log(`  без файла в seed-assets: ${missing} товар(ов) — см. README.md в папке products`);
+    console.log(`  без файла в seed-assets: ${missing} товар(ов)`);
   }
 
   return { uploaded, missing, minioOk };

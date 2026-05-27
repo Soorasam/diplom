@@ -212,7 +212,6 @@ export class EmployeeService {
     };
   }
 
-  /** Заказы на закрытом сборе: submitted → confirmed; после закупки → in_transit. */
   private async syncStuckOrdersForPickupPoint(pickupPointId: string) {
     await this.prisma.order.updateMany({
       where: {

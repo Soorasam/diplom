@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom"
 import { Plus } from "lucide-react"
-import type { Product } from "@/shared/api/mock-db"
+import type { Product } from "@/shared/api/api-types"
 import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { routes } from "@/shared/config/routes"

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import type { TicketDetail } from "@/entities/ticket/model/types"
 import { shouldShowMessageBody } from "@/features/tickets/lib/message-body"
@@ -18,6 +18,7 @@ type Props = {
 export const TicketThread = ({ ticket, canReply, onSend, sending }: Props) => {
   const endRef = useRef<HTMLDivElement>(null)
   const prevCountRef = useRef(ticket.messages.length)
+  const [preview, setPreview] = useState<{ url: string; name: string } | null>(null)
 
   useEffect(() => {
     const grew = ticket.messages.length > prevCountRef.current
@@ -27,6 +28,30 @@ export const TicketThread = ({ ticket, canReply, onSend, sending }: Props) => {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {preview ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setPreview(null)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-[95vw]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-1 text-xs font-medium text-white"
+              onClick={() => setPreview(null)}
+            >
+              Закрыть
+            </button>
+            <img
+              src={preview.url}
+              alt={preview.name}
+              className="max-h-[85vh] max-w-[95vw] rounded-lg object-contain"
+            />
+          </div>
+        </div>
+      ) : null}
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto pb-3">
         {ticket.messages.map((msg) => {
           const isAdmin = msg.author.role === "admin"
@@ -56,7 +81,11 @@ export const TicketThread = ({ ticket, canReply, onSend, sending }: Props) => {
                   <ul className={`flex flex-col gap-2 ${showBody ? "mt-2" : "mt-1"}`}>
                     {msg.attachments.map((a) => (
                       <li key={a.id}>
-                        <TicketAttachmentView attachment={a} onDarkBubble={onDark} />
+                        <TicketAttachmentView
+                          attachment={a}
+                          onDarkBubble={onDark}
+                          onOpenImage={(url, name) => setPreview({ url, name })}
+                        />
                       </li>
                     ))}
                   </ul>
@@ -75,7 +104,12 @@ export const TicketThread = ({ ticket, canReply, onSend, sending }: Props) => {
       </div>
 
       {canReply ? (
-        <TicketMessageForm onSubmit={onSend} loading={sending} disabled={sending} />
+        <TicketMessageForm
+          onSubmit={onSend}
+          loading={sending}
+          disabled={sending}
+          onPreviewImage={(url, name) => setPreview({ url, name })}
+        />
       ) : (
         <p className="border-t border-slate-200 pt-3 text-center text-sm text-slate-500">
           Обращение закрыто — переписка недоступна

@@ -28,7 +28,6 @@ export const resolveRoundRouteTitle = (round: {
   return round.title?.trim() || 'Маршрут';
 };
 
-/** Совместимость API: виртуальный route внутри ответа сбора. */
 export const attachVirtualRoute = <T extends RoundWithWaypoints>(round: T) => {
   const chainTitle = resolveRoundRouteTitle(round);
   return {

@@ -1,4 +1,4 @@
-import type { Product } from "@/shared/api/mock-db"
+import type { Product } from "@/shared/api/api-types"
 
 export const calcLineWeightKg = (
   product: Pick<Product, "weightKg" | "unit">,

@@ -97,7 +97,25 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     server: {
-      host: true
+      host: true,
+      proxy: {
+        "/api": {
+          target: "http://127.0.0.1:3000",
+          changeOrigin: true,
+        },
+        "/coop-products": {
+          target: "http://127.0.0.1:9000",
+          changeOrigin: true,
+        },
+        "/coop-driver-docs": {
+          target: "http://127.0.0.1:9000",
+          changeOrigin: true,
+        },
+        "/coop-tickets": {
+          target: "http://127.0.0.1:9000",
+          changeOrigin: true,
+        },
+      },
     },
     resolve: {
       alias: {

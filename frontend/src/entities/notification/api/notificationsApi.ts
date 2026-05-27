@@ -1,5 +1,5 @@
 import { http } from "@/shared/api/client"
-import type { Notification } from "@/shared/api/mock-db"
+import type { Notification } from "@/shared/api/api-types"
 
 export const notificationsApi = {
   getByUser: async (_userId: string) => {

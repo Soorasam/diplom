@@ -1,6 +1,6 @@
 import { Truck } from "lucide-react"
 
-import type { Procurement } from "@/shared/api/mock-db"
+import type { Procurement } from "@/shared/api/api-types"
 import { formatShortDate, formatWeightKg } from "@/shared/lib/format"
 import { Card } from "@/shared/ui/card/Card"
 import { ProcurementClosingCountdown } from "@/widgets/procurement-closing-countdown/ui/ProcurementClosingCountdown"

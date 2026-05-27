@@ -1,7 +1,6 @@
 import { UserRole, type PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
-/** НП = ПВЗ: одна запись на населённый пункт. */
 export const LOCATIONS = [
   {
     name: 'с. Хандыга',
@@ -63,7 +62,6 @@ export async function seedLocations(prisma: PrismaClient) {
   return { pickupPoints };
 }
 
-/** @deprecated используйте seedLocations */
 export const seedSettlementsAndPickupPoints = seedLocations;
 
 export const SETTLEMENTS_WITH_PVZ = LOCATIONS;

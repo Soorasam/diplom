@@ -1,7 +1,7 @@
 import type { OfflineAction } from "@/features/offline/model/offline-queue-store"
 import { employeeApi } from "@/entities/employee/api/employeeApi"
 import { queryKeys } from "@/shared/config/query-keys"
-import type { Order } from "@/shared/api/mock-db"
+import type { Order } from "@/shared/api/api-types"
 import type { OrderStatus } from "@/shared/types"
 import type { QueryClient } from "@tanstack/react-query"
 

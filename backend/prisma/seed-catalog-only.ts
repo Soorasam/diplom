@@ -14,7 +14,7 @@ async function main() {
   console.log('Загрузка фото в MinIO (если файлы есть)…');
   const { uploaded, missing } = await uploadSeedProductImages(prisma);
   console.log(`\nГотово. Загружено фото: ${uploaded}, ожидают файл: ${missing}`);
-  console.log('Картинки: backend/prisma/seed-assets/products/ — см. README.md');
+  console.log('Картинки: backend/prisma/seed-assets/products/');
 }
 
 main()

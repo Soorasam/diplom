@@ -1,6 +1,6 @@
 import { http } from "@/shared/api/client"
 import type { BackendRound, BackendUser } from "@/shared/api/backend-types"
-import type { Order, PickupPoint, Product, Settlement, User } from "@/shared/api/mock-db"
+import type { Order, PickupPoint, Product, Settlement, User } from "@/shared/api/api-types"
 import {
   mapBackendOrder,
   mapBackendRole,

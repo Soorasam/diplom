@@ -1,12 +1,9 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
-import { logEvent } from "@/shared/lib/event-log"
-
 export interface CartItem {
   productId: string
   quantity: number
-  
   lineId?: string
 }
 
@@ -41,7 +38,6 @@ export const useCartStore = create<CartState>()(
       ...emptyState,
 
       addItem: (productId, qty = 1, lineId) => {
-        logEvent("cart:addItem", { productId, qty })
         set((s) => {
           const existing = s.items.find((i) => i.productId === productId)
           if (existing) {
@@ -58,14 +54,12 @@ export const useCartStore = create<CartState>()(
       },
 
       removeItem: (productId) => {
-        logEvent("cart:removeItem", { productId })
         set((s) => ({
           items: s.items.filter((i) => i.productId !== productId),
         }))
       },
 
       setQuantity: (productId, quantity) => {
-        logEvent("cart:setQuantity", { productId, quantity })
         set((s) => ({
           items:
             quantity <= 0
@@ -76,25 +70,12 @@ export const useCartStore = create<CartState>()(
         }))
       },
 
-      setPickupPoint: (id) => {
-        logEvent("cart:setPickupPoint", { pickupPointId: id })
-        set({ pickupPointId: id })
-      },
-      setProcurement: (id) => {
-        logEvent("cart:setProcurement", { procurementId: id })
-        set({ procurementId: id })
-      },
-      clearProcurement: () => {
-        logEvent("cart:clearProcurement")
-        set({ procurementId: null })
-      },
-      setComment: (comment) => {
-        logEvent("cart:setComment", { comment })
-        set({ comment })
-      },
+      setPickupPoint: (id) => set({ pickupPointId: id }),
+      setProcurement: (id) => set({ procurementId: id }),
+      clearProcurement: () => set({ procurementId: null }),
+      setComment: (comment) => set({ comment }),
 
       setFromServer: (items) => {
-        logEvent("cart:syncFromServer", { count: items.length })
         set((s) => {
           const serverIds = new Set(items.map((i) => i.productId))
           const draftOnly = s.items.filter(
@@ -112,22 +93,13 @@ export const useCartStore = create<CartState>()(
         set((s) => {
           const next = s.items.filter((i) => valid.has(i.productId))
           if (next.length === s.items.length) return s
-          logEvent("cart:pruneInvalid", {
-            removed: s.items.length - next.length,
-          })
           return { items: next }
         })
       },
 
-      clear: () => {
-        logEvent("cart:clear")
-        set({ items: [], comment: "" })
-      },
+      clear: () => set({ items: [], comment: "" }),
 
-      reset: () => {
-        logEvent("cart:reset")
-        set({ ...emptyState })
-      },
+      reset: () => set({ ...emptyState }),
     }),
     {
       name: "coop-cart",

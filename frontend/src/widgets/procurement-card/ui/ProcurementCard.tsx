@@ -1,6 +1,6 @@
 import { Calendar, Truck } from "lucide-react"
 
-import type { Procurement } from "@/shared/api/mock-db"
+import type { Procurement } from "@/shared/api/api-types"
 import { formatShortDate } from "@/shared/lib/format"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Card } from "@/shared/ui/card/Card"

@@ -1,6 +1,5 @@
 import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
-/** НП = ПВЗ: одна форма на добавление точки маршрута. */
 export class CreateSettlementDto {
   @IsString()
   @MinLength(2)

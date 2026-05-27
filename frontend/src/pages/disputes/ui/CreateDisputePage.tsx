@@ -27,6 +27,7 @@ export const CreateDisputePage = () => {
   const [description, setDescription] = useState("")
   const [files, setFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<{ file: File; url: string }[]>([])
+  const [preview, setPreview] = useState<{ url: string; name: string } | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const previewsRef = useRef(previews)
@@ -107,6 +108,30 @@ export const CreateDisputePage = () => {
         }
       }}
     >
+      {preview ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
+          onClick={() => setPreview(null)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-[95vw]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-1 text-xs font-medium text-white"
+              onClick={() => setPreview(null)}
+            >
+              Закрыть
+            </button>
+            <img
+              src={preview.url}
+              alt={preview.name}
+              className="max-h-[85vh] max-w-[95vw] rounded-lg object-contain"
+            />
+          </div>
+        </div>
+      ) : null}
       <PageHeader
         title="Открыть спор"
         backTo={routes.user.order(order.id)}
@@ -137,6 +162,7 @@ export const CreateDisputePage = () => {
             setFiles((prev) => prev.filter((_, j) => j !== i))
             setPreviews((prev) => prev.filter((_, j) => j !== i))
           }}
+          onPreviewImage={(url, name) => setPreview({ url, name })}
         />
         <input
           ref={inputRef}

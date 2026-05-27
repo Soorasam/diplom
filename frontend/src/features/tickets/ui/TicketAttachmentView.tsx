@@ -7,6 +7,7 @@ import { normalizeMediaUrl } from "@/shared/lib/normalize-media-url"
 type Props = {
   attachment: TicketAttachment
   onDarkBubble?: boolean
+  onOpenImage?: (url: string, fileName: string) => void
 }
 
 const fileLinkClass = (onDarkBubble?: boolean) =>
@@ -16,7 +17,7 @@ const fileLinkClass = (onDarkBubble?: boolean) =>
       : "border-slate-200 bg-white text-slate-800 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
   }`
 
-export const TicketAttachmentView = ({ attachment, onDarkBubble }: Props) => {
+export const TicketAttachmentView = ({ attachment, onDarkBubble, onOpenImage }: Props) => {
   const [imageFailed, setImageFailed] = useState(false)
   const url = normalizeMediaUrl(attachment.url)
   const isImage = attachment.mimeType.startsWith("image/") && !imageFailed
@@ -30,7 +31,13 @@ export const TicketAttachmentView = ({ attachment, onDarkBubble }: Props) => {
   }
 
   if (isImage) {
-    const openImage = () => window.open(url, "_blank", "noopener,noreferrer")
+    const openImage = () => {
+      if (onOpenImage) {
+        onOpenImage(url, attachment.fileName)
+        return
+      }
+      window.open(url, "_blank", "noopener,noreferrer")
+    }
     return (
       <button
         type="button"
@@ -71,9 +78,11 @@ type LocalFilePreview = {
 export const TicketLocalFilePreview = ({
   items,
   onRemove,
+  onPreviewImage,
 }: {
   items: LocalFilePreview[]
   onRemove: (index: number) => void
+  onPreviewImage?: (url: string, fileName: string) => void
 }) => {
   if (items.length === 0) return null
 
@@ -88,7 +97,8 @@ export const TicketLocalFilePreview = ({
             <img
               src={item.url}
               alt={item.file.name}
-              className="h-24 w-24 object-cover"
+              className="h-24 w-24 cursor-zoom-in object-cover"
+              onClick={() => onPreviewImage?.(item.url, item.file.name)}
             />
           ) : (
             <div className="flex h-24 w-24 flex-col items-center justify-center gap-1 p-2 text-center text-xs text-slate-600">

@@ -8,6 +8,8 @@
   },
   "include": [
     "prisma/reset-for-deploy.ts",
+    "prisma/reset-accounts-only.ts",
+    "prisma/seed-catalog-only.ts",
     "prisma/lib/**/*.ts",
     "scripts/seed-product-images.ts"
   ]

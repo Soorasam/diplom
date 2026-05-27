@@ -1,4 +1,4 @@
-import type { Notification } from "@/shared/api/mock-db"
+import type { Notification } from "@/shared/api/api-types"
 
 const TICKET_TITLES = new Set(["Ответ по обращению", "Обращение обновлено"])
 

@@ -1,6 +1,6 @@
 import type { BackendCategory, BackendProduct } from "@/shared/api/backend-types"
 import { http } from "@/shared/api/client"
-import type { Product } from "@/shared/api/mock-db"
+import type { Product } from "@/shared/api/api-types"
 import { mapCategory, mapProduct } from "@/shared/api/mappers"
 
 export interface ProductFilters {

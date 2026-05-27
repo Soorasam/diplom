@@ -1,7 +1,6 @@
 import { http } from "@/shared/api/client"
 import type { DeliveryMode } from "@/shared/types"
 
-/** Населённый пункт = один ПВЗ (id — идентификатор точки). */
 export type LocationCatalogItem = {
   id: string
   name: string
@@ -11,12 +10,8 @@ export type LocationCatalogItem = {
   phone?: string | null
 }
 
-/** @deprecated alias */
-export type SettlementCatalogItem = LocationCatalogItem
-
 export type RouteWaypointInput = {
   pickupPointId: string
-  /** @deprecated то же, что pickupPointId */
   settlementId?: string
   sortOrder: number
   isProcurementPoint: boolean

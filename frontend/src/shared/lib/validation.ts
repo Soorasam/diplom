@@ -82,7 +82,6 @@ export const isValidFullName = (value: string): boolean =>
 
 export const CLOSES_AT_DATETIME_ERROR = "Выберите корректную дату"
 
-/** На сколько лет вперёд допустим дедлайн сбора. */
 export const MAX_CLOSES_AT_YEARS_AHEAD = 2
 
 const pad2 = (n: number) => String(n).padStart(2, "0")
@@ -90,14 +89,12 @@ const pad2 = (n: number) => String(n).padStart(2, "0")
 const toDatetimeLocal = (d: Date) =>
   `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`
 
-/** Начало текущего дня — в календаре можно выбрать сегодня. */
 export const getClosesAtDatetimeMin = (): string => {
   const d = new Date()
   d.setHours(0, 0, 0, 0)
   return toDatetimeLocal(d)
 }
 
-/** Конец дня через MAX_CLOSES_AT_YEARS_AHEAD лет. */
 export const getClosesAtDatetimeMax = (): string => {
   const d = new Date()
   d.setFullYear(d.getFullYear() + MAX_CLOSES_AT_YEARS_AHEAD)

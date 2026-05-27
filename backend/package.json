@@ -12,13 +12,11 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
-    "prisma:reset:accounts": "node dist/scripts/prisma/reset-accounts-only.js",
-    "prisma:reset:deploy": "node dist/scripts/prisma/reset-for-deploy.js",
-    "prisma:seed:catalog": "node dist/scripts/prisma/seed-catalog-only.js",
+    "prisma:reset:accounts": "npm run build:scripts && node dist/scripts/prisma/reset-accounts-only.js",
+    "prisma:reset:deploy": "npm run build:scripts && node dist/scripts/prisma/reset-for-deploy.js",
+    "prisma:seed:catalog": "npm run build:scripts && node dist/scripts/prisma/seed-catalog-only.js",
     "prisma:studio": "prisma studio",
-    "assets:fetch": "node scripts/fetch-seed-images.mjs",
-    "assets:generate": "node scripts/generate-seed-images.mjs",
-    "storage:seed": "node dist/scripts/scripts/seed-product-images.js"
+    "storage:seed": "npm run build:scripts && node dist/scripts/scripts/seed-product-images.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1049.0",

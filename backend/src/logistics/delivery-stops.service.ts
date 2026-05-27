@@ -36,7 +36,6 @@ export class DeliveryStopsService {
     return { ordersDispatched: count, awaitingProcurement: true };
   }
 
-  /** После всех точек закупа — заказы в пути к ПВЗ. */
   async releaseOrdersToTransit(roundId: string) {
     const { count } = await this.prisma.order.updateMany({
       where: {
@@ -246,7 +245,6 @@ export class DeliveryStopsService {
     };
   }
 
-  /** Точка закупа без заказов на ПВЗ — закрывается вместе с «В пути». */
   async completeProcurementStopIfNoOrders(roundId: string, pickupPointId: string) {
     const ordersAtStop = await this.prisma.order.count({
       where: {

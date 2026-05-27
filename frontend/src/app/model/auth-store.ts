@@ -2,13 +2,12 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
 import type { AuthResponse, BackendUser } from "@/shared/api/backend-types"
-import type { User } from "@/shared/api/mock-db"
+import type { User } from "@/shared/api/api-types"
 import { clearApiSession, http } from "@/shared/api/client"
 import { clearTokens, saveTokens } from "@/shared/api/auth-storage"
 import { mapUser } from "@/shared/api/mappers"
 import { routes } from "@/shared/config/routes"
 import { useCartStore } from "@/features/cart/model/cart-store"
-import { logEvent } from "@/shared/lib/event-log"
 import type { UserRole } from "@/shared/types"
 
 export interface RegisterPayload {
@@ -45,7 +44,6 @@ export const useAuthStore = create<AuthState>()(
       setHasHydrated: () => set({ _hasHydrated: true }),
 
       login: async (email, password) => {
-        logEvent("auth:login:start", { email })
         const res = await http.post<AuthResponse>("/auth/login", {
           email: email.trim().toLowerCase(),
           password,
@@ -53,11 +51,9 @@ export const useAuthStore = create<AuthState>()(
         saveTokens(res.access_token, res.refresh_token)
         const user = mapUser(res.user)
         set({ user, isAuthenticated: true })
-        logEvent("auth:login:ok", { userId: user.id, role: user.role })
       },
 
       register: async (payload) => {
-        logEvent("auth:register:start", { email: payload.email })
         const res = await http.post<AuthResponse>("/auth/register", {
           email: payload.email.trim().toLowerCase(),
           password: payload.password,
@@ -69,27 +65,22 @@ export const useAuthStore = create<AuthState>()(
         saveTokens(res.access_token, res.refresh_token)
         const user = mapUser(res.user)
         set({ user, isAuthenticated: true })
-        logEvent("auth:register:ok", { userId: user.id, role: user.role })
       },
 
       refreshUser: async () => {
         const res = await http.get<BackendUser>("/auth/me", true)
         const user = mapUser(res)
         set({ user, isAuthenticated: true })
-        logEvent("auth:refreshUser", { userId: user.id, role: user.role })
       },
 
       switchRole: async (role) => {
         const backendRole = role === "driver" ? "coordinator" : "resident"
-        logEvent("auth:switchRole:start", { role })
         const res = await http.patch<BackendUser>("/profile/role", { role: backendRole }, true)
         const user = mapUser(res)
         set({ user })
-        logEvent("auth:switchRole:ok", { role: user.role })
       },
 
       logout: () => {
-        logEvent("auth:logout")
         clearTokens()
         clearApiSession()
         useCartStore.getState().reset()
@@ -97,7 +88,6 @@ export const useAuthStore = create<AuthState>()(
       },
 
       updateSettlement: async (settlementId) => {
-        logEvent("auth:updateSettlement", { settlementId })
         const res = await http.patch<BackendUser>(
           "/profile",
           { settlementId },
@@ -108,14 +98,12 @@ export const useAuthStore = create<AuthState>()(
       },
 
       updateProfile: async (payload) => {
-        logEvent("auth:updateProfile")
         const res = await http.patch<BackendUser>("/profile", payload, true)
         const user = mapUser(res)
         set({ user })
       },
 
       setPassword: async (payload) => {
-        logEvent("auth:setPassword")
         const res = await http.patch<BackendUser>("/profile/password", payload, true)
         const user = mapUser(res)
         set({ user })

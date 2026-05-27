@@ -2,7 +2,7 @@ import { Bell, ChevronRight } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import { useAuthStore } from "@/app/model/auth-store"
-import type { Notification } from "@/shared/api/mock-db"
+import type { Notification } from "@/shared/api/api-types"
 import { isTicketLinkedNotification } from "@/entities/notification/lib/ticket-notification"
 import {
   useAutoMarkNotificationsRead,

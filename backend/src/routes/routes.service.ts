@@ -133,7 +133,6 @@ export class RoutesService {
     return { ok: true };
   }
 
-  /** Справочник точек маршрута (НП = ПВЗ). */
   listLocationsCatalog() {
     return this.prisma.pickupPoint.findMany({
       orderBy: { name: 'asc' },
@@ -149,7 +148,6 @@ export class RoutesService {
     );
   }
 
-  /** @deprecated alias */
   listSettlementsWithPickup() {
     return this.listLocationsCatalog();
   }

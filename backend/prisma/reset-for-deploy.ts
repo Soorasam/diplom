@@ -1,10 +1,3 @@
-/**
- * Полная очистка БД и минимальный набор для деплоя / ручного теста:
- * — 5 НП, 5 ПВЗ, 5 сотрудников ПВЗ, каталог, admin + demo-житель
- * — без сборов, заказов, маршрутов, шаблонов
- *
- * npm run prisma:reset:deploy
- */
 import { PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 

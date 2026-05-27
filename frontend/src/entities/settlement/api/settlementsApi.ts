@@ -1,5 +1,5 @@
 import { http } from "@/shared/api/client"
-import type { PickupPoint, Settlement } from "@/shared/api/mock-db"
+import type { PickupPoint, Settlement } from "@/shared/api/api-types"
 import { mapPickupPoint, mapSettlement } from "@/shared/api/mappers"
 
 type LocationDto = {
@@ -24,7 +24,6 @@ export const settlementsApi = {
     return s
   },
 
-  /** НП = ПВЗ: id точки совпадает с id «населённого пункта». */
   getPickupPoints: async (locationId?: string) => {
     const items = await http.get<LocationDto[]>("/pickup-points")
     const mapped = items.map(mapPickupPoint) as PickupPoint[]

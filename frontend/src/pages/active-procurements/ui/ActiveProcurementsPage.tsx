@@ -21,7 +21,7 @@ import {
   useLeaveProcurement,
   useMyProcurementMemberships,
 } from "@/entities/procurement/api/useProcurements"
-import type { Procurement } from "@/shared/api/mock-db"
+import type { Procurement } from "@/shared/api/api-types"
 import { routes } from "@/shared/config/routes"
 import type { DeliveryMode } from "@/shared/types"
 import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
