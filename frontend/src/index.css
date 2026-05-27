@@ -473,6 +473,28 @@ main,
   padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
 }
 
+[data-bottom-nav] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  padding-bottom: 0.75rem;
+}
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  @supports (-webkit-touch-callout: none) {
+    [data-bottom-nav] {
+      padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+    }
+  }
+}
+
+@-moz-document url-prefix() {
+  @media (max-width: 768px) {
+    [data-bottom-nav] {
+      padding-bottom: 0.75rem;
+    }
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;

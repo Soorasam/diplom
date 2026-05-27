@@ -44,7 +44,7 @@ export const MobileBottomNav = ({ tabs }: MobileBottomNavProps) => {
 
       data-bottom-nav
 
-      className="fixed bottom-0 left-[50vw] z-50 w-screen -translate-x-1/2 border-t border-slate-200 bg-white/95 backdrop-blur-md safe-bottom dark:border-slate-800 dark:bg-[#18202C]/95"
+      className="mobile-bottom-nav fixed bottom-0 left-[50vw] z-50 w-screen -translate-x-1/2 border-t border-slate-200 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-[#18202C]/95"
 
     >
 
