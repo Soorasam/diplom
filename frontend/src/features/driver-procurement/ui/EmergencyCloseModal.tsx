@@ -36,7 +36,7 @@ export const EmergencyCloseModal = ({ open, loading, onCancel, onConfirm }: Prop
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-900/55 p-4 backdrop-blur-[3px] sm:items-center"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/55 p-4 backdrop-blur-[3px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="emergency-close-title"

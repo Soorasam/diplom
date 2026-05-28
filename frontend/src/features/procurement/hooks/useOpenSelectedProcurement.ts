@@ -13,7 +13,9 @@ export const useOpenSelectedProcurement = (selectedRoundId: string) => {
       ? procurement
       : undefined
   const closedProcurement =
-    procurement && procurement.status !== "open" ? procurement : undefined
+    procurement && procurement.status !== "open" && procurement.status !== "closing"
+      ? procurement
+      : undefined
 
   useEffect(() => {
     if (!selectedRoundId || isLoading) return
