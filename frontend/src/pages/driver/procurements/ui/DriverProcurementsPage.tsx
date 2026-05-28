@@ -42,6 +42,7 @@ import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
 import { ProcurementClosingCountdown } from "@/widgets/procurement-closing-countdown/ui/ProcurementClosingCountdown"
+import { useAuthStore } from "@/app/model/auth-store"
 
 const transportOptions = [
   { value: "winter_road" as const, label: "Зимник" },
@@ -54,6 +55,7 @@ const initialTransportType: CreateRoutePlanPayload["transportType"] = "winter_ro
 const createInitialRows = (): RouteBuilderRow[] => [createEmptyRouteRow(true)]
 
 export const DriverProcurementsPage = () => {
+  const user = useAuthStore((s) => s.user)
   const qc = useQueryClient()
   const [title, setTitle] = useState("")
   const [closesAt, setClosesAt] = useState("")
@@ -78,8 +80,8 @@ export const DriverProcurementsPage = () => {
 
   const create = useCreateProcurement()
   const scheduleEmergencyClose = useScheduleEmergencyClose()
-  const { data: activeRound } = useDriverActiveProcurement()
-  const { data: deliveryRound } = useDriverDeliveryProcurement()
+  const { data: activeRound } = useDriverActiveProcurement(user?.id)
+  const { data: deliveryRound } = useDriverDeliveryProcurement(user?.id)
   const { data: all = [] } = useAllProcurements()
 
   const hasActiveRound = Boolean(activeRound)
@@ -192,9 +194,10 @@ export const DriverProcurementsPage = () => {
   const closedProcurements = useMemo(
     () =>
       [...all]
+        .filter((p) => !user?.id || p.organizerUserId === user.id)
         .filter((p) => p.status !== "open" && p.status !== "closing")
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
-    [all],
+    [all, user?.id],
   )
 
   const handleEmergencyClose = async () => {

@@ -6,6 +6,7 @@ import { AdminLayout } from "./layouts/AdminLayout"
 import { DriverLayout } from "./layouts/DriverLayout"
 
 import { RequireRole } from "@/features/auth/ui/RequireRole"
+import { homeRouteForRole, useAuthStore } from "@/app/model/auth-store"
 
 import { HomePage } from "@/pages/home/ui/HomePage"
 import { CatalogPage } from "@/pages/catalog/ui/CatalogPage"
@@ -76,6 +77,13 @@ const LegacyProcurementRedirect = () => {
   return <Navigate to={u.procurement(id ?? "")} replace />
 }
 
+const RootRedirect = () => {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const user = useAuthStore((s) => s.user)
+  if (!isAuthenticated || !user) return <Navigate to={u.root} replace />
+  return <Navigate to={homeRouteForRole(user.role)} replace />
+}
+
 export const router = createBrowserRouter([
   {
     element: <RootShell />,
@@ -83,7 +91,7 @@ export const router = createBrowserRouter([
       { path: "/auth", element: <AuthPage /> },
       { path: "/driver-apply", element: <DriverApplyPage /> },
 
-      { path: "/", element: <Navigate to={u.root} replace /> },
+      { path: "/", element: <RootRedirect /> },
       { path: "catalog", element: <Navigate to={u.catalog} replace /> },
       { path: "product/:id", element: <LegacyProductRedirect /> },
       { path: "cart", element: <Navigate to={u.cart} replace /> },
@@ -170,7 +178,11 @@ export const router = createBrowserRouter([
 
       {
         path: "/user",
-        element: <AppLayout />,
+        element: (
+          <RequireRole roles={["client"]}>
+            <AppLayout />
+          </RequireRole>
+        ),
         errorElement: <NotFoundPage />,
         children: [
           { index: true, element: <HomePage /> },

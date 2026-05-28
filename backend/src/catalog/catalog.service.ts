@@ -43,7 +43,10 @@ export class CatalogService {
     const due = await this.prisma.round.findMany({
       where: {
         status: RoundStatus.open,
-        emergencyCloseAt: { lte: new Date() },
+        OR: [
+          { emergencyCloseAt: { lte: new Date() } },
+          { closesAt: { lte: new Date() } },
+        ],
       },
       select: { id: true },
     });

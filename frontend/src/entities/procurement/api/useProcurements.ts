@@ -16,10 +16,11 @@ export const useActiveProcurements = () =>
     },
   })
 
-export const useDriverActiveProcurement = () =>
+export const useDriverActiveProcurement = (userId?: string) =>
   useQuery({
-    queryKey: ["driver", "active-procurement"],
+    queryKey: ["driver", "active-procurement", userId ?? "anon"],
     queryFn: () => procurementsApi.getDriverActive(),
+    enabled: Boolean(userId),
     refetchInterval: (query) => {
       const p = query.state.data
       if (p?.emergencyCloseAt) return 5000
@@ -27,10 +28,11 @@ export const useDriverActiveProcurement = () =>
     },
   })
 
-export const useDriverDeliveryProcurement = () =>
+export const useDriverDeliveryProcurement = (userId?: string) =>
   useQuery({
-    queryKey: ["driver", "delivery-procurement"],
+    queryKey: ["driver", "delivery-procurement", userId ?? "anon"],
     queryFn: () => procurementsApi.getDriverDelivery(),
+    enabled: Boolean(userId),
     refetchInterval: 10000,
   })
 

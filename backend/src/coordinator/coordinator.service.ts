@@ -244,9 +244,15 @@ export class CoordinatorService {
     return result;
   }
 
-  async startDelivery(roundId: string) {
+  async startDelivery(user: User, roundId: string) {
     const round = await this.prisma.round.findUnique({ where: { id: roundId } });
     if (!round) throw new NotFoundException('Сбор не найден');
+    if (
+      user.role === UserRole.coordinator &&
+      round.createdByUserId !== user.id
+    ) {
+      throw new BadRequestException('Нет доступа к этому сбору');
+    }
     if (round.status === RoundStatus.open) {
       throw new BadRequestException('Сначала закройте сбор');
     }
@@ -274,9 +280,12 @@ export class CoordinatorService {
     };
   }
 
-  async listOrders() {
+  async listOrders(user: User) {
     const orders = await this.prisma.order.findMany({
       where: {
+        ...(user.role === UserRole.coordinator
+          ? { round: { createdByUserId: user.id } }
+          : {}),
         status: {
           notIn: [OrderStatus.cancelled, OrderStatus.delivered],
         },
@@ -297,9 +306,14 @@ export class CoordinatorService {
   }
 
   async dashboard(user: User) {
+    const orderWhere: Prisma.OrderWhereInput =
+      user.role === UserRole.coordinator
+        ? { round: { createdByUserId: user.id } }
+        : {};
     const [routes, orders] = await Promise.all([
       this.listRoutes(user),
       this.prisma.order.findMany({
+        where: orderWhere,
         select: { status: true, totalEstimate: true },
       }),
     ]);

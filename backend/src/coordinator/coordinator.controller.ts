@@ -23,13 +23,13 @@ export class CoordinatorController {
   }
 
   @Get('orders')
-  orders() {
-    return this.coordinator.listOrders();
+  orders(@CurrentUser() user: User) {
+    return this.coordinator.listOrders(user);
   }
 
   @Post('rounds/:id/start-delivery')
-  startDelivery(@Param('id') roundId: string) {
-    return this.coordinator.startDelivery(roundId);
+  startDelivery(@CurrentUser() user: User, @Param('id') roundId: string) {
+    return this.coordinator.startDelivery(user, roundId);
   }
 
   @Post('rounds/:roundId/stops/:pickupPointId/complete')
