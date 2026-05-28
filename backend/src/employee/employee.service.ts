@@ -255,7 +255,7 @@ export class EmployeeService {
 
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
-      include: { round: true },
+      include: { round: { select: { id: true, createdByUserId: true } } },
     });
     if (!order) throw new NotFoundException('Заказ не найден');
     if (order.pickupPointId !== pickupPointId) {
@@ -282,13 +282,6 @@ export class EmployeeService {
       pickupPointId,
     );
 
-    if (completion.roundCompleted) {
-      await this.prisma.round.update({
-        where: { id: order.roundId },
-        data: { status: RoundStatus.fulfilled },
-      });
-    }
-
     const stop = await this.prisma.roundDeliveryStop.findUnique({
       where: {
         uq_round_delivery_stop: {
@@ -297,6 +290,21 @@ export class EmployeeService {
         },
       },
     });
+
+    if (
+      completion.stopReadyForDriver &&
+      stop?.status !== DeliveryStopStatus.completed &&
+      order.round?.createdByUserId
+    ) {
+      await this.prisma.notification.create({
+        data: {
+          userId: order.round.createdByUserId,
+          title: 'Точка готова к закрытию',
+          body: `На ПВЗ подтверждена приёмка заказов. Можно закрыть точку маршрута.`,
+          read: false,
+        },
+      });
+    }
 
     return {
       order: this.mapOrder(updated),

@@ -23,6 +23,11 @@ const mapStopStatus = (s: RouteDeliveryStop["status"]): PointStatus => {
 }
 
 const stopSubtitle = (ds: RouteDeliveryStop) => {
+  if (ds.isProcurementStop && ds.expectsOrders) {
+    return ds.procurementCompleted
+      ? "Закупка завершена, ожидается подтверждение ПВЗ"
+      : "Точка закупа и выдачи — сначала чек-лист, затем подтверждение ПВЗ"
+  }
   if (ds.isProcurementStop && !ds.procurementCompleted) return "Точка закупа"
   if (ds.isProcurementStop && ds.procurementCompleted) return "Закупка завершена"
   if (ds.expectsOrders) return "Передача заказов — подтверждает ПВЗ"

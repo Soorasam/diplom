@@ -109,24 +109,12 @@ export class CoordinatorService {
           const derivedStatus = this.deriveStopUiStatus(s, counts);
           const expectsOrders = counts.total > 0;
           const driverCanComplete =
-            !expectsOrders &&
+            (
+              !expectsOrders ||
+              counts.received === counts.total
+            ) &&
             s.status !== DeliveryStopStatus.completed &&
             (!s.isProcurementStop || Boolean(s.procurementCompletedAt));
-          if (
-            derivedStatus === 'completed' &&
-            s.status !== DeliveryStopStatus.completed
-          ) {
-            void this.deliveryStops
-              .refreshStopCompletion(round.id, s.pickupPointId)
-              .then(async (result) => {
-                if (result.roundCompleted) {
-                  await this.prisma.round.update({
-                    where: { id: round.id },
-                    data: { status: RoundStatus.fulfilled },
-                  });
-                }
-              });
-          }
           const address = s.pickupPoint.address?.trim() || s.pickupPoint.name;
           return {
             pickupPointId: s.pickupPointId,
@@ -340,7 +328,9 @@ export class CoordinatorService {
     if (stop.status === DeliveryStopStatus.completed) return 'completed';
 
     if (counts.total > 0) {
-      if (counts.received === counts.total) return 'completed';
+      if (counts.received === counts.total) {
+        return 'in_progress';
+      }
       if (counts.inTransit > 0 || counts.received > 0) return 'in_progress';
       if (stop.status === DeliveryStopStatus.in_progress) return 'in_progress';
       return 'pending';

@@ -152,7 +152,16 @@ export class DeliveryStopsService {
         status: { not: OrderStatus.cancelled },
       },
     });
-    if (ordersAtStop > 0) {
+    const unresolvedOrders = await this.prisma.order.count({
+      where: {
+        roundId,
+        pickupPointId,
+        status: {
+          in: [OrderStatus.submitted, OrderStatus.confirmed, OrderStatus.in_transit],
+        },
+      },
+    });
+    if (ordersAtStop > 0 && unresolvedOrders > 0) {
       throw new BadRequestException(
         'На этой точке ожидают заказы — завершение подтверждает сотрудник ПВЗ',
       );
@@ -191,6 +200,15 @@ export class DeliveryStopsService {
   }
 
   async refreshStopCompletion(roundId: string, pickupPointId: string) {
+    const stop = await this.prisma.roundDeliveryStop.findUnique({
+      where: {
+        uq_round_delivery_stop: { roundId, pickupPointId },
+      },
+    });
+    if (!stop) {
+      return { stopCompleted: false, stopReadyForDriver: false, roundCompleted: false };
+    }
+
     const ordersAtStop = await this.prisma.order.count({
       where: {
         roundId,
@@ -199,7 +217,15 @@ export class DeliveryStopsService {
       },
     });
     if (ordersAtStop === 0) {
-      return { stopCompleted: false, roundCompleted: false };
+      const roundCompleted =
+        stop.status === DeliveryStopStatus.completed
+          ? await this.isRoundFullyCompleted(roundId)
+          : false;
+      return {
+        stopCompleted: stop.status === DeliveryStopStatus.completed,
+        stopReadyForDriver: false,
+        roundCompleted,
+      };
     }
 
     const inTransit = await this.prisma.order.count({
@@ -212,7 +238,7 @@ export class DeliveryStopsService {
 
     if (inTransit > 0) {
       await this.markStopInProgress(roundId, pickupPointId);
-      return { stopCompleted: false, roundCompleted: false };
+      return { stopCompleted: false, stopReadyForDriver: false, roundCompleted: false };
     }
 
     const activeAtPvz = await this.prisma.order.count({
@@ -223,24 +249,23 @@ export class DeliveryStopsService {
       },
     });
 
-    if (activeAtPvz === 0) {
-      return { stopCompleted: false, roundCompleted: false };
+    if (activeAtPvz < ordersAtStop) {
+      return { stopCompleted: false, stopReadyForDriver: false, roundCompleted: false };
     }
 
-    await this.prisma.roundDeliveryStop.update({
-      where: {
-        uq_round_delivery_stop: { roundId, pickupPointId },
-      },
-      data: {
-        status: DeliveryStopStatus.completed,
-        completedAt: new Date(),
-      },
-    });
+    if (stop.isProcurementStop && !stop.procurementCompletedAt) {
+      return { stopCompleted: false, stopReadyForDriver: false, roundCompleted: false };
+    }
 
-    const roundCompleted = await this.isRoundFullyCompleted(roundId);
+    await this.markStopInProgress(roundId, pickupPointId);
+    const stopCompleted = stop.status === DeliveryStopStatus.completed;
+    const roundCompleted = stopCompleted
+      ? await this.isRoundFullyCompleted(roundId)
+      : false;
 
     return {
-      stopCompleted: true,
+      stopCompleted,
+      stopReadyForDriver: true,
       roundCompleted,
     };
   }
