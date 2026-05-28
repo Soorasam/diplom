@@ -9,7 +9,7 @@ BRANCH="${DEPLOY_BRANCH:-main}"
 echo "==> git pull ($BRANCH)"
 git fetch origin
 git checkout "$BRANCH"
-git pull origin "$BRANCH"
+git pull --ff-only origin "$BRANCH"
 
 if [ ! -f .env.production ]; then
   echo "Нет .env.production — скопируйте deploy/.env.production.example"
