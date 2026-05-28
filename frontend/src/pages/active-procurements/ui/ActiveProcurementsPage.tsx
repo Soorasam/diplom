@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import { useQueries } from "@tanstack/react-query"
 import {
   ArrowRight,
   CheckCircle2,
   ChevronRight,
   List,
   Lock,
-  Map,
+  Map as MapIcon,
   Package,
 } from "lucide-react"
 
@@ -21,6 +22,7 @@ import {
   useLeaveProcurement,
   useMyProcurementMemberships,
 } from "@/entities/procurement/api/useProcurements"
+import { driverRoutesApi } from "@/entities/route/api/driverRoutesApi"
 import type { Procurement } from "@/shared/api/api-types"
 import { routes } from "@/shared/config/routes"
 import type { DeliveryMode } from "@/shared/types"
@@ -57,8 +59,45 @@ export const ActiveProcurementsPage = () => {
   const [limitMessage, setLimitMessage] = useState<string | null>(null)
   const [leaveConfirmId, setLeaveConfirmId] = useState<string | null>(null)
 
+  const routeQueries = useQueries({
+    queries: (procurements ?? []).map((p) => ({
+      queryKey: ["route", "eligibility", p.routeId],
+      queryFn: () => driverRoutesApi.getRoute(p.routeId),
+      enabled: Boolean(p.routeId),
+      staleTime: 60_000,
+    })),
+  })
+
+  const eligibilityByProcurementId = useMemo(() => {
+    const byRouteId = new Map<string, boolean>()
+    for (let i = 0; i < (procurements ?? []).length; i += 1) {
+      const p = procurements![i]
+      const route = routeQueries[i]?.data
+      if (!route || byRouteId.has(p.routeId)) continue
+
+      const userPickupPointId = user?.pickupPointId
+      const userSettlementId = user?.settlementId
+      const eligible = route.waypoints.some(
+        (w) =>
+          (userPickupPointId && w.pickupPointId === userPickupPointId) ||
+          (userSettlementId && w.settlementId === userSettlementId),
+      )
+      byRouteId.set(p.routeId, eligible)
+    }
+
+    const byProcurementId = new Map<string, boolean>()
+    for (const p of procurements ?? []) {
+      const routeEligible = byRouteId.get(p.routeId)
+      if (routeEligible !== undefined) byProcurementId.set(p.id, routeEligible)
+    }
+    return byProcurementId
+  }, [procurements, routeQueries, user?.pickupPointId, user?.settlementId])
+
   const filtered = useMemo(() => {
     let list = [...(procurements ?? [])]
+    if (user?.pickupPointId || user?.settlementId) {
+      list = list.filter((p) => eligibilityByProcurementId.get(p.id) === true)
+    }
     if (deliveryFilter !== "all") {
       list = list.filter((p) => p.deliveryMode === deliveryFilter)
     }
@@ -72,7 +111,14 @@ export const ActiveProcurementsPage = () => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
     return list
-  }, [procurements, deliveryFilter, sort])
+  }, [
+    procurements,
+    deliveryFilter,
+    sort,
+    user?.pickupPointId,
+    user?.settlementId,
+    eligibilityByProcurementId,
+  ])
 
   const mapMarkers = filtered.map((p) => ({
     id: p.id,
@@ -146,7 +192,7 @@ export const ActiveProcurementsPage = () => {
             Список
           </button>
           <button type="button" onClick={() => setViewMode("map")} className={chipClass(viewMode === "map")}>
-            <Map size={14} />
+            <MapIcon size={14} />
             Карта
           </button>
           <select
@@ -193,6 +239,7 @@ export const ActiveProcurementsPage = () => {
               const hasJoined = memberships.includes(p.id)
               const atLimit = p.currentWeightKg >= p.targetWeightKg
               const isOwnRound = Boolean(user?.id && p.organizerUserId === user.id)
+              const notInRoute = eligibilityByProcurementId.get(p.id) !== true
               return (
                 <li key={p.id}>
                   <Card className="overflow-hidden !p-0">
@@ -250,7 +297,7 @@ export const ActiveProcurementsPage = () => {
                           fullWidth
                           size="lg"
                           disabled={
-                            !isAuthenticated || atLimit || isOwnRound || join.isPending
+                            !isAuthenticated || atLimit || isOwnRound || join.isPending || notInRoute
                           }
                           leftIcon={
                             !isAuthenticated ? <Lock size={18} /> : <Package size={18} />
@@ -259,6 +306,8 @@ export const ActiveProcurementsPage = () => {
                         >
                           {isOwnRound
                             ? "Это ваш сбор"
+                            : notInRoute
+                              ? "Недоступен для вашего ПВЗ"
                             : atLimit
                               ? "Лимит веса достигнут"
                               : p.emergencyCloseAt

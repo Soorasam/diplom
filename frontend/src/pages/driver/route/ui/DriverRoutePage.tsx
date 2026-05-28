@@ -83,7 +83,20 @@ export const DriverRoutePage = () => {
     )
   }
 
-  const deliveryStops = activeRoute.deliveryStops ?? []
+  const deliveryStopsRaw = activeRoute.deliveryStops ?? []
+  const driverPickupPointId = user?.pickupPointId
+  const deliveryStops = deliveryStopsRaw.filter((ds, index, arr) => {
+    const isLast = index === arr.length - 1
+    const isDriverOwnTailStop =
+      Boolean(driverPickupPointId) &&
+      ds.pickupPointId === driverPickupPointId &&
+      isLast &&
+      (ds.totalOrders ?? 0) === 0 &&
+      (ds.receivedOrders ?? 0) === 0 &&
+      !ds.expectsOrders
+
+    return !isDriverOwnTailStop
+  })
 
   const stops = deliveryStops.map((ds) => ({
     pickupPointId: ds.pickupPointId,

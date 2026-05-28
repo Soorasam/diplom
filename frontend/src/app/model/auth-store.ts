@@ -110,12 +110,16 @@ export const useAuthStore = create<AuthState>()(
       },
 
       updateSettlement: async (settlementId) => {
+        const prevSettlementId = get().user?.settlementId
         const res = await http.patch<BackendUser>(
           "/profile",
           { settlementId },
           true,
         )
         const user = mapUser(res)
+        if (prevSettlementId && prevSettlementId !== settlementId) {
+          useCartStore.getState().clearProcurement()
+        }
         set({ user })
       },
 
