@@ -67,6 +67,13 @@ export const ProfilePage = () => {
 
   const menuLinks = isAdminWorkspace
     ? []
+    : isEmployeeWorkspace
+      ? [
+          { to: routes.employee.intake, label: "Приемка заказов", icon: MapPin },
+          { to: routes.employee.orders, label: "Выдача заказов", icon: Package },
+          { to: routes.employee.procurements, label: "Сборы ПВЗ", icon: Truck },
+          { to: profileRoutes.profileEdit, label: "Редактировать данные", icon: Pencil },
+        ]
     : isDriverInterface
       ? [
           ...(isAdmin

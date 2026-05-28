@@ -8,6 +8,8 @@ import { clearTokens, saveTokens } from "@/shared/api/auth-storage"
 import { mapUser } from "@/shared/api/mappers"
 import { routes } from "@/shared/config/routes"
 import { useCartStore } from "@/features/cart/model/cart-store"
+import { useOfflineQueueStore } from "@/features/offline/model/offline-queue-store"
+import { useDriverApplicationDraftStore } from "@/features/driver-application/model/driver-application-draft-store"
 import type { UserRole } from "@/shared/types"
 
 export interface RegisterPayload {
@@ -37,7 +39,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       _hasHydrated: false,
@@ -50,6 +52,12 @@ export const useAuthStore = create<AuthState>()(
         })
         saveTokens(res.access_token, res.refresh_token)
         const user = mapUser(res.user)
+        const prevUserId = get().user?.id
+        if (prevUserId && prevUserId !== user.id) {
+          useCartStore.getState().reset()
+          useOfflineQueueStore.getState().reset()
+          useDriverApplicationDraftStore.getState().clear()
+        }
         set({ user, isAuthenticated: true })
       },
 
@@ -64,12 +72,24 @@ export const useAuthStore = create<AuthState>()(
         })
         saveTokens(res.access_token, res.refresh_token)
         const user = mapUser(res.user)
+        const prevUserId = get().user?.id
+        if (prevUserId && prevUserId !== user.id) {
+          useCartStore.getState().reset()
+          useOfflineQueueStore.getState().reset()
+          useDriverApplicationDraftStore.getState().clear()
+        }
         set({ user, isAuthenticated: true })
       },
 
       refreshUser: async () => {
         const res = await http.get<BackendUser>("/auth/me", true)
         const user = mapUser(res)
+        const prevUserId = get().user?.id
+        if (prevUserId && prevUserId !== user.id) {
+          useCartStore.getState().reset()
+          useOfflineQueueStore.getState().reset()
+          useDriverApplicationDraftStore.getState().clear()
+        }
         set({ user, isAuthenticated: true })
       },
 
@@ -84,6 +104,8 @@ export const useAuthStore = create<AuthState>()(
         clearTokens()
         clearApiSession()
         useCartStore.getState().reset()
+        useOfflineQueueStore.getState().reset()
+        useDriverApplicationDraftStore.getState().clear()
         set({ user: null, isAuthenticated: false })
       },
 

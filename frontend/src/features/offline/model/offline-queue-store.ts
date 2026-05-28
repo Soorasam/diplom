@@ -26,6 +26,7 @@ interface OfflineQueueState {
   markFailed: (id: string, error: string) => void
   remove: (id: string) => void
   clearDone: () => void
+  reset: () => void
 }
 
 function nowIso() {
@@ -103,6 +104,8 @@ export const useOfflineQueueStore = create<OfflineQueueState>()(
         const { actions } = get()
         set({ actions: actions.filter((a) => a.status !== "done") })
       },
+
+      reset: () => set({ actions: [] }),
     }),
     { name: "coop-offline-queue" },
   ),
