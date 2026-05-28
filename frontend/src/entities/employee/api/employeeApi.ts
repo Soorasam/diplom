@@ -20,6 +20,8 @@ export interface EmployeeWorkspaceOrder {
   roundTitle: string | null
   customerName: string | null
   customerPhone: string | null
+  driverName?: string | null
+  driverPhone?: string | null
   items: { name: string; quantity: number; unit: string }[]
   canReceive?: boolean
 }

@@ -52,7 +52,6 @@ export const ProfilePage = () => {
   const isAdmin = user?.role === "admin"
   const isEmployee = user?.role === "employee"
   const isAdminWorkspace = isAdmin && pathname.startsWith(routes.admin.root)
-  const isEmployeeWorkspace = isEmployee && pathname.startsWith(routes.employee.root)
   const isUserWorkspace =
     pathname === routes.user.root || pathname.startsWith(`${routes.user.root}/`)
   const isDriverInterface = user?.role === "driver"
@@ -67,7 +66,7 @@ export const ProfilePage = () => {
 
   const menuLinks = isAdminWorkspace
     ? []
-    : isEmployeeWorkspace
+    : isEmployee
       ? [
           { to: routes.employee.intake, label: "Приемка заказов", icon: MapPin },
           { to: routes.employee.orders, label: "Выдача заказов", icon: Package },
@@ -124,19 +123,7 @@ export const ProfilePage = () => {
           }
         : null
     : isEmployee
-      ? isEmployeeWorkspace
-        ? {
-            to: routes.user.root,
-            label: "Переключиться на интерфейс жителя",
-            icon: LayoutDashboard,
-          }
-        : isUserWorkspace
-          ? {
-              to: routes.employee.root,
-              label: "Интерфейс ПВЗ",
-              icon: MapPin,
-            }
-          : null
+      ? null
       : null
 
   return (
@@ -165,6 +152,15 @@ export const ProfilePage = () => {
                   ) : null}
                   <p className="mt-0.5 text-sm font-normal leading-relaxed text-sky-700 dark:text-cyan-300">
                     Администратор
+                  </p>
+                </>
+              ) : isEmployee ? (
+                <>
+                  <p className="mt-0.5 text-sm font-normal leading-relaxed text-sky-700 dark:text-cyan-300">
+                    Сотрудник ПВЗ
+                  </p>
+                  <p className="mt-0.5 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
+                    {settlementName ?? "Пункт выдачи не привязан"}
                   </p>
                 </>
               ) : !isDriverInterface ? (

@@ -58,7 +58,14 @@ export class EmployeeService {
       },
       include: {
         user: { select: { fullName: true, phone: true } },
-        round: { select: { id: true, title: true, status: true } },
+        round: {
+          select: {
+            id: true,
+            title: true,
+            status: true,
+            createdBy: { select: { fullName: true, phone: true, email: true } },
+          },
+        },
         items: { include: { product: true } },
       },
       orderBy: [{ roundId: 'asc' }, { createdAt: 'asc' }],
@@ -349,7 +356,17 @@ export class EmployeeService {
       status: OrderStatus;
       totalEstimate: Prisma.Decimal | number;
       roundId: string | null;
-      round?: { id: string; title: string | null } | null;
+      round?:
+        | {
+            id: string;
+            title: string | null;
+            createdBy?: {
+              fullName: string | null;
+              phone: string | null;
+              email: string | null;
+            } | null;
+          }
+        | null;
       user: { fullName: string | null; phone: string | null };
       items: {
         productName: string;
@@ -368,6 +385,8 @@ export class EmployeeService {
       roundTitle: order.round?.title ?? null,
       customerName: order.user.fullName,
       customerPhone: order.user.phone,
+      driverName: order.round?.createdBy?.fullName ?? order.round?.createdBy?.email ?? null,
+      driverPhone: order.round?.createdBy?.phone ?? null,
       items: order.items.map((i) => ({
         name: i.productName || i.product.name,
         quantity: i.quantity,

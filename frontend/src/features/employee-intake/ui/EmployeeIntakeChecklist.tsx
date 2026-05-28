@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Check,
   CheckCircle2,
@@ -7,6 +7,7 @@ import {
   Phone,
   Truck,
   User,
+  X,
 } from "lucide-react"
 
 import type {
@@ -94,6 +95,43 @@ function IntakeOrderRow({
   const ui = orderStatusUi[order.status] ?? orderStatusUi.confirmed
   const canReceive = (order.canReceive ?? order.status === "in_transit") && ui.canAct
   const received = order.status === "at_pickup" || justReceived
+  const [arrivedMap, setArrivedMap] = useState<Record<string, boolean>>({})
+  const [confirmAll, setConfirmAll] = useState(false)
+  const [confirmMissingOpen, setConfirmMissingOpen] = useState(false)
+  const [countdown, setCountdown] = useState(10)
+
+  useEffect(() => {
+    if (!confirmMissingOpen || countdown <= 0) return
+    const timer = window.setTimeout(() => setCountdown((prev) => prev - 1), 1000)
+    return () => window.clearTimeout(timer)
+  }, [confirmMissingOpen, countdown])
+
+  const keyFor = (itemName: string, idx: number) => `${itemName}-${idx}`
+  const arrivedCount = order.items.filter((item, idx) => arrivedMap[keyFor(item.name, idx)]).length
+  const missingItems = order.items
+    .filter((item, idx) => !arrivedMap[keyFor(item.name, idx)])
+    .map((i) => i.name)
+
+  const handleConfirmReceive = async () => {
+    await onReceive(order.id, roundId)
+    setConfirmAll(false)
+    setConfirmMissingOpen(false)
+    setCountdown(10)
+  }
+
+  const onPrimaryClick = async () => {
+    if (!canReceive || receivePending || roundDone) return
+    if (missingItems.length === 0) {
+      if (!confirmAll) {
+        setConfirmAll(true)
+        return
+      }
+      await handleConfirmReceive()
+      return
+    }
+    setConfirmMissingOpen(true)
+    setCountdown(10)
+  }
 
   return (
     <li
@@ -108,15 +146,15 @@ function IntakeOrderRow({
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600">
             <span className="inline-flex items-center gap-1">
               <User size={14} className="shrink-0 text-slate-400" />
-              {order.customerName ?? "Житель"}
+              {order.driverName ?? "Водитель"}
             </span>
-            {order.customerPhone ? (
+            {order.driverPhone ? (
               <a
-                href={`tel:${order.customerPhone.replace(/\s/g, "")}`}
+                href={`tel:${order.driverPhone.replace(/\s/g, "")}`}
                 className="inline-flex items-center gap-1 font-medium text-sky-700"
               >
                 <Phone size={14} />
-                {order.customerPhone}
+                {order.driverPhone}
               </a>
             ) : null}
           </div>
@@ -131,28 +169,48 @@ function IntakeOrderRow({
           Состав заказа
         </p>
         <ul className="mt-2 flex flex-col gap-1.5">
-          {order.items.map((item, idx) => (
-            <li key={`${item.name}-${idx}`} className="flex items-start gap-2 text-sm">
-              <span
-                className={cn(
-                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-xs",
-                  received
-                    ? "border-emerald-300 bg-emerald-100 text-emerald-700"
-                    : "border-slate-200 bg-white text-slate-400",
-                )}
-              >
-                {received ? <Check size={12} strokeWidth={3} /> : idx + 1}
-              </span>
-              <span className="text-slate-800">
-                <span className="font-medium">{item.name}</span>
-                <span className="text-slate-500">
-                  {" "}
-                  — {item.quantity} {item.unit}
+          {order.items.map((item, idx) => {
+            const key = keyFor(item.name, idx)
+            const isArrived = received || Boolean(arrivedMap[key])
+            return (
+              <li key={key} className="flex items-start gap-2 text-sm">
+                <button
+                  type="button"
+                  disabled={received || !canReceive || receivePending || roundDone}
+                  onClick={() =>
+                    setArrivedMap((prev) => ({
+                      ...prev,
+                      [key]: !prev[key],
+                    }))
+                  }
+                  className={cn(
+                    "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-xs transition-colors",
+                    isArrived
+                      ? "border-emerald-300 bg-emerald-100 text-emerald-700"
+                      : "border-red-300 bg-red-50 text-red-500",
+                    received || !canReceive || receivePending || roundDone
+                      ? "cursor-default"
+                      : "cursor-pointer",
+                  )}
+                >
+                  {isArrived ? <Check size={12} strokeWidth={3} /> : idx + 1}
+                </button>
+                <span className="text-slate-800">
+                  <span className="font-medium">{item.name}</span>
+                  <span className="text-slate-500">
+                    {" "}
+                    — {item.quantity} {item.unit}
+                  </span>
                 </span>
-              </span>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
+        {!received && canReceive ? (
+          <p className="mt-2 text-xs text-slate-500">
+            Отметьте прибывшие товары: {arrivedCount}/{order.items.length}
+          </p>
+        ) : null}
         <p className="mt-2 text-right text-sm font-semibold text-slate-900">
           {formatPrice(order.totalAmount)}
         </p>
@@ -172,10 +230,47 @@ function IntakeOrderRow({
             size="lg"
             leftIcon={<PackageCheck size={20} />}
             disabled={receivePending || roundDone || !canReceive}
-            onClick={() => void onReceive(order.id, roundId)}
+            onClick={() => void onPrimaryClick()}
           >
-            {canReceive ? "Принял от водителя" : "Жду водителя"}
+            {!canReceive
+              ? "Жду водителя"
+              : confirmAll
+                ? "Вы уверены?"
+                : "Подтвердить приём"}
           </Button>
+          {confirmMissingOpen ? (
+            <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs font-semibold text-amber-900">
+                  Вы уверены, что следующие товары не прибыли?
+                </p>
+                <button
+                  type="button"
+                  className="text-amber-700"
+                  onClick={() => {
+                    setConfirmMissingOpen(false)
+                    setCountdown(10)
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+              <ul className="mt-2 list-disc pl-5 text-xs text-amber-900">
+                {missingItems.map((name, idx) => (
+                  <li key={`${name}-${idx}`}>{name}</li>
+                ))}
+              </ul>
+              <Button
+                type="button"
+                className="mt-3 w-full"
+                size="sm"
+                disabled={countdown > 0 || receivePending}
+                onClick={() => void handleConfirmReceive()}
+              >
+                {countdown > 0 ? `Подтвердить (${countdown})` : "Подтвердить приём"}
+              </Button>
+            </div>
+          ) : null}
         </>
       )}
     </li>
