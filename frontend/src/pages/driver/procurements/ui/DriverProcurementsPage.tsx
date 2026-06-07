@@ -13,6 +13,7 @@ import {
 import { routes } from "@/shared/config/routes"
 import { randomId } from "@/shared/lib/random-id"
 import { EmergencyCloseModal } from "@/features/driver-procurement/ui/EmergencyCloseModal"
+import { ProcurementSettlementCard } from "@/features/driver-procurement-settlement/ui/ProcurementSettlementCard"
 import {
   driverRoutesApi,
   transportToDeliveryMode,
@@ -300,20 +301,23 @@ export const DriverProcurementsPage = () => {
           ) : null}
 
           {hasDeliveryInProgress && deliveryRound ? (
-            <Card className="border-amber-200 bg-amber-50/50">
-              <p className="text-sm font-semibold text-amber-950">Доставка по маршруту</p>
-              <p className="mt-1 text-sm text-amber-900/80">
-                Сбор «{deliveryRound.title}» закрыт. Новый сбор можно создать после того, как
-                завершите выдачу заказов в посёлках на маршруте.
-              </p>
-              <Link
-                to={routes.driver.route}
-                className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-amber-300 bg-white px-4 text-sm font-semibold text-amber-900 hover:bg-amber-50"
-              >
-                <MapPin size={18} />
-                Открыть маршрут
-              </Link>
-            </Card>
+            <>
+              <Card className="border-amber-200 bg-amber-50/50">
+                <p className="text-sm font-semibold text-amber-950">Доставка по маршруту</p>
+                <p className="mt-1 text-sm text-amber-900/80">
+                  Сбор «{deliveryRound.title}» закрыт. Новый сбор можно создать после того, как
+                  завершите выдачу заказов в посёлках на маршруте.
+                </p>
+                <Link
+                  to={routes.driver.route}
+                  className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-amber-300 bg-white px-4 text-sm font-semibold text-amber-900 hover:bg-amber-50"
+                >
+                  <MapPin size={18} />
+                  Открыть маршрут
+                </Link>
+              </Card>
+              <ProcurementSettlementCard roundId={deliveryRound.id} />
+            </>
           ) : null}
 
           {canCreateNewRound ? (

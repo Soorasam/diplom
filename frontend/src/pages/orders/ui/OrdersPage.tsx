@@ -6,6 +6,7 @@ import { useOrders } from "@/entities/order/api/useOrders"
 import { routes } from "@/shared/config/routes"
 import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
 import { formatDate, formatPrice } from "@/shared/lib/format"
+import { orderNetAmount, orderRefundAmount } from "@/shared/lib/order-amounts"
 import { orderStatusLabel, orderStatusVariant } from "@/shared/lib/order-status"
 import {
   paymentStatusLabel,
@@ -37,7 +38,10 @@ export const OrdersPage = () => {
         </div>
       ) : orders && orders.length > 0 ? (
         <ul className="flex flex-col gap-3">
-          {orders.map((order) => (
+          {orders.map((order) => {
+            const refund = orderRefundAmount(order)
+            const displayTotal = refund > 0 ? orderNetAmount(order) : order.total
+            return (
             <li key={order.id}>
               <Link to={routes.user.order(order.id)}>
                 <Card className="ui-card-interactive transition">
@@ -46,8 +50,13 @@ export const OrdersPage = () => {
                       <p className="font-semibold text-slate-900 dark:text-slate-100">№ {order.id}</p>
                       <p className="text-xs text-slate-500">{formatDate(order.createdAt)}</p>
                       <p className="ui-price mt-1 text-sm">
-                        {formatPrice(order.total)}
+                        {formatPrice(displayTotal)}
                       </p>
+                      {refund > 0 ? (
+                        <p className="mt-0.5 text-xs text-emerald-700">
+                          Возврат переплаты: {formatPrice(refund)}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-2">
                       <div className="flex flex-wrap justify-end gap-1.5">
@@ -67,7 +76,7 @@ export const OrdersPage = () => {
                 </Card>
               </Link>
             </li>
-          ))}
+          )})}
         </ul>
       ) : (
         <EmptyState

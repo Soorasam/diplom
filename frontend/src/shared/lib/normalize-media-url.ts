@@ -1,4 +1,4 @@
-const COOP_MEDIA_PREFIX = /^\/coop-(products|tickets|driver-docs)\//
+const COOP_MEDIA_PREFIX = /^\/coop-(products|tickets|driver-docs|receipts|procurement)\//
 
 export function normalizeMediaUrl(url: string | null | undefined): string {
   if (!url?.trim()) return ""

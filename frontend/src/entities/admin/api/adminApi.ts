@@ -1,4 +1,8 @@
 import { http } from "@/shared/api/client"
+import type {
+  ProcurementReceipt,
+  PurchaseSettlement,
+} from "@/entities/procurement-settlement/api/procurementSettlementApi"
 import type { BackendRound, BackendUser } from "@/shared/api/backend-types"
 import type { Order, PickupPoint, Product, Settlement, User } from "@/shared/api/api-types"
 import {
@@ -200,6 +204,18 @@ export const adminApi = {
   },
 
   resolveNotification: (id: string) => http.patch(`/admin/notifications/${id}/resolve`, {}, true),
+
+  getProcurementReceipts: (roundId: string) =>
+    http.get<ProcurementReceipt[]>(
+      `/admin/rounds/${roundId}/procurement-receipts`,
+      true,
+    ),
+
+  getPurchaseSettlement: (roundId: string) =>
+    http.get<PurchaseSettlement>(
+      `/admin/rounds/${roundId}/purchase-settlement`,
+      true,
+    ),
 
   createPvzEmployee: (payload: {
     email: string

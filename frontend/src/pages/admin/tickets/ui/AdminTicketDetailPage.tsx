@@ -1,10 +1,13 @@
 import { Link, useParams } from "react-router-dom"
+import { useQuery } from "@tanstack/react-query"
 
 import {
   useAddTicketMessage,
   useTicket,
   useUpdateTicketStatus,
 } from "@/entities/ticket/api/useTickets"
+import { ordersApi } from "@/entities/order/api/ordersApi"
+import { AdminProcurementReceiptsPanel } from "@/features/admin-procurement-receipts/ui/AdminProcurementReceiptsPanel"
 import type { TicketStatus } from "@/entities/ticket/model/types"
 import { TicketStatusBadge, TicketThread } from "@/features/tickets/ui/TicketThread"
 import { routes } from "@/shared/config/routes"
@@ -24,6 +27,12 @@ export const AdminTicketDetailPage = () => {
   const { data: ticket, isLoading, isError } = useTicket(id, { poll: true })
   const addMessage = useAddTicketMessage(id ?? "")
   const updateStatus = useUpdateTicketStatus(id ?? "")
+
+  const { data: disputeOrder } = useQuery({
+    queryKey: ["orders", "detail", ticket?.orderId],
+    queryFn: () => ordersApi.getById(ticket!.orderId!),
+    enabled: Boolean(ticket?.orderId),
+  })
 
   if (isLoading) {
     return (
@@ -58,6 +67,10 @@ export const AdminTicketDetailPage = () => {
             : ticket.user.name
         }
       />
+
+      {disputeOrder?.procurementId ? (
+        <AdminProcurementReceiptsPanel roundId={disputeOrder.procurementId} />
+      ) : null}
 
       <Card className="flex flex-wrap items-center justify-between gap-3 border-slate-200">
         <div className="flex flex-wrap items-center gap-2">

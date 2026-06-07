@@ -4,6 +4,8 @@ import { Link } from "react-router-dom"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { ProcurementChecklistCard } from "@/features/driver-procurement-checklist/ui/ProcurementChecklistCard"
+import { ProcurementSettlementCard } from "@/features/driver-procurement-settlement/ui/ProcurementSettlementCard"
+import { useDriverDeliveryProcurement } from "@/entities/procurement/api/useProcurements"
 import { routesApi } from "@/entities/route/api/routesApi"
 import type { RouteDeliveryStop } from "@/entities/route/api/routesApi"
 import { queryKeys } from "@/shared/config/query-keys"
@@ -45,6 +47,8 @@ export const DriverRoutePage = () => {
     queryKey: queryKeys.routes.driver(driverId),
     queryFn: () => routesApi.getByDriver(driverId),
   })
+
+  const { data: deliveryRound } = useDriverDeliveryProcurement(user?.id)
 
   const completeStop = useMutation({
     mutationFn: ({
@@ -139,6 +143,10 @@ export const DriverRoutePage = () => {
 
       {roundId && activeRoute.status === "active" ? (
         <ProcurementChecklistCard roundId={roundId} />
+      ) : null}
+
+      {deliveryRound?.id ? (
+        <ProcurementSettlementCard roundId={deliveryRound.id} />
       ) : null}
 
       {nextStop && !tripCompleted ? (

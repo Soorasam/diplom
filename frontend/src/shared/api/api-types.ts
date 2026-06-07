@@ -144,6 +144,8 @@ export interface Order {
   paymentStatus?: PaymentStatus
   paymentStatusLabel?: string
   statusLabel?: string
+  refundAmount?: number
+  netTotal?: number
 }
 
 export interface Notification {

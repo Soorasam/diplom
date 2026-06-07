@@ -13,6 +13,7 @@ import { useSettlements } from "@/entities/settlement/api/useSettlements"
 import { useAuthStore } from "@/app/model/auth-store"
 import { routes } from "@/shared/config/routes"
 import { formatDate, formatPrice } from "@/shared/lib/format"
+import { orderNetAmount, orderRefundAmount } from "@/shared/lib/order-amounts"
 import { orderStatusLabel, orderStatusVariant } from "@/shared/lib/order-status"
 import {
   paymentStatusLabel,
@@ -66,6 +67,8 @@ export const OrderDetailsPage = () => {
   const paymentLabel =
     order.paymentStatusLabel ??
     (order.paymentStatus ? paymentStatusLabel[order.paymentStatus] : null)
+  const refund = orderRefundAmount(order)
+  const netAmount = orderNetAmount(order)
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-8">
@@ -80,9 +83,16 @@ export const OrderDetailsPage = () => {
       />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
-          {formatPrice(order.total)}
-        </span>
+        <div>
+          <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            {formatPrice(refund > 0 ? netAmount : order.total)}
+          </span>
+          {refund > 0 ? (
+            <p className="mt-0.5 text-xs text-slate-500">
+              Ориентир при оплате: {formatPrice(order.total)}
+            </p>
+          ) : null}
+        </div>
         <div className="flex flex-wrap gap-2">
           <Badge variant={orderStatusVariant[order.status]}>
             {order.statusLabel ?? orderStatusLabel[order.status]}
@@ -101,6 +111,22 @@ export const OrderDetailsPage = () => {
             <ShieldCheck size={18} className="mt-0.5 shrink-0 text-sky-600" />
             Средства зарезервированы на платформе. Координатор получит выплату после вашего
             подтверждения получения товара.
+            {refund > 0
+              ? ` К выплате координатору: ${formatPrice(netAmount)}.`
+              : null}
+          </p>
+        </Card>
+      ) : null}
+
+      {refund > 0 ? (
+        <Card className="border-emerald-100 bg-emerald-50/50 p-4!">
+          <p className="text-sm font-medium text-emerald-900">
+            Возврат переплаты после закупа: {formatPrice(refund)}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-emerald-800/90">
+            Цена в каталоге была ориентиром. По чекам координатора переплата возвращается на
+            платформе (эскроу, пилот — симуляция). Координатор получит {formatPrice(netAmount)} после
+            подтверждения получения.
           </p>
         </Card>
       ) : null}

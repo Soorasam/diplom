@@ -80,6 +80,8 @@ export const mapBackendOrder = (o: {
   paymentStatus?: PaymentStatus
   paymentStatusLabel?: string
   statusLabel?: string
+  refundAmount?: number | string | { toNumber(): number } | null
+  netTotal?: number | string | { toNumber(): number } | null
 }): Order => ({
   id: o.id,
   userId: o.userId,
@@ -110,6 +112,8 @@ export const mapBackendOrder = (o: {
   paymentStatus: o.paymentStatus,
   paymentStatusLabel: o.paymentStatusLabel,
   statusLabel: o.statusLabel,
+  refundAmount: parseApiNumber(o.refundAmount),
+  netTotal: parseApiNumber(o.netTotal),
 })
 
 export const mapSettlement = (s: {
