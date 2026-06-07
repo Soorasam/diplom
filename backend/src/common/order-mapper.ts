@@ -38,6 +38,8 @@ export function orderTitle(order: OrderForMapper): string {
 }
 
 export function mapOrderListItem(order: OrderForMapper) {
+  const totalEstimate = decimalToNumber(order.totalEstimate);
+  const refundAmount = decimalToNumber(order.refundAmount);
   return {
     id: order.id,
     publicNumber: order.publicNumber,
@@ -50,8 +52,10 @@ export function mapOrderListItem(order: OrderForMapper) {
     statusLabel: ORDER_STATUS_LABELS[order.status],
     paymentStatus: order.paymentStatus,
     paymentStatusLabel: PAYMENT_STATUS_LABELS[order.paymentStatus],
-    totalEstimate: decimalToNumber(order.totalEstimate),
-    total: decimalToNumber(order.totalEstimate),
+    totalEstimate,
+    refundAmount,
+    netTotal: Math.max(totalEstimate - refundAmount, 0),
+    total: totalEstimate,
     expectedAt: order.expectedAt,
     createdAt: order.createdAt,
   };
@@ -59,6 +63,8 @@ export function mapOrderListItem(order: OrderForMapper) {
 
 export function mapOrderDetail(order: OrderForMapper) {
   const createdAt = order.createdAt.toISOString();
+  const totalEstimate = decimalToNumber(order.totalEstimate);
+  const refundAmount = decimalToNumber(order.refundAmount);
   return {
     id: order.id,
     publicNumber: order.publicNumber,
@@ -70,8 +76,10 @@ export function mapOrderDetail(order: OrderForMapper) {
     statusLabel: ORDER_STATUS_LABELS[order.status],
     paymentStatus: order.paymentStatus,
     paymentStatusLabel: PAYMENT_STATUS_LABELS[order.paymentStatus],
-    totalEstimate: decimalToNumber(order.totalEstimate),
-    total: decimalToNumber(order.totalEstimate),
+    totalEstimate,
+    refundAmount,
+    netTotal: Math.max(totalEstimate - refundAmount, 0),
+    total: totalEstimate,
     statusNote: order.statusNote,
     expectedAt: order.expectedAt,
     createdAt: order.createdAt,

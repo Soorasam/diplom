@@ -23,3 +23,8 @@
         proxy_pass http://127.0.0.1:9000/coop-tickets/;
         proxy_set_header Host $host;
     }
+
+    location ^~ /coop-receipts/ {
+        proxy_pass http://127.0.0.1:9000/coop-receipts/;
+        proxy_set_header Host $host;
+    }

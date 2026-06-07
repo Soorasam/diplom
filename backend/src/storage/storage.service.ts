@@ -84,4 +84,8 @@ export class StorageService {
   ticketsBucket() {
     return process.env.MINIO_TICKETS_BUCKET ?? 'coop-tickets';
   }
+
+  receiptsBucket() {
+    return process.env.MINIO_RECEIPTS_BUCKET ?? 'coop-receipts';
+  }
 }

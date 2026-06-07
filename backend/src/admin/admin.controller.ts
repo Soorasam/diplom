@@ -6,6 +6,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { UpdateOrderStatusDto } from '../orders/dto/update-order-status.dto';
 import { OrdersService } from '../orders/orders.service';
+import { ProcurementSettlementService } from '../logistics/procurement-settlement.service';
 import { AdminService } from './admin.service';
 import { CreatePvzEmployeeDto } from './dto/create-pvz-employee.dto';
 import { CreateSettlementDto } from './dto/create-settlement.dto';
@@ -17,6 +18,7 @@ export class AdminController {
   constructor(
     private admin: AdminService,
     private ordersService: OrdersService,
+    private settlement: ProcurementSettlementService,
   ) {}
 
   @Get('stats')
@@ -77,6 +79,22 @@ export class AdminController {
   @Get('rounds')
   rounds() {
     return this.admin.listRounds();
+  }
+
+  @Get('rounds/:id/procurement-receipts')
+  roundProcurementReceipts(
+    @CurrentUser() user: User,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.settlement.listReceipts(user, id);
+  }
+
+  @Get('rounds/:id/purchase-settlement')
+  roundPurchaseSettlement(
+    @CurrentUser() user: User,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.settlement.getSettlement(user, id);
   }
 
   @Get('notifications')

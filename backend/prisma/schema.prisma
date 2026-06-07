@@ -178,6 +178,8 @@ model Round {
   participantsCount  Int           @default(0) @map("participants_count")
   currentWeightKg    Decimal       @default(0) @map("current_weight_kg") @db.Decimal(10, 2)
   targetWeightKg     Decimal       @default(500) @map("target_weight_kg") @db.Decimal(10, 2)
+  actualPurchaseTotal Decimal?     @map("actual_purchase_total") @db.Decimal(12, 2)
+  purchaseSettledAt  DateTime?     @map("purchase_settled_at")
 
   createdBy      User?               @relation("DriverRounds", fields: [createdByUserId], references: [id], onDelete: SetNull)
   waypoints      RoundWaypoint[]
@@ -185,6 +187,7 @@ model Round {
   orders         Order[]
   participants   RoundParticipant[]
   deliveryStops  RoundDeliveryStop[]
+  procurementReceipts RoundProcurementReceipt[]
 
   @@map("rounds")
 }
@@ -217,6 +220,20 @@ model RoundParticipant {
 
   @@unique([userId, roundId], name: "uq_round_participant_user_round")
   @@map("round_participants")
+}
+
+model RoundProcurementReceipt {
+  id        String   @id @default(uuid()) @db.Uuid
+  roundId   String   @map("round_id") @db.Uuid
+  objectKey String   @map("object_key")
+  fileName  String   @map("file_name")
+  mimeType  String   @map("mime_type")
+  url       String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  round Round @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  @@map("round_procurement_receipts")
 }
 
 model Category {
@@ -275,6 +292,7 @@ model Order {
   status         OrderStatus   @default(submitted)
   paymentStatus  PaymentStatus @default(pending) @map("payment_status")
   totalEstimate  Decimal       @default(0) @map("total_estimate") @db.Decimal(12, 2)
+  refundAmount   Decimal       @default(0) @map("refund_amount") @db.Decimal(12, 2)
   statusNote     String?     @map("status_note")
   expectedAt     DateTime?   @map("expected_at")
   createdAt      DateTime    @default(now()) @map("created_at")
