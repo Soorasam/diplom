@@ -1,8 +1,12 @@
 import { useState } from "react"
 import { Link, useParams } from "react-router-dom"
-import { MessageSquare, QrCode } from "lucide-react"
+import { CheckCircle2, MessageSquare, ShieldCheck } from "lucide-react"
 
-import { useOrder } from "@/entities/order/api/useOrders"
+import {
+  useConfirmReceipt,
+  useOrder,
+  useReservePayment,
+} from "@/entities/order/api/useOrders"
 import { useTicketByOrder } from "@/entities/ticket/api/useTickets"
 import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
 import { useSettlements } from "@/entities/settlement/api/useSettlements"
@@ -10,11 +14,16 @@ import { useAuthStore } from "@/app/model/auth-store"
 import { routes } from "@/shared/config/routes"
 import { formatDate, formatPrice } from "@/shared/lib/format"
 import { orderStatusLabel, orderStatusVariant } from "@/shared/lib/order-status"
+import {
+  paymentStatusLabel,
+  paymentStatusVariant,
+} from "@/shared/lib/payment-status"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
+import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
 import { OrderTimeline } from "@/widgets/order-timeline/ui/OrderTimeline"
 
 export const OrderDetailsPage = () => {
@@ -24,7 +33,9 @@ export const OrderDetailsPage = () => {
   const { data: order, isLoading } = useOrder(id)
   const { data: existingTicket } = useTicketByOrder(id)
   const { data: settlements } = useSettlements()
-  const [qrOpen, setQrOpen] = useState(false)
+  const confirmReceipt = useConfirmReceipt()
+  const reservePayment = useReservePayment()
+  const [actionError, setActionError] = useState<string | null>(null)
 
   if (isLoading) {
     return (
@@ -46,26 +57,53 @@ export const OrderDetailsPage = () => {
     (s) => s.id === order.pickupPointId || s.id === user?.settlementId,
   )
 
-  const showQr = order.status === "at_pickup" || order.status === "in_transit"
-  const canDispute =
-    order.status !== "cancelled" && order.status !== "draft"
+  const canPay =
+    order.paymentStatus === "pending" && order.status !== "cancelled"
+  const canConfirmReceipt =
+    order.status === "in_transit" && order.paymentStatus === "held"
+  const canDispute = order.status !== "cancelled" && order.status !== "draft"
+
+  const paymentLabel =
+    order.paymentStatusLabel ??
+    (order.paymentStatus ? paymentStatusLabel[order.paymentStatus] : null)
 
   return (
     <div className="flex flex-col gap-4 p-4 pb-8">
       <PageHeader
-        title={`Заказ #${order.id.slice(0, 8)}`}
+        title={
+          order.publicNumber
+            ? `Заказ №${order.publicNumber}`
+            : `Заказ #${order.id.slice(0, 8)}`
+        }
         backTo={routes.user.orders}
         subtitle={formatDate(order.createdAt)}
       />
 
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
           {formatPrice(order.total)}
         </span>
-        <Badge variant={orderStatusVariant[order.status]}>
-          {orderStatusLabel[order.status]}
-        </Badge>
+        <div className="flex flex-wrap gap-2">
+          <Badge variant={orderStatusVariant[order.status]}>
+            {order.statusLabel ?? orderStatusLabel[order.status]}
+          </Badge>
+          {order.paymentStatus ? (
+            <Badge variant={paymentStatusVariant[order.paymentStatus]}>
+              {paymentLabel}
+            </Badge>
+          ) : null}
+        </div>
       </div>
+
+      {order.paymentStatus === "held" ? (
+        <Card className="border-sky-100 bg-sky-50/40 p-4!">
+          <p className="flex items-start gap-2 text-sm text-slate-700">
+            <ShieldCheck size={18} className="mt-0.5 shrink-0 text-sky-600" />
+            Средства зарезервированы на платформе. Координатор получит выплату после вашего
+            подтверждения получения товара.
+          </p>
+        </Card>
+      ) : null}
 
       {settlement ? (
         <Card>
@@ -98,20 +136,56 @@ export const OrderDetailsPage = () => {
         <OrderTimeline timeline={order.timeline} />
       </Card>
 
-      {(showQr || canDispute) && (
+      {actionError ? (
+        <AlertBanner variant="warning" title="Не удалось выполнить действие">
+          {actionError}
+        </AlertBanner>
+      ) : null}
+
+      {(canPay || canConfirmReceipt || canDispute) && (
         <Card className="flex flex-col gap-2">
           <p className="text-sm font-semibold text-slate-900">Действия</p>
-          {showQr ? (
+
+          {canPay ? (
             <Button
-              type="button"
-              variant="outline"
               fullWidth
-              leftIcon={<QrCode size={18} />}
-              onClick={() => setQrOpen(true)}
+              loading={reservePayment.isPending}
+              onClick={() => {
+                setActionError(null)
+                reservePayment.mutate(order.id, {
+                  onError: () =>
+                    setActionError("Не удалось зарезервировать оплату. Повторите попытку."),
+                })
+              }}
             >
-              Показать код для получения
+              Оплатить и зарезервировать на платформе
             </Button>
           ) : null}
+
+          {canConfirmReceipt ? (
+            <>
+              <p className="text-xs text-slate-500">
+                Проверьте товар при координаторе и подтвердите только после получения.
+              </p>
+              <Button
+                fullWidth
+                leftIcon={<CheckCircle2 size={18} />}
+                loading={confirmReceipt.isPending}
+                onClick={() => {
+                  setActionError(null)
+                  confirmReceipt.mutate(order.id, {
+                    onError: () =>
+                      setActionError(
+                        "Не удалось подтвердить получение. Проверьте статус заказа.",
+                      ),
+                  })
+                }}
+              >
+                Товар получен
+              </Button>
+            </>
+          ) : null}
+
           {canDispute ? (
             <Link
               to={
@@ -127,29 +201,6 @@ export const OrderDetailsPage = () => {
           ) : null}
         </Card>
       )}
-
-      {qrOpen ? (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setQrOpen(false)}
-        >
-          <Card
-            className="ornament-frame max-w-xs text-center"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className="text-sm font-semibold text-slate-900">QR-код заказа</p>
-            <p className="mt-1 text-xs text-slate-500">Покажите координатору при получении</p>
-            <div className="relative z-10 mx-auto mt-4 flex h-40 w-40 items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 font-mono text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">
-              {order.id}
-            </div>
-            <Button className="mt-4" fullWidth onClick={() => setQrOpen(false)}>
-              Закрыть
-            </Button>
-          </Card>
-        </div>
-      ) : null}
     </div>
   )
 }

@@ -28,7 +28,7 @@ const tabs: MobileNavTab[] = [
     match: (p) => p.startsWith(routes.driver.route),
   },
   {
-    label: "Выдача",
+    label: "Заказы",
     path: routes.driver.handout,
     icon: Package,
     match: (p) => p.startsWith(routes.driver.handout),

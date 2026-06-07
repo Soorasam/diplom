@@ -109,14 +109,8 @@ export const CheckoutPage = () => {
     }
     navigate(routes.user.payment, {
       state: {
-        userId: authUser.id,
         procurementId,
         pickupPointId: deliveryPointId,
-        items: lineItems.map((i) => ({
-          productId: i.productId,
-          quantity: i.quantity,
-        })),
-        comment: comment || undefined,
         total,
         lineLabels: lineItems.map((i) => ({
           name: i.product.name,

@@ -53,8 +53,11 @@ export const DriverDashboardPage = () => {
   const nextSettlementId = activeRoute?.toSettlementIds[0]
   const nextStop = settlements?.find((s) => s.id === nextSettlementId)
   const inTransitCount =
-    driverOrders?.filter((o) => o.status === "in_transit" || o.status === "at_pickup")
-      .length ?? 0
+    driverOrders?.filter((o) => o.status === "in_transit").length ?? 0
+  const awaitingAcceptCount =
+    driverOrders?.filter(
+      (o) => o.status === "pending" && o.paymentStatus === "held",
+    ).length ?? 0
 
   const isLoading = loadingRoutes || loadingOrders
 
@@ -105,21 +108,44 @@ export const DriverDashboardPage = () => {
             </Card>
           </div>
 
-          <Card className="p-4">
-            <div className="flex items-start gap-3">
-              <div className="ui-icon-soft flex h-10 w-10 shrink-0 rounded-2xl">
-                <Truck size={20} />
+          <div className="grid grid-cols-2 gap-3">
+            <Card className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="ui-icon-soft flex h-10 w-10 shrink-0 rounded-2xl">
+                  <Package size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium leading-normal text-slate-500 dark:text-slate-400">
+                    К принятию
+                  </p>
+                  <p className="text-lg font-semibold leading-normal text-slate-900 dark:text-slate-100">
+                    {awaitingAcceptCount}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium leading-normal text-slate-500 dark:text-slate-400">
-                  В доставке
-                </p>
-                <p className="text-lg font-semibold leading-normal text-slate-900 dark:text-slate-100">
-                  {inTransitCount} заказов
-                </p>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-start gap-3">
+                <div className="ui-icon-soft flex h-10 w-10 shrink-0 rounded-2xl">
+                  <Truck size={20} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium leading-normal text-slate-500 dark:text-slate-400">
+                    В доставке
+                  </p>
+                  <p className="text-lg font-semibold leading-normal text-slate-900 dark:text-slate-100">
+                    {inTransitCount}
+                  </p>
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </div>
+
+          <Link to={routes.driver.handout}>
+            <Card className="ui-link-card p-4 text-center text-sm font-medium text-sky-700">
+              Заказы сбора — принять в рейс и выдача
+            </Card>
+          </Link>
 
           {nextStop ? (
             <Card className="ui-panel-gradient p-4">

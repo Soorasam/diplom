@@ -30,6 +30,8 @@ export const HomePage = () => {
   const { data: categories } = useCategories()
 
   const activeOrder = orders?.find((o) => o.status !== "delivered" && o.status !== "cancelled")
+  const needsReceiptConfirm =
+    activeOrder?.status === "in_transit" && activeOrder.paymentStatus === "held"
   const nearestDelivery = procurements?.[0]?.estimatedDelivery
 
   return (
@@ -93,6 +95,15 @@ export const HomePage = () => {
                   {orderStatusLabel[activeOrder.status]}
                 </Badge>
               </div>
+              {needsReceiptConfirm ? (
+                <p className="mt-2 text-xs text-sky-700">
+                  Проверьте товар и подтвердите получение в карточке заказа
+                </p>
+              ) : activeOrder.paymentStatus === "pending" ? (
+                <p className="mt-2 text-xs text-amber-700">
+                  Завершите оплату, чтобы координатор принял заказ в рейс
+                </p>
+              ) : null}
             </Card>
           </Link>
         ) : null}

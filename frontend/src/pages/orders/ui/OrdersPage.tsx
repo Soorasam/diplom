@@ -7,6 +7,10 @@ import { routes } from "@/shared/config/routes"
 import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
 import { formatDate, formatPrice } from "@/shared/lib/format"
 import { orderStatusLabel, orderStatusVariant } from "@/shared/lib/order-status"
+import {
+  paymentStatusLabel,
+  paymentStatusVariant,
+} from "@/shared/lib/payment-status"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Badge } from "@/shared/ui/badge/Badge"
@@ -46,9 +50,17 @@ export const OrdersPage = () => {
                       </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-2">
-                      <Badge variant={orderStatusVariant[order.status]}>
-                        {orderStatusLabel[order.status]}
-                      </Badge>
+                      <div className="flex flex-wrap justify-end gap-1.5">
+                        <Badge variant={orderStatusVariant[order.status]}>
+                          {order.statusLabel ?? orderStatusLabel[order.status]}
+                        </Badge>
+                        {order.paymentStatus ? (
+                          <Badge variant={paymentStatusVariant[order.paymentStatus]}>
+                            {order.paymentStatusLabel ??
+                              paymentStatusLabel[order.paymentStatus]}
+                          </Badge>
+                        ) : null}
+                      </div>
                       <ChevronRight size={18} className="text-slate-400" />
                     </div>
                   </div>

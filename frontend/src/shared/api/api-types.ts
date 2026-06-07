@@ -2,6 +2,7 @@ import type {
   DeliveryMode,
   DriverApplicationStatus,
   OrderStatus,
+  PaymentStatus,
   ProcurementStatus,
   UserRole,
 } from "@/shared/types"
@@ -130,6 +131,10 @@ export interface Order {
   timeline: { status: OrderStatus; at: string; label: string }[]
   publicNumber?: string
   userName?: string
+  userPhone?: string
+  paymentStatus?: PaymentStatus
+  paymentStatusLabel?: string
+  statusLabel?: string
 }
 
 export interface Notification {

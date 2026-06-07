@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { queryKeys } from "@/shared/config/query-keys"
+import type { OrderStatus } from "@/shared/types"
 
 import { ordersApi } from "./ordersApi"
 
@@ -19,14 +20,57 @@ export const useOrder = (id: string) =>
     enabled: Boolean(id),
   })
 
-export const useCreateOrder = () => {
+export const useCheckoutFromCart = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ordersApi.create,
+    mutationFn: ({
+      procurementId,
+      pickupPointId,
+    }: {
+      procurementId: string
+      pickupPointId: string
+    }) => ordersApi.checkoutFromCart(procurementId, pickupPointId),
     onSuccess: () => {
       useCartStore.getState().reset()
       void qc.invalidateQueries({ queryKey: queryKeys.cart })
       void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
+      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
+    },
+  })
+}
+
+export const useReservePayment = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (orderId: string) => ordersApi.reservePayment(orderId),
+    onSuccess: (order) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
+      void qc.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) })
+      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
+    },
+  })
+}
+
+export const useConfirmReceipt = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (orderId: string) => ordersApi.confirmReceipt(orderId),
+    onSuccess: (order) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
+      void qc.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) })
+    },
+  })
+}
+
+export const useUpdateOrderStatus = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ orderId, status }: { orderId: string; status: OrderStatus }) =>
+      ordersApi.updateStatus(orderId, status),
+    onSuccess: (order) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
+      void qc.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) })
+      void qc.invalidateQueries({ queryKey: ["routes", "driver"] })
     },
   })
 }

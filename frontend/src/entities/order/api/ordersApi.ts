@@ -5,54 +5,68 @@ import {
 } from "@/shared/api/mappers"
 import type { OrderStatus } from "@/shared/types"
 
+type BackendOrderPayload = Parameters<typeof mapBackendOrder>[0]
+
+const mapOrder = (o: BackendOrderPayload) =>
+  mapBackendOrder({
+    ...o,
+    items: o.items ?? [],
+    pickupPointId: o.pickupPointId ?? "",
+    procurementId: (o as { procurementId?: string }).procurementId ?? o.roundId ?? "",
+  })
+
 export const ordersApi = {
   getByUser: async (_userId: string) => {
-    const list = await http.get<Parameters<typeof mapBackendOrder>[0][]>("/orders", true)
-    return list.map((o) =>
-      mapBackendOrder({
-        ...o,
-        items: o.items ?? [],
-        pickupPointId: o.pickupPointId ?? "",
-        procurementId: o.procurementId ?? o.roundId ?? "",
-      }),
-    )
+    const list = await http.get<BackendOrderPayload[]>("/orders", true)
+    return list.map(mapOrder)
   },
 
   getById: async (id: string) => {
-    const order = await http.get<Parameters<typeof mapBackendOrder>[0]>(`/orders/${id}`, true)
-    return mapBackendOrder(order)
+    const order = await http.get<BackendOrderPayload>(`/orders/${id}`, true)
+    return mapOrder(order)
   },
 
-  create: async (payload: {
-    userId: string
-    procurementId: string
-    pickupPointId: string
-    items: { productId: string; quantity: number }[]
-    comment?: string
-  }) => {
+  /** Checkout корзины → заказ submitted + paymentStatus pending */
+  checkoutFromCart: async (procurementId: string, pickupPointId: string) => {
     const { cartApi } = await import("@/entities/cart/api/cartApi")
+    await http.patch("/profile", { pickupPointId }, true)
+    const created = await cartApi.checkout(procurementId)
     await cartApi.clear()
-    for (const item of payload.items) {
-      await cartApi.addItem(item.productId, item.quantity, payload.procurementId)
-    }
-    const { http: h } = await import("@/shared/api/client")
-    await h.patch("/profile", { pickupPointId: payload.pickupPointId }, true)
-    const created = await cartApi.checkout(payload.procurementId)
     return ordersApi.getById(created.id)
   },
 
+  /** Эскроу: симуляция оплаты, pending → held */
+  reservePayment: async (orderId: string) => {
+    const order = await http.post<BackendOrderPayload>(
+      `/orders/${orderId}/reserve-payment`,
+      {},
+      true,
+    )
+    return mapOrder(order)
+  },
+
+  /** Житель подтверждает получение: in_transit → delivered, held → released */
+  confirmReceipt: async (orderId: string) => {
+    const order = await http.post<BackendOrderPayload>(
+      `/orders/${orderId}/confirm-receipt`,
+      {},
+      true,
+    )
+    return mapOrder(order)
+  },
+
   getAll: async () => {
-    const list = await http.get<Parameters<typeof mapBackendOrder>[0][]>("/admin/orders", true)
-    return list.map(mapBackendOrder)
+    const list = await http.get<BackendOrderPayload[]>("/admin/orders", true)
+    return list.map(mapOrder)
   },
 
   updateStatus: async (id: string, status: OrderStatus) => {
     const backendStatus = mapFrontOrderStatusToBackend(status)
-    const order = await http.patch<Parameters<typeof mapBackendOrder>[0]>(
+    const order = await http.patch<BackendOrderPayload>(
       `/orders/${id}/status`,
       { status: backendStatus },
       true,
     )
-    return mapBackendOrder(order)
+    return mapOrder(order)
   },
 }

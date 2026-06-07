@@ -13,7 +13,7 @@ import type {
   BackendRound,
   BackendUser,
 } from "@/shared/api/backend-types"
-import type { DeliveryMode, OrderStatus, UserRole } from "@/shared/types"
+import type { DeliveryMode, OrderStatus, PaymentStatus, UserRole } from "@/shared/types"
 import { normalizeProductImageUrl } from "@/shared/lib/normalize-media-url"
 
 export const parseApiNumber = (
@@ -77,6 +77,9 @@ export const mapBackendOrder = (o: {
   publicNumber?: string
   title?: string
   timeline?: Order["timeline"]
+  paymentStatus?: PaymentStatus
+  paymentStatusLabel?: string
+  statusLabel?: string
 }): Order => ({
   id: o.id,
   userId: o.userId,
@@ -103,6 +106,10 @@ export const mapBackendOrder = (o: {
     ],
   publicNumber: o.publicNumber,
   userName: (o as { userName?: string }).userName,
+  userPhone: (o as { userPhone?: string }).userPhone,
+  paymentStatus: o.paymentStatus,
+  paymentStatusLabel: o.paymentStatusLabel,
+  statusLabel: o.statusLabel,
 })
 
 export const mapSettlement = (s: {
