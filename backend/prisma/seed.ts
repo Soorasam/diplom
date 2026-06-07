@@ -2,12 +2,7 @@ import { PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 import { ensureSeedProducts, uploadSeedProductImages } from './lib/seed-catalog';
-import {
-  KHANDYGA_PVZ_INDEX,
-  PVZ_EMPLOYEE_ACCOUNTS,
-  seedPvzEmployees,
-  seedLocations,
-} from './lib/seed-settlements-pvz';
+import { KHANDYGA_LOCATION_INDEX, seedLocations } from './lib/seed-settlements-pvz';
 
 const prisma = new PrismaClient();
 
@@ -38,7 +33,7 @@ async function main() {
   console.log('Загрузка фото товаров в MinIO…');
   await uploadSeedProductImages(prisma);
 
-  const mainPvz = pickupPoints[KHANDYGA_PVZ_INDEX];
+  const mainLocation = pickupPoints[KHANDYGA_LOCATION_INDEX];
   const passwordAdmin = await bcrypt.hash('admin12345', 10);
   const passwordDemo = await bcrypt.hash('demo12345', 10);
 
@@ -48,7 +43,7 @@ async function main() {
       fullName: 'Администратор',
       hashedPassword: passwordAdmin,
       role: UserRole.admin,
-      pickupPointId: mainPvz.id,
+      pickupPointId: mainLocation.id,
     },
   });
 
@@ -58,19 +53,13 @@ async function main() {
       fullName: 'Демо Пользователь',
       hashedPassword: passwordDemo,
       role: UserRole.resident,
-      pickupPointId: mainPvz.id,
+      pickupPointId: mainLocation.id,
     },
   });
 
-  await seedPvzEmployees(prisma, pickupPoints);
-
   console.log('Seed выполнен успешно.');
   console.log('  admin@coop.local / admin12345');
-  console.log('  demo@coop.local  / demo12345 (ПВЗ Хандыга)');
-  console.log('  Сотрудники ПВЗ (пароль employee12345):');
-  for (const e of PVZ_EMPLOYEE_ACCOUNTS) {
-    console.log(`    ${e.email}`);
-  }
+  console.log('  demo@coop.local  / demo12345 (с. Хандыга)');
   console.log('  Полная очистка: npm run prisma:reset:deploy');
 }
 

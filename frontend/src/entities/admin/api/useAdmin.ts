@@ -60,28 +60,11 @@ export const useAdminDriver = (id: string | undefined) =>
     enabled: Boolean(id),
   })
 
-export const useAdminPickupPoints = () =>
-  useQuery({
-    queryKey: [...queryKeys.admin.stats, "pickup-points"],
-    queryFn: () => adminApi.getPickupPoints(),
-  })
-
 export const useAdminRounds = () =>
   useQuery({
     queryKey: [...queryKeys.admin.stats, "rounds"],
     queryFn: () => adminApi.getRounds(),
   })
-
-export const useCreatePvzEmployee = () => {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: adminApi.createPvzEmployee,
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: [...queryKeys.admin.stats, "pickup-points"] })
-      void qc.invalidateQueries({ queryKey: queryKeys.admin.users })
-    },
-  })
-}
 
 export const useUpdateAdminOrderStatus = () => {
   const qc = useQueryClient()

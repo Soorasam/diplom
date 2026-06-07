@@ -19,28 +19,6 @@ export const procurementsApi = {
     return mapRound(round)
   },
 
-  getRoute: async (routeId: string) => {
-    const routes = await http.get<{ id: string; title: string; transportType: string }[]>(
-      "/routes",
-    )
-    const r = routes.find((x) => x.id === routeId)
-    if (!r) throw new Error("Маршрут не найден")
-    return {
-      id: r.id,
-      name: r.title,
-      fromSettlementId: "",
-      toSettlementIds: [],
-      deliveryMode:
-        r.transportType === "river"
-          ? "river"
-          : r.transportType === "winter_road"
-            ? "winter_road"
-            : "mixed",
-      status: "active" as const,
-      points: [],
-    }
-  },
-
   create: async (payload: {
     title: string
     closesAt: string
@@ -107,21 +85,5 @@ export const procurementsApi = {
       true,
     )
     return res.roundIds
-  },
-
-  getReceiptApprovals: async (procurementId: string) => {
-    const round = await http.get<BackendRound>(`/rounds/${procurementId}`)
-    if (round.status === "fulfilled") {
-      return [{ approvedByRole: "admin" as const, approvedAt: round.closesAt }]
-    }
-    return []
-  },
-
-  approveReceipt: async (procurementId: string, actorRole: UserRole) => {
-    if (actorRole !== "employee" && actorRole !== "admin") {
-      throw new Error("Подтверждать приемку может только ПВЗ или админ")
-    }
-    await http.patch(`/rounds/${procurementId}/fulfill`, {}, true)
-    return [{ approvedByRole: actorRole, approvedAt: new Date().toISOString() }]
   },
 }

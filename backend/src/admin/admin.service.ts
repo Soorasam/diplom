@@ -1,8 +1,5 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, UserRole } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
-import * as crypto from 'crypto';
-import { CreatePvzEmployeeDto } from './dto/create-pvz-employee.dto';
+import { UserRole } from '@prisma/client';
 import { CreateSettlementDto } from './dto/create-settlement.dto';
 import { CatalogService } from '../catalog/catalog.service';
 import { calcRoundProgressPercent, decimalToNumber } from '../common/order-labels';
@@ -90,72 +87,6 @@ export class AdminService {
 
   listRoutes() {
     return this.prisma.route.findMany({ orderBy: { title: 'asc' } });
-  }
-
-  private generateTemporaryPassword(length = 12): string {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-    const bytes = crypto.randomBytes(length);
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      result += chars[bytes[i]! % chars.length];
-    }
-    return result;
-  }
-
-  async createPvzEmployee(dto: CreatePvzEmployeeDto) {
-    const email = dto.email.trim().toLowerCase();
-    const pickupPoint = await this.prisma.pickupPoint.findUnique({
-      where: { id: dto.pickupPointId },
-    });
-    if (!pickupPoint) {
-      throw new NotFoundException('Пункт выдачи не найден');
-    }
-
-    const existing = await this.prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      throw new ConflictException('Этот email уже используется');
-    }
-
-    const temporaryPassword = this.generateTemporaryPassword();
-    const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
-
-    try {
-      const user = await this.prisma.user.create({
-        data: {
-          email,
-          hashedPassword,
-          fullName: dto.fullName?.trim() || `Сотрудник ${pickupPoint.name}`,
-          role: UserRole.employee,
-          pickupPointId: pickupPoint.id,
-          mustChangePassword: true,
-        },
-      });
-
-      return {
-        user: {
-          id: user.id,
-          email: user.email,
-          fullName: user.fullName,
-          role: user.role,
-          pickupPointId: user.pickupPointId,
-          mustChangePassword: true,
-        },
-        temporaryPassword,
-        pickupPoint: {
-          id: pickupPoint.id,
-          name: pickupPoint.name,
-          settlementName: pickupPoint.name,
-        },
-      };
-    } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
-        throw new ConflictException('Этот email уже используется');
-      }
-      throw error;
-    }
   }
 
   async createSettlement(dto: CreateSettlementDto) {
@@ -259,18 +190,6 @@ export class AdminService {
           }
         : null,
     };
-  }
-
-  listPickupPoints() {
-    return this.prisma.pickupPoint.findMany({
-      orderBy: { name: 'asc' },
-      include: {
-        users: {
-          where: { role: UserRole.employee },
-          select: { id: true, email: true, fullName: true, phone: true },
-        },
-      },
-    });
   }
 
   async listRounds() {

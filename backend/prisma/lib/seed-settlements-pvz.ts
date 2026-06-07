@@ -1,5 +1,4 @@
-import { UserRole, type PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+import type { PrismaClient } from '@prisma/client';
 
 export const LOCATIONS = [
   {
@@ -41,16 +40,6 @@ export const LOCATIONS = [
 
 export const KHANDYGA_LOCATION_INDEX = 0;
 
-const EMPLOYEE_PASSWORD = 'employee12345';
-
-export const PVZ_EMPLOYEE_ACCOUNTS = [
-  { email: 'employee@coop.local', fullName: 'Сотрудник ПВЗ Хандыга', phone: '+7 914 555-00-01' },
-  { email: 'employee-batagai@coop.local', fullName: 'Сотрудник ПВЗ Батагай', phone: '+7 914 555-00-02' },
-  { email: 'employee-viluisk@coop.local', fullName: 'Сотрудник ПВЗ Вилюйск', phone: '+7 914 555-00-03' },
-  { email: 'employee-oymyakon@coop.local', fullName: 'Сотрудник ПВЗ Оймякон', phone: '+7 914 555-00-04' },
-  { email: 'employee-yakutsk@coop.local', fullName: 'Сотрудник ПВЗ Якутск', phone: '+7 914 555-00-05' },
-] as const;
-
 export async function seedLocations(prisma: PrismaClient) {
   const pickupPoints: Awaited<ReturnType<typeof prisma.pickupPoint.create>>[] = [];
 
@@ -60,34 +49,4 @@ export async function seedLocations(prisma: PrismaClient) {
   }
 
   return { pickupPoints };
-}
-
-export const seedSettlementsAndPickupPoints = seedLocations;
-
-export const SETTLEMENTS_WITH_PVZ = LOCATIONS;
-export const KHANDYGA_PVZ_INDEX = KHANDYGA_LOCATION_INDEX;
-
-export async function seedPvzEmployees(
-  prisma: PrismaClient,
-  pickupPoints: Awaited<ReturnType<typeof prisma.pickupPoint.create>>[],
-) {
-  const hashedPassword = await bcrypt.hash(EMPLOYEE_PASSWORD, 10);
-
-  for (let i = 0; i < PVZ_EMPLOYEE_ACCOUNTS.length; i++) {
-    const account = PVZ_EMPLOYEE_ACCOUNTS[i];
-    const pvz = pickupPoints[i];
-    if (!pvz) continue;
-
-    await prisma.user.create({
-      data: {
-        email: account.email,
-        fullName: account.fullName,
-        phone: account.phone,
-        hashedPassword,
-        role: UserRole.employee,
-        pickupPointId: pvz.id,
-        isActive: true,
-      },
-    });
-  }
 }

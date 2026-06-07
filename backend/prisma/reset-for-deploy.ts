@@ -2,12 +2,7 @@ import { PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 import { ensureSeedProducts, uploadSeedProductImages } from './lib/seed-catalog';
-import {
-  KHANDYGA_LOCATION_INDEX,
-  PVZ_EMPLOYEE_ACCOUNTS,
-  seedPvzEmployees,
-  seedLocations,
-} from './lib/seed-settlements-pvz';
+import { KHANDYGA_LOCATION_INDEX, seedLocations } from './lib/seed-settlements-pvz';
 
 const prisma = new PrismaClient();
 
@@ -43,7 +38,7 @@ async function seedBase() {
   console.log('Загрузка фото товаров в MinIO…');
   await uploadSeedProductImages(prisma);
 
-  const mainPvz = pickupPoints[KHANDYGA_LOCATION_INDEX];
+  const mainLocation = pickupPoints[KHANDYGA_LOCATION_INDEX];
   const passwordAdmin = await bcrypt.hash('admin12345', 10);
   const passwordDemo = await bcrypt.hash('demo12345', 10);
 
@@ -53,7 +48,7 @@ async function seedBase() {
       fullName: 'Администратор',
       hashedPassword: passwordAdmin,
       role: UserRole.admin,
-        pickupPointId: mainPvz.id,
+      pickupPointId: mainLocation.id,
       isActive: true,
     },
   });
@@ -64,12 +59,10 @@ async function seedBase() {
       fullName: 'Демо Пользователь',
       hashedPassword: passwordDemo,
       role: UserRole.resident,
-        pickupPointId: mainPvz.id,
+      pickupPointId: mainLocation.id,
       isActive: true,
     },
   });
-
-  await seedPvzEmployees(prisma, pickupPoints);
 
   return { pickupPoints };
 }
@@ -82,14 +75,10 @@ async function main() {
   const { pickupPoints } = await seedBase();
 
   console.log('\nГотово. В БД только:');
-  console.log(`  НП/ПВЗ: ${pickupPoints.length} · сотрудников: ${PVZ_EMPLOYEE_ACCOUNTS.length}`);
+  console.log(`  НП: ${pickupPoints.length}`);
   console.log('  Каталог товаров с фото (если MinIO доступен)');
   console.log('\n  admin@coop.local / admin12345');
-  console.log('  demo@coop.local  / demo12345  → ПВЗ Хандыга');
-  console.log('\n  Сотрудники ПВЗ (все пароль employee12345):');
-  for (const e of PVZ_EMPLOYEE_ACCOUNTS) {
-    console.log(`    ${e.email}  →  ${e.fullName}`);
-  }
+  console.log('  demo@coop.local  / demo12345  → с. Хандыга');
   console.log('\nСборы и маршруты создаются только через приложение (водитель / админ).');
 }
 

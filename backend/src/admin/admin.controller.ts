@@ -8,7 +8,6 @@ import { UpdateOrderStatusDto } from '../orders/dto/update-order-status.dto';
 import { OrdersService } from '../orders/orders.service';
 import { ProcurementSettlementService } from '../logistics/procurement-settlement.service';
 import { AdminService } from './admin.service';
-import { CreatePvzEmployeeDto } from './dto/create-pvz-employee.dto';
 import { CreateSettlementDto } from './dto/create-settlement.dto';
 
 @Controller('admin')
@@ -64,16 +63,6 @@ export class AdminController {
   @Get('drivers/:id')
   driver(@Param('id', ParseUUIDPipe) id: string) {
     return this.admin.getDriver(id);
-  }
-
-  @Get('pickup-points')
-  pickupPoints() {
-    return this.admin.listPickupPoints();
-  }
-
-  @Post('pvz-employees')
-  createPvzEmployee(@Body() dto: CreatePvzEmployeeDto) {
-    return this.admin.createPvzEmployee(dto);
   }
 
   @Get('rounds')

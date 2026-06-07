@@ -9,9 +9,3 @@ export const useSettlements = () =>
     queryKey: queryKeys.settlements,
     queryFn: () => settlementsApi.getAll(),
   })
-
-export const usePickupPoints = (settlementId?: string) =>
-  useQuery({
-    queryKey: queryKeys.pickupPoints(settlementId),
-    queryFn: () => settlementsApi.getPickupPoints(settlementId),
-  })

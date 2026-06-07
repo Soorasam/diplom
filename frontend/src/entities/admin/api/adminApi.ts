@@ -4,11 +4,10 @@ import type {
   PurchaseSettlement,
 } from "@/entities/procurement-settlement/api/procurementSettlementApi"
 import type { BackendRound, BackendUser } from "@/shared/api/backend-types"
-import type { Order, PickupPoint, Product, Settlement, User } from "@/shared/api/api-types"
+import type { Order, Product, Settlement, User } from "@/shared/api/api-types"
 import {
   mapBackendOrder,
   mapBackendRole,
-  mapPickupPoint,
   mapProduct,
   mapRound,
   mapSettlement,
@@ -31,11 +30,6 @@ export type AdminStats = {
   driversActive: number
   activeProcurements: number
   procurementsOpen: number
-}
-
-export type AdminPickupPoint = PickupPoint & {
-  settlementName?: string
-  employees: { id: string; name: string; email: string; phone: string }[]
 }
 
 export type AdminDriverDetail = {
@@ -63,16 +57,6 @@ export type AdminDriverDetail = {
       mimeType: string | null
     }[]
   } | null
-}
-
-export type AdminTicket = {
-  id: string
-  title: string
-  body: string
-  read: boolean
-  createdAt: string
-  kind: "dispute" | "other"
-  reporterName: string | null
 }
 
 export const adminApi = {
@@ -165,45 +149,13 @@ export const adminApi = {
     }
   },
 
-  getPickupPoints: async (): Promise<AdminPickupPoint[]> => {
-    const list = await http.get<
-      {
-        id: string
-        name: string
-        address?: string | null
-        phone?: string | null
-        ulus?: string | null
-        users?: { id: string; email: string; fullName: string | null; phone: string | null }[]
-      }[]
-    >("/admin/pickup-points", true)
-    return list.map((p) => ({
-      ...mapPickupPoint({ ...p, settlementId: p.id }),
-      settlementName: p.name,
-      employees: (p.users ?? []).map((u) => ({
-        id: u.id,
-        name: u.fullName ?? u.email,
-        email: u.email,
-        phone: u.phone ?? "",
-      })),
-    }))
-  },
-
   getRounds: async () => {
     const list = await http.get<BackendRound[]>("/admin/rounds", true)
     return list.map(mapRound)
   },
 
-  fulfillRound: (id: string) =>
-    http.patch<BackendRound>(`/rounds/${id}/fulfill`, {}, true).then(mapRound),
-
   closeAndDispatchRound: (id: string) =>
     http.patch<BackendRound>(`/rounds/${id}/close`, {}, true).then(mapRound),
-
-  getNotifications: async (): Promise<AdminTicket[]> => {
-    return http.get<AdminTicket[]>("/admin/notifications", true)
-  },
-
-  resolveNotification: (id: string) => http.patch(`/admin/notifications/${id}/resolve`, {}, true),
 
   getProcurementReceipts: (roundId: string) =>
     http.get<ProcurementReceipt[]>(
@@ -216,20 +168,4 @@ export const adminApi = {
       `/admin/rounds/${roundId}/purchase-settlement`,
       true,
     ),
-
-  createPvzEmployee: (payload: {
-    email: string
-    pickupPointId: string
-    fullName?: string
-  }) =>
-    http.post<{
-      user: {
-        id: string
-        email: string
-        fullName: string | null
-        pickupPointId: string | null
-      }
-      temporaryPassword: string
-      pickupPoint: { id: string; name: string; settlementName: string }
-    }>("/admin/pvz-employees", payload, true),
 }

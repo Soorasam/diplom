@@ -172,25 +172,3 @@ export const useLeaveProcurement = (userId?: string) => {
     },
   })
 }
-
-export const useProcurementReceiptApprovals = (procurementId?: string) =>
-  useQuery({
-    queryKey: ["procurements", "receipt-approvals", procurementId],
-    queryFn: () => procurementsApi.getReceiptApprovals(procurementId!),
-    enabled: Boolean(procurementId),
-  })
-
-export const useApproveProcurementReceipt = (actorRole: UserRole) => {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (procurementId: string) =>
-      procurementsApi.approveReceipt(procurementId, actorRole),
-    onSuccess: (_, procurementId) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.all })
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
-      void qc.invalidateQueries({
-        queryKey: ["procurements", "receipt-approvals", procurementId],
-      })
-    },
-  })
-}

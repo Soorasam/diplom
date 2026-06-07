@@ -19,17 +19,10 @@ export const queryKeys = {
     detail: (id: string) => ["orders", id] as const,
   },
   settlements: ["settlements"] as const,
-  pickupPoints: (settlementId?: string) =>
-    ["pickup-points", settlementId] as const,
   notifications: (userId: string) => ["notifications", userId] as const,
   routes: {
     all: ["routes"] as const,
     driver: (driverId: string) => ["routes", "driver", driverId] as const,
-  },
-  employee: {
-    workspace: ["employee", "workspace"] as const,
-    orders: (pickupPointId: string) =>
-      ["employee", "orders", pickupPointId] as const,
   },
   admin: {
     stats: ["admin", "stats"] as const,

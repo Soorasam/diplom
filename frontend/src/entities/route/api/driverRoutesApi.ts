@@ -58,8 +58,6 @@ export const driverRoutesApi = {
 
   deleteTemplate: (id: string) =>
     http.delete<{ ok: boolean }>(`/driver/route-templates/${id}`, true),
-
-  getRoute: (id: string) => http.get<DriverRoutePlan>(`/routes/${id}`),
 }
 
 export const transportToDeliveryMode = (t: string): DeliveryMode => {

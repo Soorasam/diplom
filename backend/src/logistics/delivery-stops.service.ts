@@ -163,7 +163,7 @@ export class DeliveryStopsService {
     });
     if (ordersAtStop > 0 && unresolvedOrders > 0) {
       throw new BadRequestException(
-        'На этой точке ожидают заказы — завершение подтверждает сотрудник ПВЗ',
+        'На этой точке ещё есть незавершённые заказы — завершите выдачу жителям',
       );
     }
 

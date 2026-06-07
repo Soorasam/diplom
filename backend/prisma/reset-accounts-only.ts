@@ -16,13 +16,6 @@ const DEMO_USERS = [
     fullName: 'Демо Пользователь',
     role: UserRole.resident,
   },
-  {
-    email: 'employee@coop.local',
-    password: 'employee12345',
-    fullName: 'Сотрудник ПВЗ',
-    phone: '+7 914 555-00-01',
-    role: UserRole.employee,
-  },
 ] as const;
 
 async function wipeAllData() {
@@ -65,7 +58,6 @@ async function seedBaseAccounts() {
       data: {
         email: demo.email,
         fullName: demo.fullName,
-        phone: 'phone' in demo ? demo.phone : null,
         hashedPassword,
         role: demo.role,
         pickupPointId: pickupPoint.id,
@@ -85,10 +77,9 @@ async function main() {
   const { pickupPoint } = await seedBaseAccounts();
 
   console.log('\nГотово. В БД только:');
-  console.log(`  ПВЗ: ${pickupPoint.name}, ${pickupPoint.address}`);
-  console.log('\n  admin@coop.local      / admin12345');
-  console.log('  demo@coop.local       / demo12345');
-  console.log('  employee@coop.local / employee12345');
+  console.log(`  НП: ${pickupPoint.name}, ${pickupPoint.address}`);
+  console.log('\n  admin@coop.local / admin12345');
+  console.log('  demo@coop.local  / demo12345');
   console.log('\nКаталог и сборы отсутствуют. Каталог: npm run prisma:seed:catalog');
 }
 

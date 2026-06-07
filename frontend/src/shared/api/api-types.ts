@@ -39,11 +39,6 @@ export interface DriverApplication {
   documents?: DriverApplicationDocument[]
 }
 
-export interface PvzEmployeeProfile {
-  userId: string
-  pickupPointId: string
-}
-
 export interface Settlement {
   id: string
   name: string
