@@ -81,10 +81,19 @@ export interface Product {
   popular?: boolean
 }
 
+export interface ProcurementWaypoint {
+  pickupPointId: string
+  settlementId: string
+  settlementName?: string
+  sortOrder: number
+  isProcurementPoint: boolean
+}
+
 export interface Procurement {
   id: string
   title: string
   routeId: string
+  waypoints?: ProcurementWaypoint[]
   status: ProcurementStatus
   createdAt: string
   closesAt: string

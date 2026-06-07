@@ -181,6 +181,13 @@ export const mapRound = (r: BackendRound): Procurement => ({
   id: r.id,
   title: r.title ?? r.route.title,
   routeId: r.routeId,
+  waypoints: (r.waypoints ?? []).map((w) => ({
+    pickupPointId: w.pickupPointId,
+    settlementId: w.pickupPointId,
+    settlementName: w.pickupPoint?.name,
+    sortOrder: w.sortOrder,
+    isProcurementPoint: w.isProcurementPoint,
+  })),
   status:
     r.status === "open" && r.emergencyCloseAt
       ? "closing"

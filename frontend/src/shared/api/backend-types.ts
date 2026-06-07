@@ -43,9 +43,17 @@ export interface BackendRoute {
   createdByUserId?: string | null
 }
 
+export interface BackendRoundWaypoint {
+  pickupPointId: string
+  sortOrder: number
+  isProcurementPoint: boolean
+  pickupPoint?: { id: string; name: string }
+}
+
 export interface BackendRound {
   id: string
   routeId: string
+  waypoints?: BackendRoundWaypoint[]
   title: string | null
   routeTitle?: string | null
   transportType?: "winter_road" | "river" | "highway"

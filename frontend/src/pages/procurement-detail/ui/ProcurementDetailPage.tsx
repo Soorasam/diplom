@@ -1,7 +1,6 @@
 import { useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { ArrowRight, Map, Package } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import {
@@ -14,8 +13,11 @@ import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { participateInProcurement } from "@/features/procurement/lib/participate-in-procurement"
 import { LeaveProcurementPanel } from "@/features/procurement/ui/LeaveProcurementPanel"
-import { driverRoutesApi } from "@/entities/route/api/driverRoutesApi"
 import { routes } from "@/shared/config/routes"
+import {
+  getUserDeliveryLocationId,
+  isProcurementEligibleForUser,
+} from "@/shared/lib/procurement-eligibility"
 import { formatShortDate } from "@/shared/lib/format"
 import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
 import { Button } from "@/shared/ui/button/Button"
@@ -37,12 +39,7 @@ export const ProcurementDetailPage = () => {
   const procurementIdInCart = useCartStore((s) => s.procurementId)
 
   const { data: procurement, isLoading } = useProcurement(id)
-  const { data: routePlan, isLoading: loadingRoutePlan } = useQuery({
-    queryKey: ["route", "eligibility", procurement?.routeId],
-    queryFn: () => driverRoutesApi.getRoute(procurement!.routeId),
-    enabled: Boolean(procurement?.routeId),
-    staleTime: 60_000,
-  })
+  const userLocationId = getUserDeliveryLocationId(user)
   const { data: memberships = [] } = useMyProcurementMemberships(user?.id)
   const join = useJoinProcurement(user?.id)
   const leave = useLeaveProcurement(user?.id)
@@ -61,16 +58,11 @@ export const ProcurementDetailPage = () => {
   const isOwnRound = Boolean(
     user?.id && procurement?.organizerUserId && procurement.organizerUserId === user.id,
   )
-  const needsEligibilityCheck = Boolean(user?.pickupPointId || user?.settlementId)
-  const inUserRoute = needsEligibilityCheck
-    ? Boolean(
-        routePlan?.waypoints.some(
-          (w) =>
-            (user?.pickupPointId && w.pickupPointId === user.pickupPointId) ||
-            (user?.settlementId && w.settlementId === user.settlementId),
-        ),
-      )
-    : true
+  const inUserRoute = userLocationId
+    ? procurement
+      ? isProcurementEligibleForUser(procurement, user)
+      : false
+    : false
 
   const handleParticipate = async () => {
     if (!procurement || atLimit) {
@@ -150,6 +142,15 @@ export const ProcurementDetailPage = () => {
 
         {limitMessage ? <AlertBanner variant="warning">{limitMessage}</AlertBanner> : null}
 
+        {isAuthenticated && !userLocationId ? (
+          <AlertBanner variant="warning" title="Укажите населённый пункт">
+            <Link to={routes.user.addresses} className="ui-link font-semibold underline">
+              Выберите посёлок доставки
+            </Link>{" "}
+            в профиле, чтобы участвовать в сборе.
+          </AlertBanner>
+        ) : null}
+
         <Card className="!p-4">
           <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
             <Map size={18} className="text-blue-600" />
@@ -211,10 +212,14 @@ export const ProcurementDetailPage = () => {
                   fullWidth
                   size="lg"
                   rightIcon={<ArrowRight size={18} />}
-                  disabled={!inUserRoute || loadingRoutePlan}
+                  disabled={!inUserRoute}
                   onClick={() => participateInProcurement(navigate, setProcurement, procurement.id)}
                 >
-                  {inUserRoute ? "Перейти в каталог" : "Сбор не для вашего посёлка"}
+                  {!userLocationId
+                    ? "Укажите посёлок в профиле"
+                    : inUserRoute
+                      ? "Перейти в каталог"
+                      : "Сбор не для вашего посёлка"}
                 </Button>
                 <Button
                   type="button"
@@ -238,7 +243,7 @@ export const ProcurementDetailPage = () => {
               isClosed ||
               isOwnRound ||
               join.isPending ||
-              loadingRoutePlan ||
+              !userLocationId ||
               !inUserRoute
             }
             leftIcon={<Package size={18} />}
@@ -248,8 +253,10 @@ export const ProcurementDetailPage = () => {
               ? "Это ваш сбор"
               : isClosed
                 ? "Сбор закрыт"
-                : !inUserRoute
-                  ? "Сбор не для вашего посёлка"
+                : !userLocationId
+                  ? "Укажите посёлок в профиле"
+                  : !inUserRoute
+                    ? "Сбор не для вашего посёлка"
                 : atLimit
                   ? "Лимит веса достигнут"
                   : isClosing
