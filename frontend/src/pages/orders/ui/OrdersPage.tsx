@@ -41,42 +41,59 @@ export const OrdersPage = () => {
           {orders.map((order) => {
             const refund = orderRefundAmount(order)
             const displayTotal = refund > 0 ? orderNetAmount(order) : order.total
+            const orderLabel = order.publicNumber
+              ? `№ ${order.publicNumber}`
+              : `№ ${order.id.slice(0, 8)}`
+
             return (
-            <li key={order.id}>
-              <Link to={routes.user.order(order.id)}>
-                <Card className="ui-card-interactive transition">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-slate-900 dark:text-slate-100">№ {order.id}</p>
-                      <p className="text-xs text-slate-500">{formatDate(order.createdAt)}</p>
-                      <p className="ui-price mt-1 text-sm">
+              <li key={order.id}>
+                <Link to={routes.user.order(order.id)} className="block">
+                  <Card className="ui-card-interactive relative min-h-[5.5rem] pr-11 pt-3 pb-3 pl-4">
+                    <div className="absolute top-3 right-3 flex max-w-[46%] flex-col items-end gap-1">
+                      <Badge
+                        variant={orderStatusVariant[order.status]}
+                        className="max-w-full truncate"
+                      >
+                        {order.statusLabel ?? orderStatusLabel[order.status]}
+                      </Badge>
+                      {order.paymentStatus ? (
+                        <Badge
+                          variant={paymentStatusVariant[order.paymentStatus]}
+                          className="max-w-full truncate"
+                        >
+                          {order.paymentStatusLabel ??
+                            paymentStatusLabel[order.paymentStatus]}
+                        </Badge>
+                      ) : null}
+                    </div>
+
+                    <div className="min-w-0 pr-[42%]">
+                      <p className="truncate font-semibold text-slate-900 dark:text-slate-100">
+                        {orderLabel}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        {formatDate(order.createdAt)}
+                      </p>
+                      <p className="ui-price mt-2 text-sm font-semibold">
                         {formatPrice(displayTotal)}
                       </p>
                       {refund > 0 ? (
-                        <p className="mt-0.5 text-xs text-emerald-700">
-                          Возврат переплаты: {formatPrice(refund)}
+                        <p className="mt-0.5 text-xs leading-snug text-emerald-700">
+                          Возврат: {formatPrice(refund)}
                         </p>
                       ) : null}
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-2">
-                      <div className="flex flex-wrap justify-end gap-1.5">
-                        <Badge variant={orderStatusVariant[order.status]}>
-                          {order.statusLabel ?? orderStatusLabel[order.status]}
-                        </Badge>
-                        {order.paymentStatus ? (
-                          <Badge variant={paymentStatusVariant[order.paymentStatus]}>
-                            {order.paymentStatusLabel ??
-                              paymentStatusLabel[order.paymentStatus]}
-                          </Badge>
-                        ) : null}
-                      </div>
-                      <ChevronRight size={18} className="text-slate-400" />
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            </li>
-          )})}
+
+                    <ChevronRight
+                      size={18}
+                      className="absolute bottom-3 right-3 text-slate-400"
+                      aria-hidden
+                    />
+                  </Card>
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       ) : (
         <EmptyState

@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { routesApi } from "@/entities/route/api/routesApi"
+import { queryKeys } from "@/shared/config/query-keys"
+import {
+  isDeliveryRoundInProgress,
+  isOpenCollectionRound,
+} from "@/shared/lib/driver-round-workload"
 import { MapPin, PlusCircle, RotateCcw, Save, Sparkles, Trash2, Truck } from "lucide-react"
 
 import {
@@ -81,12 +87,40 @@ export const DriverProcurementsPage = () => {
 
   const create = useCreateProcurement()
   const scheduleEmergencyClose = useScheduleEmergencyClose()
+  const driverId = user?.role === "driver" ? user.id : ""
+
   const { data: activeRound } = useDriverActiveProcurement(user?.id)
   const { data: deliveryRound } = useDriverDeliveryProcurement(user?.id)
   const { data: all = [] } = useAllProcurements()
 
-  const hasActiveRound = Boolean(activeRound)
-  const hasDeliveryInProgress = Boolean(deliveryRound)
+  const { data: driverRoutes } = useQuery({
+    queryKey: queryKeys.routes.driver(driverId),
+    queryFn: () => routesApi.getByDriver(driverId),
+    enabled: Boolean(driverId),
+  })
+
+  const { data: driverOrders } = useQuery({
+    queryKey: [...queryKeys.routes.driver(driverId), "orders"],
+    queryFn: () => routesApi.getDriverOrders(driverId),
+    enabled: Boolean(driverId),
+  })
+
+  const deliveryRoute = useMemo(
+    () =>
+      driverRoutes?.find(
+        (r) =>
+          r.status === "active" &&
+          (r.activeRoundId === deliveryRound?.id || r.id === deliveryRound?.id),
+      ),
+    [driverRoutes, deliveryRound?.id],
+  )
+
+  const hasActiveRound = isOpenCollectionRound(activeRound)
+  const hasDeliveryInProgress = isDeliveryRoundInProgress(
+    deliveryRound,
+    deliveryRoute,
+    driverOrders,
+  )
   const canCreateNewRound = !hasActiveRound && !hasDeliveryInProgress
 
   const deleteTemplate = useMutation({

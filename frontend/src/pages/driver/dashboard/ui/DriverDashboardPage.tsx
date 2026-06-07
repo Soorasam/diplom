@@ -7,6 +7,7 @@ import { routesApi } from "@/entities/route/api/routesApi"
 import { useSettlements } from "@/entities/settlement/api/useSettlements"
 import { queryKeys } from "@/shared/config/query-keys"
 import { routes } from "@/shared/config/routes"
+import { isCoordinatorRouteInProgress } from "@/shared/lib/driver-round-workload"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Card } from "@/shared/ui/card/Card"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
@@ -48,7 +49,11 @@ export const DriverDashboardPage = () => {
     queryFn: () => routesApi.getDriverOrders(driverId),
   })
 
-  const activeRoute = driverRoutes?.find((r) => r.status === "active")
+  const rawActiveRoute = driverRoutes?.find((r) => r.status === "active")
+  const activeRoute =
+    rawActiveRoute && isCoordinatorRouteInProgress(rawActiveRoute, driverOrders)
+      ? rawActiveRoute
+      : undefined
   const todayRoutes = driverRoutes ?? []
   const nextSettlementId = activeRoute?.toSettlementIds[0]
   const nextStop = settlements?.find((s) => s.id === nextSettlementId)
@@ -177,25 +182,36 @@ export const DriverDashboardPage = () => {
                   Нет активных маршрутов. Откройте сбор в разделе «Сборы» — маршрут появится здесь.
                 </Card>
               ) : (
-                todayRoutes.map((route) => (
-                  <Link key={route.id} to={routes.driver.route}>
-                    <Card className="ui-link-card p-4 transition-colors">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="truncate font-medium leading-normal text-slate-900 dark:text-slate-100">
-                            {route.name}
-                          </p>
-                          <p className="text-xs font-normal leading-relaxed text-slate-500 dark:text-slate-400">
-                            {deliveryModeLabel[route.deliveryMode]}
-                          </p>
+                todayRoutes.map((route) => {
+                  const routeInProgress =
+                    route.status === "active" &&
+                    isCoordinatorRouteInProgress(route, driverOrders)
+                  const displayStatus = routeInProgress
+                    ? "active"
+                    : route.status === "active"
+                      ? "completed"
+                      : route.status
+
+                  return (
+                    <Link key={route.id} to={routes.driver.route}>
+                      <Card className="ui-link-card p-4 transition-colors">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate font-medium leading-normal text-slate-900 dark:text-slate-100">
+                              {route.name}
+                            </p>
+                            <p className="text-xs font-normal leading-relaxed text-slate-500 dark:text-slate-400">
+                              {deliveryModeLabel[route.deliveryMode]}
+                            </p>
+                          </div>
+                          <Badge variant={routeStatusVariant[displayStatus]}>
+                            {routeStatusLabel[displayStatus]}
+                          </Badge>
                         </div>
-                        <Badge variant={routeStatusVariant[route.status]}>
-                          {routeStatusLabel[route.status]}
-                        </Badge>
-                      </div>
-                    </Card>
-                  </Link>
-                ))
+                      </Card>
+                    </Link>
+                  )
+                })
               )}
             </div>
           </div>

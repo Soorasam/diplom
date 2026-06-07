@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { CheckCircle2, MapPin, Truck } from "lucide-react"
+import { AlertTriangle, CheckCircle2, MapPin, Package, Truck } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { useAuthStore } from "@/app/model/auth-store"
@@ -10,6 +10,8 @@ import { routesApi } from "@/entities/route/api/routesApi"
 import type { RouteDeliveryStop } from "@/entities/route/api/routesApi"
 import { queryKeys } from "@/shared/config/query-keys"
 import { routes } from "@/shared/config/routes"
+import { isCoordinatorRouteInProgress } from "@/shared/lib/driver-round-workload"
+import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
@@ -26,16 +28,31 @@ const mapStopStatus = (s: RouteDeliveryStop["status"]): PointStatus => {
   return "pending"
 }
 
-const stopSubtitle = (ds: RouteDeliveryStop) => {
+const stopPhaseLabel = (ds: RouteDeliveryStop) => {
+  if (ds.isProcurementStop) return "Этап: закупка"
+  if (ds.expectsOrders) return "Этап: выдача жителям"
+  return "Этап: проезд"
+}
+
+const stopInstruction = (ds: RouteDeliveryStop) => {
   if (ds.isProcurementStop && ds.expectsOrders) {
     return ds.procurementCompleted
-      ? "Закупка завершена — переходите к выдаче"
-      : "Точка закупа — сначала чек-лист"
+      ? "Закупка завершена — можно везти товар в посёлки"
+      : "Сначала отметьте закупку в чек-листе ниже"
   }
-  if (ds.isProcurementStop && !ds.procurementCompleted) return "Точка закупа"
-  if (ds.isProcurementStop && ds.procurementCompleted) return "Закупка завершена"
-  if (ds.expectsOrders) return "Раздача заказов жителям на общей точке"
-  return "Остановка по маршруту"
+  if (ds.isProcurementStop) {
+    return ds.procurementCompleted
+      ? "Закупка на этой точке завершена"
+      : "Точка закупа — заполните чек-лист"
+  }
+  if (ds.expectsOrders) {
+    const pending = (ds.inTransitOrders ?? 0) + (ds.totalOrders ?? 0) - (ds.receivedOrders ?? 0)
+    if (pending > 0) {
+      return "Вручите товар жителям и попросите подтвердить получение в приложении. Не уезжайте, пока выдача не завершена."
+    }
+    return "Заказов к выдаче нет — можно закрыть точку"
+  }
+  return "Техническая остановка маршрута"
 }
 
 export const DriverRoutePage = () => {
@@ -46,6 +63,11 @@ export const DriverRoutePage = () => {
   const { data: driverRoutes, isLoading } = useQuery({
     queryKey: queryKeys.routes.driver(driverId),
     queryFn: () => routesApi.getByDriver(driverId),
+  })
+
+  const { data: driverOrders } = useQuery({
+    queryKey: [...queryKeys.routes.driver(driverId), "orders"],
+    queryFn: () => routesApi.getDriverOrders(driverId),
   })
 
   const { data: deliveryRound } = useDriverDeliveryProcurement(user?.id)
@@ -63,8 +85,11 @@ export const DriverRoutePage = () => {
     },
   })
 
+  const rawActiveRoute = driverRoutes?.find((r) => r.status === "active")
   const activeRoute =
-    driverRoutes?.find((r) => r.status === "active") ?? driverRoutes?.[0]
+    rawActiveRoute && isCoordinatorRouteInProgress(rawActiveRoute, driverOrders)
+      ? rawActiveRoute
+      : undefined
 
   if (isLoading) {
     return (
@@ -83,7 +108,7 @@ export const DriverRoutePage = () => {
         <EmptyState
           icon={MapPin}
           title="Нет активного маршрута"
-          description="Маршрут появится после закрытия сбора и отправки рейса"
+          description="Маршрут появится после закрытия сбора с оплаченными заказами. Пустой сбор не блокирует новый."
         />
       </PageShell>
     )
@@ -104,17 +129,24 @@ export const DriverRoutePage = () => {
     return !isDriverOwnTailStop
   })
 
-  const stops = deliveryStops.map((ds) => ({
+  const stops = deliveryStops.map((ds, index) => ({
+    step: index + 1,
     pickupPointId: ds.pickupPointId,
     label: ds.label,
-    subtitle: stopSubtitle(ds),
+    phase: stopPhaseLabel(ds),
+    instruction: stopInstruction(ds),
     address: ds.address ?? ds.settlementName,
     status: mapStopStatus(ds.status),
-    progress: ds.expectsOrders
-      ? `${ds.receivedOrders}/${ds.totalOrders} выдано`
-      : undefined,
+    totalOrders: ds.totalOrders ?? 0,
+    inTransitOrders: ds.inTransitOrders ?? 0,
+    receivedOrders: ds.receivedOrders ?? 0,
     driverCanComplete: ds.driverCanComplete,
     expectsOrders: ds.expectsOrders,
+    isProcurementStop: ds.isProcurementStop,
+    needsHandout:
+      ds.expectsOrders &&
+      ds.status !== "completed" &&
+      (ds.inTransitOrders > 0 || ds.totalOrders > ds.receivedOrders),
   }))
 
   if (stops.length === 0) {
@@ -138,8 +170,15 @@ export const DriverRoutePage = () => {
     <PageShell>
       <PageHeader
         title={activeRoute.name}
-        subtitle="Закупка и раздача — координатор на маршруте"
+        subtitle={`Маршрут поэтапно · ${stops.length} ${
+          stops.length === 1 ? "точка" : stops.length < 5 ? "точки" : "точек"
+        }`}
       />
+
+      <AlertBanner variant="info" title="Порядок работы">
+        Пройдите точки по номерам. На этапе «Выдача» сдайте товар жителям до отъезда — выплата
+        поступит после их подтверждения в приложении.
+      </AlertBanner>
 
       {roundId && activeRoute.status === "active" ? (
         <ProcurementChecklistCard roundId={roundId} />
@@ -150,105 +189,142 @@ export const DriverRoutePage = () => {
       ) : null}
 
       {nextStop && !tripCompleted ? (
-        <Card className="ui-panel-gradient">
-          <div className="flex items-center gap-3">
-            <div className="ui-icon-solid flex h-10 w-10 items-center justify-center rounded-2xl">
+        <Card className="ui-panel-gradient border-sky-200">
+          <div className="flex items-start gap-3">
+            <div className="ui-icon-solid flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl">
               <Truck size={20} />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-medium ui-text-accent">Следующая точка</p>
+              <p className="text-xs font-medium text-sky-700">
+                Сейчас: шаг {nextStop.step} из {stops.length}
+              </p>
               <p className="truncate font-semibold text-slate-900">{nextStop.label}</p>
-              <p className="text-xs text-slate-500">{nextStop.address}</p>
+              <p className="text-xs text-slate-600">{nextStop.phase}</p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-500">{nextStop.instruction}</p>
             </div>
           </div>
         </Card>
       ) : null}
 
-      <Link to={routes.driver.handout} className="ui-cta ui-cta-primary ui-cta-block">
-        Открыть список выдачи
-      </Link>
+      {nextStop?.needsHandout ? (
+        <Link to={routes.driver.handout} className="ui-cta ui-cta-primary ui-cta-block">
+          <Package size={18} />
+          Открыть список выдачи в {nextStop.label}
+        </Link>
+      ) : (
+        <Link to={routes.driver.handout} className="ui-cta ui-cta-outline ui-cta-block">
+          Список заказов сбора
+        </Link>
+      )}
 
       <div>
-        <p className="mb-2 text-sm font-semibold text-slate-800">Точки маршрута</p>
-        <ol className="flex flex-col gap-2">
-          {stops.map((stop, index) => (
-            <li key={stop.pickupPointId}>
-              <Card
-                className={
-                  stop.status === "arrived"
-                    ? "ui-stop-active"
-                    : stop.status === "done"
-                      ? "ui-stop-done"
-                      : ""
-                }
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                      stop.status === "done"
-                        ? "ui-icon-soft"
-                        : stop.status === "arrived"
-                          ? "ui-icon-solid"
-                          : "bg-slate-100 text-slate-500"
+        <p className="mb-3 text-sm font-semibold text-slate-800">Этапы маршрута</p>
+        <ol className="relative flex flex-col gap-0">
+          {stops.map((stop, index) => {
+            const isLast = index === stops.length - 1
+            const isCurrent = stop.status === "arrived"
+            const isDone = stop.status === "done"
+
+            return (
+              <li key={stop.pickupPointId} className="relative flex gap-3 pb-4">
+                {!isLast ? (
+                  <span
+                    className={`absolute left-4 top-10 bottom-0 w-0.5 ${
+                      isDone ? "bg-emerald-200" : "bg-slate-200"
                     }`}
-                  >
-                    {stop.status === "done" ? <CheckCircle2 size={16} /> : index + 1}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-slate-900">{stop.label}</p>
-                    <p className="text-xs text-slate-500">{stop.subtitle}</p>
-                    <p className="mt-0.5 text-sm text-slate-700">{stop.address}</p>
-                    {stop.progress ? (
-                      <p className="mt-1 text-xs font-medium text-slate-600">{stop.progress}</p>
-                    ) : null}
-                    {stop.driverCanComplete && roundId ? (
-                      <Button
-                        size="sm"
-                        className="mt-2"
-                        disabled={completeStop.isPending}
-                        onClick={() =>
-                          completeStop.mutate({
-                            roundId,
-                            pickupPointId: stop.pickupPointId,
-                          })
-                        }
-                      >
-                        Точка выполнена
-                      </Button>
-                    ) : null}
-                    {stop.expectsOrders && stop.status !== "done" ? (
-                      <p className="mt-2 text-xs text-slate-500">
-                        Выдайте заказы в разделе «Выдача», затем закройте точку
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="shrink-0">
-                    {stop.status === "done" ? (
-                      <Badge variant="success">Закрыта</Badge>
-                    ) : stop.status === "arrived" ? (
-                      <Badge variant="info">В работе</Badge>
-                    ) : (
-                      <Badge variant="default">Ожидает</Badge>
-                    )}
-                  </div>
+                    aria-hidden
+                  />
+                ) : null}
+
+                <div
+                  className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                    isDone
+                      ? "bg-emerald-100 text-emerald-800"
+                      : isCurrent
+                        ? "bg-sky-600 text-white"
+                        : "bg-slate-100 text-slate-500"
+                  }`}
+                >
+                  {isDone ? <CheckCircle2 size={16} /> : stop.step}
                 </div>
-              </Card>
-            </li>
-          ))}
+
+                <Card
+                  className={`min-w-0 flex-1 !p-4 ${
+                    isCurrent ? "border-sky-300 ring-1 ring-sky-200" : ""
+                  } ${stop.needsHandout ? "border-amber-300 bg-amber-50/40" : ""}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        {stop.phase}
+                      </p>
+                      <p className="font-semibold text-slate-900">{stop.label}</p>
+                    </div>
+                    <Badge
+                      variant={
+                        isDone ? "success" : isCurrent ? "info" : "default"
+                      }
+                      className="shrink-0"
+                    >
+                      {isDone ? "Пройдена" : isCurrent ? "Сейчас здесь" : "Впереди"}
+                    </Badge>
+                  </div>
+
+                  <p className="mt-1 text-sm text-slate-600">{stop.address}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                    {stop.instruction}
+                  </p>
+
+                  {stop.expectsOrders ? (
+                    <p className="mt-2 text-xs font-medium text-slate-600">
+                      Заказов: {stop.receivedOrders}/{stop.totalOrders} подтверждено
+                      {stop.inTransitOrders > 0
+                        ? ` · ${stop.inTransitOrders} ждут выдачи`
+                        : ""}
+                    </p>
+                  ) : null}
+
+                  {stop.needsHandout ? (
+                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+                      <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                      <span>
+                        Перед отъездом вручите товар и дождитесь подтверждения в приложении
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {stop.driverCanComplete && roundId ? (
+                    <Button
+                      size="sm"
+                      className="mt-3"
+                      variant={stop.needsHandout ? "outline" : "primary"}
+                      disabled={completeStop.isPending || stop.needsHandout}
+                      onClick={() =>
+                        completeStop.mutate({
+                          roundId,
+                          pickupPointId: stop.pickupPointId,
+                        })
+                      }
+                    >
+                      {stop.needsHandout
+                        ? "Сначала завершите выдачу"
+                        : "Точка пройдена — можно ехать дальше"}
+                    </Button>
+                  ) : null}
+                </Card>
+              </li>
+            )
+          })}
         </ol>
       </div>
 
       {tripCompleted ? (
         <Card className="ui-panel">
-          <p className="text-sm font-semibold ui-text-accent">
+          <p className="text-sm font-semibold text-emerald-800">
             Рейс завершён: все точки маршрута пройдены.
           </p>
         </Card>
-      ) : (
-        <p className="text-xs text-slate-500">
-          В посёлках с заказами отметьте выдачу в разделе «Выдача», затем закройте точку маршрута.
-        </p>
-      )}
+      ) : null}
     </PageShell>
   )
 }
