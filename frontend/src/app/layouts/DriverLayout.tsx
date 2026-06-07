@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom"
-import { LayoutDashboard, Map, Route, ShoppingBasket, User } from "lucide-react"
+import { LayoutDashboard, Package, Route, ShoppingBasket, User } from "lucide-react"
 
 import { routes } from "@/shared/config/routes"
 import { MobilePageLayout } from "@/shared/ui/mobile-page-layout/MobilePageLayout"
@@ -28,10 +28,10 @@ const tabs: MobileNavTab[] = [
     match: (p) => p.startsWith(routes.driver.route),
   },
   {
-    label: "Карта",
-    path: routes.driver.map,
-    icon: Map,
-    match: (p) => p.startsWith(routes.driver.map),
+    label: "Выдача",
+    path: routes.driver.handout,
+    icon: Package,
+    match: (p) => p.startsWith(routes.driver.handout),
   },
   {
     label: "Профиль",

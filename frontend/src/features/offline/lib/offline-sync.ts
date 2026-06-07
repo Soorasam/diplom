@@ -1,5 +1,5 @@
 import type { OfflineAction } from "@/features/offline/model/offline-queue-store"
-import { employeeApi } from "@/entities/employee/api/employeeApi"
+import { ordersApi } from "@/entities/order/api/ordersApi"
 import { queryKeys } from "@/shared/config/query-keys"
 import type { Order } from "@/shared/api/api-types"
 import type { OrderStatus } from "@/shared/types"
@@ -15,20 +15,11 @@ function setOrderStatusInCache(qc: QueryClient, orderId: string, status: OrderSt
 
 export function createOfflineHandlers(qc: QueryClient): Record<string, ActionHandler> {
   return {
-    "employee.order.mark_ready_for_pickup": async (a) => {
-      const { orderId } = a.payload as { orderId: string }
-      setOrderStatusInCache(qc, orderId, "at_pickup")
-      await employeeApi.receiveFromDriver(orderId)
-      void qc.invalidateQueries({ queryKey: queryKeys.employee.workspace })
-      void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
-    },
-    "employee.order.confirm_handover": async (a) => {
+    "driver.order.confirm_handout": async (a) => {
       const { orderId } = a.payload as { orderId: string }
       setOrderStatusInCache(qc, orderId, "delivered")
-      await employeeApi.handoutToResident(orderId)
-      void qc.invalidateQueries({ queryKey: queryKeys.employee.workspace })
+      await ordersApi.updateStatus(orderId, "delivered")
       void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
     },
   }
 }
-

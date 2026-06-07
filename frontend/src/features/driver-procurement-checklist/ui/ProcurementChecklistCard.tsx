@@ -132,7 +132,7 @@ export const ProcurementChecklistCard = ({ roundId }: Props) => {
                   <div className="min-w-0">
                     <p className="font-medium text-slate-900">{line.productName}</p>
                     <p className="text-xs text-slate-500">
-                      {line.quantity} {line.unit} · заказ {line.orderNumber} →{" "}
+                      {line.quantity} {line.unit} · заказ {line.orderNumber} → пос.
                       {line.deliveryPvzName}
                     </p>
                     <p className="text-xs text-slate-600">~{line.lineTotal.toFixed(0)} ₽</p>

@@ -3,9 +3,7 @@ import { persist } from "zustand/middleware"
 
 export type OfflineActionStatus = "queued" | "processing" | "done" | "failed"
 
-export type OfflineActionType =
-  | "employee.order.mark_ready_for_pickup"
-  | "employee.order.confirm_handover"
+export type OfflineActionType = "driver.order.confirm_handout"
 
 export interface OfflineAction<TPayload = unknown> {
   id: string

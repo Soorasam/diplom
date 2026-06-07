@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { useProducts } from "@/entities/product/api/useProducts"
-import { usePickupPoints } from "@/entities/settlement/api/useSettlements"
+import { useSettlements } from "@/entities/settlement/api/useSettlements"
 import { useProcurementParticipation } from "@/features/procurement/hooks/useProcurementParticipation"
 import { calcCartWeightKg } from "@/features/cart/lib/calc-weight"
 import { useCartStore } from "@/features/cart/model/cart-store"
@@ -29,13 +29,12 @@ export const CheckoutPage = () => {
   const pickupPointId = useCartStore((s) => s.pickupPointId)
   const procurementId = useCartStore((s) => s.procurementId)
   const comment = useCartStore((s) => s.comment)
-  const setPickupPoint = useCartStore((s) => s.setPickupPoint)
 
   const { procurement, hasJoined, isRoundOpen, canCheckoutRound } =
     useProcurementParticipation()
 
   const { data: products } = useProducts()
-  const { data: pickupPoints } = usePickupPoints(authUser?.settlementId)
+  const { data: settlements } = useSettlements()
   const {
     register,
     handleSubmit,
@@ -48,7 +47,10 @@ export const CheckoutPage = () => {
 
   const agreeTerms = watch("agreeTerms")
 
-  const pickup = pickupPoints?.find((p) => p.id === pickupPointId)
+  const deliveryPointId = pickupPointId ?? authUser?.pickupPointId ?? authUser?.settlementId
+  const settlement = settlements?.find(
+    (s) => s.id === authUser?.settlementId || s.id === deliveryPointId,
+  )
   const lineItems = items
     .map((item) => {
       const product = products?.find((p) => p.id === item.productId)
@@ -76,7 +78,7 @@ export const CheckoutPage = () => {
   const blockers: string[] = []
   if (!user) blockers.push("Войдите в аккаунт")
   if (lineItems.length === 0) blockers.push("В корзине нет товаров — добавьте из каталога")
-  if (!pickupPointId) blockers.push("Выберите пункт выдачи")
+  if (!deliveryPointId) blockers.push("Укажите населённый пункт в профиле")
   if (!procurementId) blockers.push("Выберите сбор в корзине")
   if (procurementId && !hasJoined) blockers.push("Вступите в сбор в корзине")
   if (procurementId && hasJoined && !isRoundOpen) {
@@ -97,7 +99,7 @@ export const CheckoutPage = () => {
   const onSubmit = () => {
     if (
       !authUser ||
-      !pickupPointId ||
+      !deliveryPointId ||
       !procurementId ||
       !canCheckoutRound ||
       lineItems.length === 0 ||
@@ -109,7 +111,7 @@ export const CheckoutPage = () => {
       state: {
         userId: authUser.id,
         procurementId,
-        pickupPointId,
+        pickupPointId: deliveryPointId,
         items: lineItems.map((i) => ({
           productId: i.productId,
           quantity: i.quantity,
@@ -131,7 +133,7 @@ export const CheckoutPage = () => {
       <PageHeader
         title="Оформление"
         backTo={routes.user.cart}
-        subtitle="Проверьте пункт выдачи и состав"
+        subtitle="Проверьте посёлок доставки и состав"
         className="mb-0!"
       />
 
@@ -160,31 +162,13 @@ export const CheckoutPage = () => {
       ) : null}
 
       <Card>
-        <h2 className="text-sm font-semibold text-slate-800">Пункт выдачи</h2>
-        {pickupPoints && pickupPoints.length > 0 ? (
-          <select
-            className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-            value={pickupPointId ?? ""}
-            onChange={(e) => setPickupPoint(e.target.value)}
-          >
-            <option value="">Выберите пункт</option>
-            {pickupPoints.map((pp) => (
-              <option key={pp.id} value={pp.id}>
-                {pp.name}
-              </option>
-            ))}
-          </select>
-        ) : (
-          <p className="mt-1 text-sm text-slate-600">
-            {pickup?.name ?? "Не выбран"}
-            {!authUser?.settlementId
-              ? " — укажите населённый пункт в профиле"
-              : ""}
-          </p>
-        )}
-        {pickup?.address ? (
-          <p className="mt-1 text-xs text-slate-500">{pickup.address}</p>
-        ) : null}
+        <h2 className="text-sm font-semibold text-slate-800">Посёлок доставки</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          {settlement?.name ?? "Не выбран — укажите в профиле"}
+        </p>
+        <p className="mt-2 text-xs text-slate-500">
+          Заказ передаст координатор на общей точке раздачи в посёлке
+        </p>
       </Card>
 
       <Card>

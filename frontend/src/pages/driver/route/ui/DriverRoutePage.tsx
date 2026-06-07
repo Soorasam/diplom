@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { CheckCircle2, MapPin, Truck } from "lucide-react"
+import { Link } from "react-router-dom"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { ProcurementChecklistCard } from "@/features/driver-procurement-checklist/ui/ProcurementChecklistCard"
 import { routesApi } from "@/entities/route/api/routesApi"
 import type { RouteDeliveryStop } from "@/entities/route/api/routesApi"
 import { queryKeys } from "@/shared/config/query-keys"
+import { routes } from "@/shared/config/routes"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
@@ -25,13 +27,13 @@ const mapStopStatus = (s: RouteDeliveryStop["status"]): PointStatus => {
 const stopSubtitle = (ds: RouteDeliveryStop) => {
   if (ds.isProcurementStop && ds.expectsOrders) {
     return ds.procurementCompleted
-      ? "Закупка завершена, ожидается подтверждение ПВЗ"
-      : "Точка закупа и выдачи — сначала чек-лист, затем подтверждение ПВЗ"
+      ? "Закупка завершена — переходите к выдаче"
+      : "Точка закупа — сначала чек-лист"
   }
   if (ds.isProcurementStop && !ds.procurementCompleted) return "Точка закупа"
   if (ds.isProcurementStop && ds.procurementCompleted) return "Закупка завершена"
-  if (ds.expectsOrders) return "Передача заказов — подтверждает ПВЗ"
-  return "Остановка по маршруту — отметьте сами"
+  if (ds.expectsOrders) return "Раздача заказов жителям на общей точке"
+  return "Остановка по маршруту"
 }
 
 export const DriverRoutePage = () => {
@@ -73,7 +75,7 @@ export const DriverRoutePage = () => {
   if (!activeRoute) {
     return (
       <PageShell>
-        <PageHeader title="Маршрут" subtitle="Точки доставки в ПВЗ" />
+        <PageHeader title="Маршрут" subtitle="Населённые пункты на рейсе" />
         <EmptyState
           icon={MapPin}
           title="Нет активного маршрута"
@@ -105,7 +107,7 @@ export const DriverRoutePage = () => {
     address: ds.address ?? ds.settlementName,
     status: mapStopStatus(ds.status),
     progress: ds.expectsOrders
-      ? `${ds.receivedOrders}/${ds.totalOrders} принято в ПВЗ`
+      ? `${ds.receivedOrders}/${ds.totalOrders} выдано`
       : undefined,
     driverCanComplete: ds.driverCanComplete,
     expectsOrders: ds.expectsOrders,
@@ -114,11 +116,11 @@ export const DriverRoutePage = () => {
   if (stops.length === 0) {
     return (
       <PageShell>
-        <PageHeader title={activeRoute.name} subtitle="Точки доставки" />
+        <PageHeader title={activeRoute.name} subtitle="Точки на маршруте" />
         <EmptyState
           icon={MapPin}
           title="Точки маршрута не заданы"
-          description="После закрытия сбора и старта рейса появятся точки на маршруте"
+          description="После закрытия сбора и старта рейса появятся посёлки на маршруте"
         />
       </PageShell>
     )
@@ -132,7 +134,7 @@ export const DriverRoutePage = () => {
     <PageShell>
       <PageHeader
         title={activeRoute.name}
-        subtitle="Закупка и остановки — водитель; приём заказов — сотрудник ПВЗ"
+        subtitle="Закупка и раздача — координатор на маршруте"
       />
 
       {roundId && activeRoute.status === "active" ? (
@@ -153,6 +155,10 @@ export const DriverRoutePage = () => {
           </div>
         </Card>
       ) : null}
+
+      <Link to={routes.driver.handout} className="ui-cta ui-cta-primary ui-cta-block">
+        Открыть список выдачи
+      </Link>
 
       <div>
         <p className="mb-2 text-sm font-semibold text-slate-800">Точки маршрута</p>
@@ -204,7 +210,7 @@ export const DriverRoutePage = () => {
                     ) : null}
                     {stop.expectsOrders && stop.status !== "done" ? (
                       <p className="mt-2 text-xs text-slate-500">
-                        Закрытие — когда сотрудник ПВЗ примет все заказы
+                        Выдайте заказы в разделе «Выдача», затем закройте точку
                       </p>
                     ) : null}
                   </div>
@@ -232,8 +238,7 @@ export const DriverRoutePage = () => {
         </Card>
       ) : (
         <p className="text-xs text-slate-500">
-          На ПВЗ с заказами точку закрывает сотрудник при приёме. На остальных остановках —
-          кнопка «Точка выполнена».
+          В посёлках с заказами отметьте выдачу в разделе «Выдача», затем закройте точку маршрута.
         </p>
       )}
     </PageShell>

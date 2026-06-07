@@ -307,7 +307,7 @@ export const ActiveProcurementsPage = () => {
                           {isOwnRound
                             ? "Это ваш сбор"
                             : notInRoute
-                              ? "Недоступен для вашего ПВЗ"
+                              ? "Недоступен для вашего посёлка"
                             : atLimit
                               ? "Лимит веса достигнут"
                               : p.emergencyCloseAt

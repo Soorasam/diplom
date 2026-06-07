@@ -17,22 +17,25 @@ export const RootShell = () => {
   const path = location.pathname
   const isUserPath = path === routes.user.root || path.startsWith(`${routes.user.root}/`)
   const isDriverPath = path === routes.driver.root || path.startsWith(`${routes.driver.root}/`)
-  const isEmployeePath =
-    path === routes.employee.root || path.startsWith(`${routes.employee.root}/`)
+  const isLegacyEmployeePath = path === "/employee" || path.startsWith("/employee/")
   const isAdminPath = path === routes.admin.root || path.startsWith(`${routes.admin.root}/`)
 
   const roleRoot = homeRouteForRole(user.role)
 
-  if (user.role === "client" && (isDriverPath || isEmployeePath || isAdminPath)) {
+  if (isLegacyEmployeePath) {
     return <Navigate to={roleRoot} replace />
   }
-  if (user.role === "driver" && (isUserPath || isEmployeePath || isAdminPath)) {
+
+  if (user.role === "client" && (isDriverPath || isAdminPath)) {
     return <Navigate to={roleRoot} replace />
   }
-  if (user.role === "employee" && (isUserPath || isDriverPath || isAdminPath)) {
+  if (user.role === "driver" && (isUserPath || isAdminPath)) {
     return <Navigate to={roleRoot} replace />
   }
-  if (user.role === "admin" && (isUserPath || isDriverPath || isEmployeePath)) {
+  if (user.role === "employee" && (isDriverPath || isAdminPath)) {
+    return <Navigate to={roleRoot} replace />
+  }
+  if (user.role === "admin" && (isUserPath || isDriverPath)) {
     return <Navigate to={roleRoot} replace />
   }
 

@@ -128,6 +128,8 @@ export interface Order {
   comment?: string
   createdAt: string
   timeline: { status: OrderStatus; at: string; label: string }[]
+  publicNumber?: string
+  userName?: string
 }
 
 export interface Notification {

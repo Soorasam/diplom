@@ -147,7 +147,7 @@ export const useAuthStore = create<AuthState>()(
 
 export const homeRouteForRole = (role: User["role"]) => {
   if (role === "driver") return routes.driver.root
-  if (role === "employee") return routes.employee.root
+  if (role === "employee") return routes.user.root
   if (role === "admin") return routes.admin.root
   return routes.user.root
 }

@@ -214,7 +214,7 @@ export const ProcurementDetailPage = () => {
                   disabled={!inUserRoute || loadingRoutePlan}
                   onClick={() => participateInProcurement(navigate, setProcurement, procurement.id)}
                 >
-                  {inUserRoute ? "Перейти в каталог" : "Сбор не для вашего ПВЗ"}
+                  {inUserRoute ? "Перейти в каталог" : "Сбор не для вашего посёлка"}
                 </Button>
                 <Button
                   type="button"
@@ -249,7 +249,7 @@ export const ProcurementDetailPage = () => {
               : isClosed
                 ? "Сбор закрыт"
                 : !inUserRoute
-                  ? "Сбор не для вашего ПВЗ"
+                  ? "Сбор не для вашего посёлка"
                 : atLimit
                   ? "Лимит веса достигнут"
                   : isClosing

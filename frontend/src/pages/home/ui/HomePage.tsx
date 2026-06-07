@@ -52,7 +52,7 @@ export const HomePage = () => {
             </span>
             <span className="pattern-hero-chip">
               <MapPin size={14} />
-              Пункты выдачи
+              Доставка в посёлок
             </span>
           </div>
         </div>

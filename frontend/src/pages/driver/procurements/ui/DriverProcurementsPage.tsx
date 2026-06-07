@@ -304,7 +304,7 @@ export const DriverProcurementsPage = () => {
               <p className="text-sm font-semibold text-amber-950">Доставка по маршруту</p>
               <p className="mt-1 text-sm text-amber-900/80">
                 Сбор «{deliveryRound.title}» закрыт. Новый сбор можно создать после того, как
-                сотрудники всех ПВЗ примут заказы на маршруте.
+                завершите выдачу заказов в посёлках на маршруте.
               </p>
               <Link
                 to={routes.driver.route}

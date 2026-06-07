@@ -47,12 +47,12 @@ export const AdminSettlementsPage = () => {
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Населённые пункты"
-        subtitle="Один НП = один ПВЗ. Название, адрес и контакты задаются в одной форме."
+        subtitle="Населённые пункты на маршрутах кооперативной доставки"
       />
 
       <Card className="border-blue-100 bg-blue-50/30">
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <p className="text-sm font-semibold text-slate-900">Добавить населённый пункт (ПВЗ)</p>
+          <p className="text-sm font-semibold text-slate-900">Добавить населённый пункт</p>
 
           <Input
             label="Название"

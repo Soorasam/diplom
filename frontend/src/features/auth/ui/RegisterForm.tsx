@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm, useWatch } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
 
 import { homeRouteForRole, useAuthStore } from "@/app/model/auth-store"
@@ -8,7 +8,7 @@ import {
   registerSchema,
   type RegisterFormValues,
 } from "@/features/auth/model/register-schema"
-import { usePickupPoints, useSettlements } from "@/entities/settlement/api/useSettlements"
+import { useSettlements } from "@/entities/settlement/api/useSettlements"
 import { applyApiErrorToForm } from "@/shared/lib/api-form-errors"
 import { routes } from "@/shared/config/routes"
 import { Button } from "@/shared/ui/button/Button"
@@ -27,7 +27,6 @@ export const RegisterForm = () => {
   const {
     register,
     handleSubmit,
-    control,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormValues>({
@@ -39,14 +38,8 @@ export const RegisterForm = () => {
       password: "",
       confirmPassword: "",
       settlementId: "",
-      pickupPointId: "",
     },
   })
-
-  const settlementId = useWatch({ control, name: "settlementId" })
-  const { data: pickupPoints, isLoading: pickupLoading } = usePickupPoints(
-    settlementId || undefined,
-  )
 
   const onSubmit = async (data: RegisterFormValues) => {
     setApiError(null)
@@ -57,7 +50,7 @@ export const RegisterForm = () => {
         fullName: data.fullName,
         phone: normalizeRuPhone(data.phone ?? "") ?? undefined,
         settlementId: data.settlementId,
-        pickupPointId: data.pickupPointId || undefined,
+        pickupPointId: data.settlementId,
       })
       const user = useAuthStore.getState().user
       navigate(user ? homeRouteForRole(user.role) : routes.user.root)
@@ -149,28 +142,6 @@ export const RegisterForm = () => {
           <span className="mt-1 block text-xs text-red-600">{errors.settlementId.message}</span>
         ) : null}
       </label>
-
-      {settlementId ? (
-        <label className="block w-full">
-          <span className="mb-1.5 block text-xs font-medium text-slate-600">
-            Пункт выдачи <span className="text-slate-400">(необязательно)</span>
-          </span>
-          {pickupLoading ? (
-            <div className="flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white">
-              <Spinner className="h-5 w-5" />
-            </div>
-          ) : (
-            <select className={selectClass} {...register("pickupPointId")}>
-              <option value="">Не выбран</option>
-              {pickupPoints?.map((pp) => (
-                <option key={pp.id} value={pp.id}>
-                  {pp.name}
-                </option>
-              ))}
-            </select>
-          )}
-        </label>
-      ) : null}
 
       {apiError ? (
         <p className="rounded-lg bg-red-500/20 px-3 py-2 text-xs text-red-100">{apiError}</p>

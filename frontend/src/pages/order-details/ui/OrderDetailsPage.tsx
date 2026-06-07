@@ -5,7 +5,7 @@ import { MessageSquare, QrCode } from "lucide-react"
 import { useOrder } from "@/entities/order/api/useOrders"
 import { useTicketByOrder } from "@/entities/ticket/api/useTickets"
 import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
-import { usePickupPoints } from "@/entities/settlement/api/useSettlements"
+import { useSettlements } from "@/entities/settlement/api/useSettlements"
 import { useAuthStore } from "@/app/model/auth-store"
 import { routes } from "@/shared/config/routes"
 import { formatDate, formatPrice } from "@/shared/lib/format"
@@ -15,7 +15,6 @@ import { Badge } from "@/shared/ui/badge/Badge"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
-import { MapView } from "@/shared/ui/map/MapView"
 import { OrderTimeline } from "@/widgets/order-timeline/ui/OrderTimeline"
 
 export const OrderDetailsPage = () => {
@@ -24,7 +23,7 @@ export const OrderDetailsPage = () => {
   const profileRoutes = useProfileRoutes()
   const { data: order, isLoading } = useOrder(id)
   const { data: existingTicket } = useTicketByOrder(id)
-  const { data: pickupPoints } = usePickupPoints(user?.settlementId)
+  const { data: settlements } = useSettlements()
   const [qrOpen, setQrOpen] = useState(false)
 
   if (isLoading) {
@@ -43,20 +42,11 @@ export const OrderDetailsPage = () => {
     )
   }
 
-  const pickup = pickupPoints?.find((p) => p.id === order.pickupPointId)
-  const markers = pickup
-    ? [
-        {
-          id: pickup.id,
-          title: pickup.name,
-          coordinates: pickup.coordinates,
-          type: "pickup" as const,
-          description: pickup.address,
-        },
-      ]
-    : []
+  const settlement = settlements?.find(
+    (s) => s.id === order.pickupPointId || s.id === user?.settlementId,
+  )
 
-  const showQr = order.status === "at_pickup"
+  const showQr = order.status === "at_pickup" || order.status === "in_transit"
   const canDispute =
     order.status !== "cancelled" && order.status !== "draft"
 
@@ -77,17 +67,13 @@ export const OrderDetailsPage = () => {
         </Badge>
       </div>
 
-      {pickup ? (
+      {settlement ? (
         <Card>
-          <p className="text-sm font-semibold text-slate-900">Пункт выдачи</p>
-          <p className="mt-1 text-sm text-slate-600">{pickup.name}</p>
-          <p className="text-xs text-slate-500">{pickup.address}</p>
-          {pickup.coordinatorName ? (
-            <p className="mt-2 text-xs text-slate-500">
-              Координатор: {pickup.coordinatorName}
-              {pickup.coordinatorPhone ? ` · ${pickup.coordinatorPhone}` : ""}
-            </p>
-          ) : null}
+          <p className="text-sm font-semibold text-slate-900">Посёлок доставки</p>
+          <p className="mt-1 text-sm text-slate-600">{settlement.name}</p>
+          <p className="mt-2 text-xs text-slate-500">
+            Заберите заказ на общей точке раздачи — координатор сообщит время и место
+          </p>
         </Card>
       ) : null}
 
@@ -123,7 +109,7 @@ export const OrderDetailsPage = () => {
               leftIcon={<QrCode size={18} />}
               onClick={() => setQrOpen(true)}
             >
-              Показать QR для выдачи
+              Показать код для получения
             </Button>
           ) : null}
           {canDispute ? (
@@ -142,13 +128,6 @@ export const OrderDetailsPage = () => {
         </Card>
       )}
 
-      {markers.length > 0 ? (
-        <Card>
-          <p className="mb-2 text-sm font-semibold text-slate-900">На карте</p>
-          <MapView markers={markers} className="h-48" />
-        </Card>
-      ) : null}
-
       {qrOpen ? (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
@@ -161,7 +140,7 @@ export const OrderDetailsPage = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <p className="text-sm font-semibold text-slate-900">QR-код заказа</p>
-            <p className="mt-1 text-xs text-slate-500">Покажите сотруднику ПВЗ</p>
+            <p className="mt-1 text-xs text-slate-500">Покажите координатору при получении</p>
             <div className="relative z-10 mx-auto mt-4 flex h-40 w-40 items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 font-mono text-xs text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {order.id}
             </div>

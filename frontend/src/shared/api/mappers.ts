@@ -101,6 +101,8 @@ export const mapBackendOrder = (o: {
         label: o.status,
       },
     ],
+  publicNumber: o.publicNumber,
+  userName: (o as { userName?: string }).userName,
 })
 
 export const mapSettlement = (s: {

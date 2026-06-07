@@ -26,10 +26,6 @@ export const registerSchema = z
     password: z.string().min(8, "Минимум 8 символов").max(128),
     confirmPassword: z.string(),
     settlementId: z.string().uuid("Выберите населённый пункт"),
-    pickupPointId: z
-      .string()
-      .optional()
-      .refine((v) => !v || z.string().uuid().safeParse(v).success, "Некорректный пункт выдачи"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Пароли не совпадают",

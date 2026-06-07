@@ -22,13 +22,15 @@ export const routes = {
     notifications: "/user/notifications",
     support: "/user/support",
     addresses: "/user/addresses",
-    pickupPoints: "/user/pickup-points",
+    /** @deprecated используйте addresses — посёлок доставки */
+    pickupPoints: "/user/addresses",
   },
 
   driver: {
     root: "/driver",
     procurements: "/driver/procurements",
     route: "/driver/route",
+    handout: "/driver/handout",
     map: "/driver/map",
     profile: "/driver/profile",
     profileEdit: "/driver/profile/edit",
@@ -36,17 +38,6 @@ export const routes = {
     dispute: (id: string) => `/driver/disputes/${id}`,
     notifications: "/driver/notifications",
     support: "/driver/support",
-  },
-
-  employee: {
-    root: "/employee",
-    intake: "/employee/intake",
-    handout: "/employee/handout",
-    procurements: "/employee/procurements",
-    orders: "/employee/handout",
-    scan: "/employee/scan",
-    profile: "/employee/profile",
-    profileEdit: "/employee/profile/edit",
   },
 
   admin: {
@@ -60,8 +51,6 @@ export const routes = {
     settlements: "/admin/settlements",
     analytics: "/admin/analytics",
     driverApplications: "/admin/driver-applications",
-    pvz: "/admin/pvz",
-    pvzEmployees: "/admin/pvz-employees",
     tickets: "/admin/tickets",
     ticket: (id: string) => `/admin/tickets/${id}`,
     profile: "/admin/profile",

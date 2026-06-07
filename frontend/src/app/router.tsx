@@ -26,7 +26,6 @@ import { ProfilePage } from "@/pages/profile/ui/ProfilePage"
 import { NotificationsPage } from "@/pages/notifications/ui/NotificationsPage"
 import { SupportPage } from "@/pages/support/ui/SupportPage"
 import { AddressesPage } from "@/pages/addresses/ui/AddressesPage"
-import { PickupPointsPage } from "@/pages/pickup-points/ui/PickupPointsPage"
 import { AuthPage } from "@/pages/auth/ui/AuthPage"
 import { NotFoundPage } from "@/pages/not-found/ui/NotFoundPage"
 import { DriverApplyPage } from "@/pages/driver-apply/ui/DriverApplyPage"
@@ -35,6 +34,7 @@ import { DriverDashboardPage } from "@/pages/driver/dashboard/ui/DriverDashboard
 import { DriverProcurementsPage } from "@/pages/driver/procurements/ui/DriverProcurementsPage"
 import { DriverRoutePage } from "@/pages/driver/route/ui/DriverRoutePage"
 import { DriverMapPage } from "@/pages/driver/map/ui/DriverMapPage"
+import { DriverHandoutPage } from "@/pages/driver/handout/ui/DriverHandoutPage"
 
 import { AdminDashboardPage } from "@/pages/admin/dashboard/ui/AdminDashboardPage"
 import { AdminUsersPage } from "@/pages/admin/users/ui/AdminUsersPage"
@@ -45,17 +45,7 @@ import { AdminDriversPage } from "@/pages/admin/drivers/ui/AdminDriversPage"
 import { AdminDriverDetailPage } from "@/pages/admin/drivers/ui/AdminDriverDetailPage"
 import { AdminSettlementsPage } from "@/pages/admin/settlements/ui/AdminSettlementsPage"
 import { AdminAnalyticsPage } from "@/pages/admin/analytics/ui/AdminAnalyticsPage"
-import { AdminPvzEmployeesPage } from "@/pages/admin/pvz-employees/ui/AdminPvzEmployeesPage"
-
-import { EmployeeLayout } from "./layouts/EmployeeLayout"
-import { EmployeeDashboardPage } from "@/pages/employee/dashboard/ui/EmployeeDashboardPage"
-import { EmployeeIntakePage } from "@/pages/employee/intake/ui/EmployeeIntakePage"
-import { EmployeeOrdersPage } from "@/pages/employee/orders/ui/EmployeeOrdersPage"
-import { EmployeeProcurementsPage } from "@/pages/employee/procurements/ui/EmployeeProcurementsPage"
-import { EmployeeScanPage } from "@/pages/employee/scan/ui/EmployeeScanPage"
-
 import { AdminDriverApplicationsPage } from "@/pages/admin/driver-applications/ui/AdminDriverApplicationsPage"
-import { AdminPvzPage } from "@/pages/admin/pvz/ui/AdminPvzPage"
 import { AdminTicketsPage } from "@/pages/admin/tickets/ui/AdminTicketsPage"
 import { AdminTicketDetailPage } from "@/pages/admin/tickets/ui/AdminTicketDetailPage"
 import { routes } from "@/shared/config/routes"
@@ -108,7 +98,9 @@ export const router = createBrowserRouter([
       { path: "notifications", element: <Navigate to={u.notifications} replace /> },
       { path: "support", element: <Navigate to={u.support} replace /> },
       { path: "addresses", element: <Navigate to={u.addresses} replace /> },
-      { path: "pickup-points", element: <Navigate to={u.pickupPoints} replace /> },
+      { path: "pickup-points", element: <Navigate to={u.addresses} replace /> },
+      { path: "employee", element: <Navigate to={u.root} replace /> },
+      { path: "employee/*", element: <Navigate to={u.root} replace /> },
 
       {
         path: "/driver",
@@ -121,6 +113,7 @@ export const router = createBrowserRouter([
           { index: true, element: <DriverDashboardPage /> },
           { path: "procurements", element: <DriverProcurementsPage /> },
           { path: "route", element: <DriverRoutePage /> },
+          { path: "handout", element: <DriverHandoutPage /> },
           { path: "map", element: <DriverMapPage /> },
           { path: "profile", element: <ProfilePage /> },
           { path: "profile/edit", element: <EditProfilePage /> },
@@ -128,25 +121,6 @@ export const router = createBrowserRouter([
           { path: "disputes/:id", element: <TicketDetailPage /> },
           { path: "notifications", element: <NotificationsPage /> },
           { path: "support", element: <SupportPage /> },
-        ],
-      },
-
-      {
-        path: "/employee",
-        element: (
-          <RequireRole roles={["employee"]}>
-            <EmployeeLayout />
-          </RequireRole>
-        ),
-        children: [
-          { index: true, element: <EmployeeDashboardPage /> },
-          { path: "intake", element: <EmployeeIntakePage /> },
-          { path: "handout", element: <EmployeeOrdersPage /> },
-          { path: "orders", element: <EmployeeOrdersPage /> },
-          { path: "procurements", element: <EmployeeProcurementsPage /> },
-          { path: "scan", element: <EmployeeScanPage /> },
-          { path: "profile", element: <ProfilePage /> },
-          { path: "profile/edit", element: <EditProfilePage /> },
         ],
       },
 
@@ -168,8 +142,8 @@ export const router = createBrowserRouter([
           { path: "settlements", element: <AdminSettlementsPage /> },
           { path: "analytics", element: <AdminAnalyticsPage /> },
           { path: "driver-applications", element: <AdminDriverApplicationsPage /> },
-          { path: "pvz", element: <AdminPvzPage /> },
-          { path: "pvz-employees", element: <AdminPvzEmployeesPage /> },
+          { path: "pvz", element: <Navigate to={routes.admin.settlements} replace /> },
+          { path: "pvz-employees", element: <Navigate to={routes.admin.settlements} replace /> },
           { path: "tickets", element: <AdminTicketsPage /> },
           { path: "tickets/:id", element: <AdminTicketDetailPage /> },
           { path: "profile", element: <ProfilePage /> },
@@ -203,7 +177,7 @@ export const router = createBrowserRouter([
           { path: "notifications", element: <NotificationsPage /> },
           { path: "support", element: <SupportPage /> },
           { path: "addresses", element: <AddressesPage /> },
-          { path: "pickup-points", element: <PickupPointsPage /> },
+          { path: "pickup-points", element: <Navigate to={u.addresses} replace /> },
         ],
       },
     ],

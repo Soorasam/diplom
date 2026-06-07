@@ -116,7 +116,7 @@ export const RouteBuilder = ({ settlements, rows, onChange }: Props) => {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    aria-label="Адрес ПВЗ"
+                    aria-label="Адрес посёлка"
                     onClick={() =>
                       setPvzPreviewId(
                         pvzPreviewId === settlement.id ? null : settlement.id,

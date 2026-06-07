@@ -81,7 +81,7 @@ export const PaymentPage = () => {
       <PageHeader
         title="Оплата"
         backTo={routes.user.checkout}
-        subtitle="Демо-оплата · после успеха вес заказа учтётся в сборе"
+        subtitle="Демо-оплата · в пилоте — перевод координатору по реквизитам сбора"
         className="mb-0!"
       />
 

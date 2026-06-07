@@ -7,9 +7,9 @@ export const orderStatusLabel: Record<OrderStatus, string> = {
   pending: "Ожидает",
   collecting: "В сборе",
   confirmed: "Подтверждён",
-  in_transit: "В пути",
-  at_pickup: "В пункте выдачи",
-  delivered: "Выдан",
+  in_transit: "В пути в посёлок",
+  at_pickup: "Готов к получению",
+  delivered: "Получен",
   cancelled: "Отменён",
 }
 

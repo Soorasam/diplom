@@ -12,7 +12,7 @@ import type { UserRole } from "@/shared/types"
 const roleLabel: Record<UserRole, string> = {
   client: "Клиент",
   driver: "Водитель",
-  employee: "ПВЗ",
+  employee: "Сотрудник (устар.)",
   admin: "Администратор",
 }
 

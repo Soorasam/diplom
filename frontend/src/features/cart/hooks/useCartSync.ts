@@ -36,8 +36,9 @@ export const useCartSync = () => {
     if (!cartLoaded || !serverCart) return
 
     setFromServer(mapBackendCartItems(serverCart))
-    if (user?.pickupPointId) {
-      setPickupPoint(user.pickupPointId)
+    const deliveryPointId = user?.pickupPointId ?? user?.settlementId
+    if (deliveryPointId) {
+      setPickupPoint(deliveryPointId)
     }
   }, [
     authHydrated,
@@ -47,6 +48,7 @@ export const useCartSync = () => {
     setFromServer,
     setPickupPoint,
     user?.pickupPointId,
+    user?.settlementId,
   ])
 
   useEffect(() => {

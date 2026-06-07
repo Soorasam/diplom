@@ -19,7 +19,7 @@ export const AddressesPage = () => {
       <PageHeader
         title="Населённый пункт"
         backTo={profileRoutes.profile}
-        subtitle="От пункта зависят маршруты и пункты выдачи"
+        subtitle="Куда координатор привезёт заказ при раздаче в посёлке"
       />
 
       {isLoading ? (

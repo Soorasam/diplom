@@ -50,7 +50,6 @@ export const ProfilePage = () => {
   )
 
   const isAdmin = user?.role === "admin"
-  const isEmployee = user?.role === "employee"
   const isAdminWorkspace = isAdmin && pathname.startsWith(routes.admin.root)
   const isUserWorkspace =
     pathname === routes.user.root || pathname.startsWith(`${routes.user.root}/`)
@@ -59,20 +58,12 @@ export const ProfilePage = () => {
     isAuthenticated && user?.role === "client" && !canUseDriverMode
   const isDriverApproved = myApp?.status === "approved"
 
-  const showDisputesMenu =
-    isAuthenticated && !isAdminWorkspace && (isDriverInterface || !isEmployee)
+  const showDisputesMenu = isAuthenticated && !isAdminWorkspace
   const unreadNotifications = useUnreadNotificationsCount()
   const unreadDisputes = useUnreadDisputesCount(showDisputesMenu)
 
   const menuLinks = isAdminWorkspace
     ? []
-    : isEmployee
-      ? [
-          { to: routes.employee.intake, label: "Приемка заказов", icon: MapPin },
-          { to: routes.employee.orders, label: "Выдача заказов", icon: Package },
-          { to: routes.employee.procurements, label: "Сборы ПВЗ", icon: Truck },
-          { to: profileRoutes.profileEdit, label: "Редактировать данные", icon: Pencil },
-        ]
     : isDriverInterface
       ? [
           ...(isAdmin
@@ -91,7 +82,6 @@ export const ProfilePage = () => {
           { to: profileRoutes.addresses, label: "Населённый пункт", icon: MapPin },
           { to: profileRoutes.notifications, label: "Уведомления", icon: Bell },
           { to: profileRoutes.support, label: "Поддержка", icon: Headphones },
-          { to: profileRoutes.pickupPoints, label: "Пункты выдачи", icon: MapPin },
         ]
 
   const vehicleLines = useMemo(() => {
@@ -122,9 +112,7 @@ export const ProfilePage = () => {
             icon: LayoutDashboard,
           }
         : null
-    : isEmployee
-      ? null
-      : null
+    : null
 
   return (
     <PageShell>
@@ -152,15 +140,6 @@ export const ProfilePage = () => {
                   ) : null}
                   <p className="mt-0.5 text-sm font-normal leading-relaxed text-sky-700 dark:text-cyan-300">
                     Администратор
-                  </p>
-                </>
-              ) : isEmployee ? (
-                <>
-                  <p className="mt-0.5 text-sm font-normal leading-relaxed text-sky-700 dark:text-cyan-300">
-                    Сотрудник ПВЗ
-                  </p>
-                  <p className="mt-0.5 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
-                    {settlementName ?? "Пункт выдачи не привязан"}
                   </p>
                 </>
               ) : !isDriverInterface ? (

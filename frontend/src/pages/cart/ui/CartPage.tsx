@@ -3,7 +3,7 @@ import { Package, MapPin, Trash2 } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { useProducts } from "@/entities/product/api/useProducts"
-import { usePickupPoints } from "@/entities/settlement/api/useSettlements"
+import { useSettlements } from "@/entities/settlement/api/useSettlements"
 import { useCartActions } from "@/features/cart/hooks/useCartActions"
 import { useProcurementParticipation } from "@/features/procurement/hooks/useProcurementParticipation"
 import { calcCartWeightKg } from "@/features/cart/lib/calc-weight"
@@ -21,6 +21,7 @@ import { StickyActionBar } from "@/shared/ui/sticky-action-bar/StickyActionBar"
 import { CheckoutSteps } from "@/shared/ui/checkout-steps/CheckoutSteps"
 import { QuantityStepper } from "@/shared/ui/quantity-stepper/QuantityStepper"
 import { CartProcurementBlock } from "@/widgets/cart-procurement-block/ui/CartProcurementBlock"
+import { useEffect } from "react"
 
 export const CartPage = () => {
   const navigate = useNavigate()
@@ -41,7 +42,18 @@ export const CartPage = () => {
   } = useProcurementParticipation()
 
   const { data: products } = useProducts()
-  const { data: pickupPoints } = usePickupPoints(user?.settlementId)
+  const { data: settlements } = useSettlements()
+
+  const deliveryPointId = pickupPointId ?? user?.pickupPointId ?? user?.settlementId
+  const settlementName = settlements?.find(
+    (s) => s.id === user?.settlementId || s.id === deliveryPointId,
+  )?.name
+
+  useEffect(() => {
+    if (!pickupPointId && deliveryPointId) {
+      setPickupPoint(deliveryPointId)
+    }
+  }, [pickupPointId, deliveryPointId, setPickupPoint])
 
   const cartProducts = items
     .map((item) => {
@@ -64,7 +76,7 @@ export const CartPage = () => {
   const canCheckout =
     isAuthenticated &&
     canCheckoutRound &&
-    Boolean(pickupPointId) &&
+    Boolean(deliveryPointId) &&
     cartProducts.length > 0 &&
     !weightOverLimit
 
@@ -74,8 +86,8 @@ export const CartPage = () => {
       ? "Выберите сбор"
       : !hasJoined
         ? "Вступите в сбор"
-        : !pickupPointId
-          ? "Выберите пункт выдачи"
+        : !deliveryPointId
+          ? "Укажите посёлок в профиле"
           : weightOverLimit
             ? "Превышен лимит веса"
             : "Оформить и оплатить"
@@ -103,24 +115,19 @@ export const CartPage = () => {
               <MapPin size={20} />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-900">Пункт выдачи</p>
-              <select
-                value={pickupPointId ?? ""}
-                onChange={(e) => setPickupPoint(e.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              >
-                <option value="">Выберите пункт</option>
-                {pickupPoints?.map((pp) => (
-                  <option key={pp.id} value={pp.id}>
-                    {pp.name}
-                  </option>
-                ))}
-              </select>
+              <p className="text-sm font-semibold text-slate-900">Посёлок доставки</p>
+              {settlementName ? (
+                <p className="mt-2 text-sm text-slate-700">{settlementName}</p>
+              ) : (
+                <p className="mt-2 text-sm text-amber-700">
+                  Не выбран — укажите в профиле
+                </p>
+              )}
               <Link
-                to={routes.user.pickupPoints}
+                to={routes.user.addresses}
                 className="ui-link mt-2 inline-block text-xs"
               >
-                Карта пунктов выдачи
+                Изменить населённый пункт
               </Link>
             </div>
           </div>
