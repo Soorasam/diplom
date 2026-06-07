@@ -140,7 +140,9 @@ export class CoordinatorService {
           roundOrders.some((o) => o.status === OrderStatus.in_transit) ||
           stops.some((s) => s.status !== DeliveryStopStatus.pending);
 
-        if (round.status === RoundStatus.fulfilled || allStopsDone) {
+        if (roundOrders.length === 0) {
+          status = 'completed';
+        } else if (round.status === RoundStatus.fulfilled || allStopsDone) {
           status = 'completed';
         } else if (hasDelivery || round.status === RoundStatus.closed) {
           status = 'active';

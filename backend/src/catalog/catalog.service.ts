@@ -222,7 +222,7 @@ export class CatalogService {
         transportType: plan.transportType,
         createdByUserId: user.id,
         closesAt,
-        minParticipants: dto.minParticipants ?? 3,
+        minParticipants: dto.minParticipants ?? 1,
         targetParticipants: dto.targetParticipants ?? 15,
         status: RoundStatus.open,
         waypoints: {
@@ -425,15 +425,6 @@ export class CatalogService {
       throw new BadRequestException('Сбор уже закрыт');
     }
 
-    if (round.participantsCount < round.minParticipants) {
-      await this.cancelRoundAsUnderfilled(round);
-      const updated = await this.prisma.round.findUnique({
-        where: { id },
-        include: roundWaypointsInclude,
-      });
-      return attachVirtualRoute(updated!);
-    }
-
     const updated = await this.prisma.round.update({
       where: { id },
       data: { status: RoundStatus.closed, emergencyCloseAt: null },
@@ -464,38 +455,6 @@ export class CatalogService {
         statusNote: 'Заказ отменён: оплата не поступила до закрытия сбора',
       },
     });
-  }
-
-  private async cancelRoundAsUnderfilled(round: { id: string; minParticipants: number }) {
-    await this.prisma.$transaction([
-      this.prisma.order.updateMany({
-        where: {
-          roundId: round.id,
-          status: { not: OrderStatus.cancelled },
-          paymentStatus: { not: PaymentStatus.held },
-        },
-        data: {
-          status: OrderStatus.cancelled,
-          statusNote: `Сбор отменён: участников меньше ${round.minParticipants}`,
-        },
-      }),
-      this.prisma.order.updateMany({
-        where: {
-          roundId: round.id,
-          status: { not: OrderStatus.cancelled },
-          paymentStatus: PaymentStatus.held,
-        },
-        data: {
-          status: OrderStatus.cancelled,
-          paymentStatus: PaymentStatus.refunded,
-          statusNote: `Сбор отменён: участников меньше ${round.minParticipants}, средства возвращены`,
-        },
-      }),
-      this.prisma.round.update({
-        where: { id: round.id },
-        data: { status: RoundStatus.closed, emergencyCloseAt: null },
-      }),
-    ]);
   }
 
   async fulfillRound(id: string) {

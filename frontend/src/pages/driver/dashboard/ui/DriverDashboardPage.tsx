@@ -8,6 +8,7 @@ import { useSettlements } from "@/entities/settlement/api/useSettlements"
 import { queryKeys } from "@/shared/config/query-keys"
 import { routes } from "@/shared/config/routes"
 import { isCoordinatorRouteInProgress } from "@/shared/lib/driver-round-workload"
+import { getDriverRouteDisplayStatus } from "@/shared/lib/driver-route-display"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Card } from "@/shared/ui/card/Card"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
@@ -20,18 +21,6 @@ const deliveryModeLabel = {
   air: "Авиа",
   mixed: "Смешанный",
 } as const
-
-const routeStatusLabel = {
-  planned: "Запланирован",
-  active: "Активен",
-  completed: "Завершён",
-} as const
-
-const routeStatusVariant = {
-  planned: "warning" as const,
-  active: "info" as const,
-  completed: "success" as const,
-}
 
 export const DriverDashboardPage = () => {
   const user = useAuthStore((s) => s.user)
@@ -183,14 +172,7 @@ export const DriverDashboardPage = () => {
                 </Card>
               ) : (
                 todayRoutes.map((route) => {
-                  const routeInProgress =
-                    route.status === "active" &&
-                    isCoordinatorRouteInProgress(route, driverOrders)
-                  const displayStatus = routeInProgress
-                    ? "active"
-                    : route.status === "active"
-                      ? "completed"
-                      : route.status
+                  const display = getDriverRouteDisplayStatus(route, driverOrders)
 
                   return (
                     <Link key={route.id} to={routes.driver.route}>
@@ -204,9 +186,7 @@ export const DriverDashboardPage = () => {
                               {deliveryModeLabel[route.deliveryMode]}
                             </p>
                           </div>
-                          <Badge variant={routeStatusVariant[displayStatus]}>
-                            {routeStatusLabel[displayStatus]}
-                          </Badge>
+                          <Badge variant={display.variant}>{display.label}</Badge>
                         </div>
                       </Card>
                     </Link>
