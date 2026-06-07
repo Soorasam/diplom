@@ -168,7 +168,7 @@ export class CartService {
 
   async checkout(user: User, dto?: CheckoutCartDto) {
     if (!user.pickupPointId) {
-      throw new BadRequestException('Укажите пункт выдачи в профиле перед оформлением');
+      throw new BadRequestException('Укажите населённый пункт в профиле перед оформлением');
     }
 
     const items = await this.prisma.cartItem.findMany({
@@ -275,6 +275,7 @@ export class CartService {
       publicNumber: order.publicNumber,
       roundId: order.roundId,
       status: order.status,
+      paymentStatus: order.paymentStatus,
       totalEstimate: decimalToNumber(order.totalEstimate),
       statusNote: order.statusNote,
       expectedAt: order.expectedAt,

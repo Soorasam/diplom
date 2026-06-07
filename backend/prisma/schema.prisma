@@ -44,6 +44,13 @@ enum OrderStatus {
   cancelled
 }
 
+enum PaymentStatus {
+  pending
+  held
+  released
+  refunded
+}
+
 enum TransportType {
   winter_road
   river
@@ -166,8 +173,8 @@ model Round {
   createdAt          DateTime      @default(now()) @map("created_at")
   closesAt           DateTime      @map("closes_at")
   emergencyCloseAt   DateTime?     @map("emergency_close_at")
-  minParticipants    Int           @default(10) @map("min_participants")
-  targetParticipants Int           @default(50) @map("target_participants")
+  minParticipants    Int           @default(3) @map("min_participants")
+  targetParticipants Int           @default(15) @map("target_participants")
   participantsCount  Int           @default(0) @map("participants_count")
   currentWeightKg    Decimal       @default(0) @map("current_weight_kg") @db.Decimal(10, 2)
   targetWeightKg     Decimal       @default(500) @map("target_weight_kg") @db.Decimal(10, 2)
@@ -264,9 +271,10 @@ model Order {
   publicNumber   String      @unique @map("public_number")
   userId         String      @map("user_id") @db.Uuid
   roundId        String      @map("round_id") @db.Uuid
-  pickupPointId  String?     @map("pickup_point_id") @db.Uuid
-  status         OrderStatus @default(submitted)
-  totalEstimate  Decimal     @default(0) @map("total_estimate") @db.Decimal(12, 2)
+  pickupPointId  String?       @map("pickup_point_id") @db.Uuid
+  status         OrderStatus   @default(submitted)
+  paymentStatus  PaymentStatus @default(pending) @map("payment_status")
+  totalEstimate  Decimal       @default(0) @map("total_estimate") @db.Decimal(12, 2)
   statusNote     String?     @map("status_note")
   expectedAt     DateTime?   @map("expected_at")
   createdAt      DateTime    @default(now()) @map("created_at")

@@ -7,6 +7,7 @@ import {
 import {
   DeliveryStopStatus,
   OrderStatus,
+  PaymentStatus,
   RoundStatus,
   User,
   UserRole,
@@ -218,8 +219,8 @@ export class CatalogService {
         transportType: plan.transportType,
         createdByUserId: user.id,
         closesAt,
-        minParticipants: dto.minParticipants ?? 10,
-        targetParticipants: dto.targetParticipants ?? 50,
+        minParticipants: dto.minParticipants ?? 3,
+        targetParticipants: dto.targetParticipants ?? 15,
         status: RoundStatus.open,
         waypoints: {
           create: plan.waypoints.map((w) => ({
@@ -404,11 +405,23 @@ export class CatalogService {
     if (round.status !== RoundStatus.open) {
       throw new BadRequestException('Сбор уже закрыт');
     }
+
+    if (round.participantsCount < round.minParticipants) {
+      await this.cancelRoundAsUnderfilled(round);
+      const updated = await this.prisma.round.findUnique({
+        where: { id },
+        include: roundWaypointsInclude,
+      });
+      return attachVirtualRoute(updated!);
+    }
+
     const updated = await this.prisma.round.update({
       where: { id },
       data: { status: RoundStatus.closed, emergencyCloseAt: null },
       include: roundWaypointsInclude,
     });
+
+    await this.cancelUnpaidOrders(id);
     await this.deliveryStops.dispatchRound(id);
     await this.procurementChecklist.initForRound(id);
     const procCount = await this.prisma.roundWaypoint.count({
@@ -418,6 +431,52 @@ export class CatalogService {
       await this.deliveryStops.releaseOrdersToTransit(id);
     }
     return attachVirtualRoute(updated);
+  }
+
+  private async cancelUnpaidOrders(roundId: string) {
+    await this.prisma.order.updateMany({
+      where: {
+        roundId,
+        paymentStatus: PaymentStatus.pending,
+        status: { notIn: [OrderStatus.cancelled, OrderStatus.delivered] },
+      },
+      data: {
+        status: OrderStatus.cancelled,
+        statusNote: 'Заказ отменён: оплата не поступила до закрытия сбора',
+      },
+    });
+  }
+
+  private async cancelRoundAsUnderfilled(round: { id: string; minParticipants: number }) {
+    await this.prisma.$transaction([
+      this.prisma.order.updateMany({
+        where: {
+          roundId: round.id,
+          status: { not: OrderStatus.cancelled },
+          paymentStatus: { not: PaymentStatus.held },
+        },
+        data: {
+          status: OrderStatus.cancelled,
+          statusNote: `Сбор отменён: участников меньше ${round.minParticipants}`,
+        },
+      }),
+      this.prisma.order.updateMany({
+        where: {
+          roundId: round.id,
+          status: { not: OrderStatus.cancelled },
+          paymentStatus: PaymentStatus.held,
+        },
+        data: {
+          status: OrderStatus.cancelled,
+          paymentStatus: PaymentStatus.refunded,
+          statusNote: `Сбор отменён: участников меньше ${round.minParticipants}, средства возвращены`,
+        },
+      }),
+      this.prisma.round.update({
+        where: { id: round.id },
+        data: { status: RoundStatus.closed, emergencyCloseAt: null },
+      }),
+    ]);
   }
 
   async fulfillRound(id: string) {

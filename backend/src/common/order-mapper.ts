@@ -1,5 +1,5 @@
 import { OrderStatus, Prisma } from '@prisma/client';
-import { ORDER_STATUS_LABELS, decimalToNumber } from './order-labels';
+import { ORDER_STATUS_LABELS, PAYMENT_STATUS_LABELS, decimalToNumber } from './order-labels';
 
 const orderRoundInclude = {
   waypoints: {
@@ -48,6 +48,8 @@ export function mapOrderListItem(order: OrderForMapper) {
     title: orderTitle(order),
     status: order.status,
     statusLabel: ORDER_STATUS_LABELS[order.status],
+    paymentStatus: order.paymentStatus,
+    paymentStatusLabel: PAYMENT_STATUS_LABELS[order.paymentStatus],
     totalEstimate: decimalToNumber(order.totalEstimate),
     total: decimalToNumber(order.totalEstimate),
     expectedAt: order.expectedAt,
@@ -66,6 +68,8 @@ export function mapOrderDetail(order: OrderForMapper) {
     pickupPointId: order.pickupPointId,
     status: order.status,
     statusLabel: ORDER_STATUS_LABELS[order.status],
+    paymentStatus: order.paymentStatus,
+    paymentStatusLabel: PAYMENT_STATUS_LABELS[order.paymentStatus],
     totalEstimate: decimalToNumber(order.totalEstimate),
     total: decimalToNumber(order.totalEstimate),
     statusNote: order.statusNote,

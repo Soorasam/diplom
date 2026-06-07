@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
 import { User, UserRole } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -47,5 +47,19 @@ export class OrdersController {
     @Body() dto: UpdateOrderStatusDto,
   ) {
     return this.orders.updateStatus(user, id, dto);
+  }
+
+  @Post(':id/reserve-payment')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.resident)
+  reservePayment(@CurrentUser() user: User, @Param('id', ParseUUIDPipe) id: string) {
+    return this.orders.reservePayment(user, id);
+  }
+
+  @Post(':id/confirm-receipt')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.resident)
+  confirmReceipt(@CurrentUser() user: User, @Param('id', ParseUUIDPipe) id: string) {
+    return this.orders.confirmReceipt(user, id);
   }
 }

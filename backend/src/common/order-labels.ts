@@ -1,12 +1,19 @@
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus } from '@prisma/client';
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  submitted: 'Оформлен',
-  confirmed: 'Подтверждён',
-  in_transit: 'В пути к пункту выдачи',
+  submitted: 'Оформлен, ожидает подтверждения',
+  confirmed: 'Принят в рейс',
+  in_transit: 'В пути в ваш посёлок',
   at_pickup: 'На пункте выдачи',
-  delivered: 'Выдан',
+  delivered: 'Получен',
   cancelled: 'Отменён',
+};
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  pending: 'Ожидает оплаты',
+  held: 'Зарезервировано на платформе',
+  released: 'Выплачено координатору',
+  refunded: 'Возвращено заказчику',
 };
 
 export function calcProgressPercent(current: number, target: number): number {
