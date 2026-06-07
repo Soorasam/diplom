@@ -110,14 +110,15 @@ export const useAuthStore = create<AuthState>()(
       },
 
       updateSettlement: async (settlementId) => {
-        const prevSettlementId = get().user?.settlementId
+        const prevLocationId =
+          get().user?.pickupPointId ?? get().user?.settlementId
         const res = await http.patch<BackendUser>(
           "/profile",
-          { settlementId },
+          { settlementId, pickupPointId: settlementId },
           true,
         )
         const user = mapUser(res)
-        if (prevSettlementId && prevSettlementId !== settlementId) {
+        if (prevLocationId && prevLocationId !== settlementId) {
           useCartStore.getState().clearProcurement()
         }
         set({ user })

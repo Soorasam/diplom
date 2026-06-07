@@ -87,6 +87,7 @@ export interface ProcurementWaypoint {
   settlementName?: string
   sortOrder: number
   isProcurementPoint: boolean
+  pickupPoint?: { id: string; name: string }
 }
 
 export interface Procurement {

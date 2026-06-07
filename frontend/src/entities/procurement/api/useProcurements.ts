@@ -1,4 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMemo } from "react"
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { queryKeys } from "@/shared/config/query-keys"
 import type { UserRole } from "@/shared/types"
@@ -15,6 +16,44 @@ export const useActiveProcurements = () =>
       return false
     },
   })
+
+/** Подгружает waypoints из деталки, если в списке их нет */
+export const useActiveProcurementsEnriched = () => {
+  const query = useActiveProcurements()
+  const procurements = query.data
+
+  const missingWaypointIds = useMemo(
+    () =>
+      (procurements ?? [])
+        .filter((p) => !p.waypoints?.length)
+        .map((p) => p.id),
+    [procurements],
+  )
+
+  const detailQueries = useQueries({
+    queries: missingWaypointIds.map((id) => ({
+      queryKey: [...queryKeys.procurements.all, id, "waypoints"],
+      queryFn: () => procurementsApi.getById(id),
+      staleTime: 60_000,
+    })),
+  })
+
+  const enrichedData = useMemo(() => {
+    if (!procurements) return undefined
+    const detailById = new Map(
+      missingWaypointIds.map((id, index) => [id, detailQueries[index]?.data]),
+    )
+    return procurements.map((p) => {
+      const detail = detailById.get(p.id)
+      if (detail?.waypoints?.length) {
+        return { ...p, waypoints: detail.waypoints }
+      }
+      return p
+    })
+  }, [procurements, missingWaypointIds, detailQueries])
+
+  return { ...query, data: enrichedData }
+}
 
 export const useDriverActiveProcurement = (userId?: string) =>
   useQuery({

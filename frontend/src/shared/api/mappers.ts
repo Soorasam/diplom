@@ -146,16 +146,19 @@ export const mapPickupPoint = (p: {
   coordinates: { lat: 0, lng: 0 },
 })
 
-export const mapUser = (u: BackendUser): User => ({
-  id: u.id,
-  name: u.fullName ?? u.email,
-  phone: u.phone ?? "",
-  email: u.email,
-  role: mapBackendRole(u.role),
-  settlementId: u.settlementId ?? u.pickupPointId ?? "",
-  pickupPointId: u.pickupPointId ?? u.settlementId ?? undefined,
-  mustChangePassword: u.mustChangePassword ?? false,
-})
+export const mapUser = (u: BackendUser): User => {
+  const locationId = u.pickupPointId ?? u.settlementId ?? ""
+  return {
+    id: u.id,
+    name: u.fullName ?? u.email,
+    phone: u.phone ?? "",
+    email: u.email,
+    role: mapBackendRole(u.role),
+    settlementId: locationId,
+    pickupPointId: locationId || undefined,
+    mustChangePassword: u.mustChangePassword ?? false,
+  }
+}
 
 export const mapCategory = (c: BackendCategory): Category => ({
   id: c.id,
@@ -185,13 +188,26 @@ export const mapRound = (r: BackendRound): Procurement => ({
   id: r.id,
   title: r.title ?? r.route.title,
   routeId: r.routeId,
-  waypoints: (r.waypoints ?? []).map((w) => ({
-    pickupPointId: w.pickupPointId,
-    settlementId: w.pickupPointId,
-    settlementName: w.pickupPoint?.name,
-    sortOrder: w.sortOrder,
-    isProcurementPoint: w.isProcurementPoint,
-  })),
+  waypoints: (r.waypoints ?? []).map((w) => {
+    const raw = w as typeof w & {
+      settlementId?: string
+      settlementName?: string
+      pickup_point_id?: string
+      pickupPoint?: { id?: string; name?: string }
+    }
+    const pickupPointId =
+      raw.pickupPointId ?? raw.pickupPoint?.id ?? raw.pickup_point_id ?? ""
+    return {
+      pickupPointId,
+      settlementId: raw.settlementId ?? pickupPointId,
+      settlementName: raw.settlementName ?? raw.pickupPoint?.name,
+      sortOrder: w.sortOrder,
+      isProcurementPoint: w.isProcurementPoint,
+      pickupPoint: raw.pickupPoint?.id
+        ? { id: raw.pickupPoint.id, name: raw.pickupPoint.name ?? "" }
+        : undefined,
+    }
+  }),
   status:
     r.status === "open" && r.emergencyCloseAt
       ? "closing"

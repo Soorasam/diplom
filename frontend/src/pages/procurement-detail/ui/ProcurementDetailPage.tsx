@@ -14,10 +14,8 @@ import { useCartStore } from "@/features/cart/model/cart-store"
 import { participateInProcurement } from "@/features/procurement/lib/participate-in-procurement"
 import { LeaveProcurementPanel } from "@/features/procurement/ui/LeaveProcurementPanel"
 import { routes } from "@/shared/config/routes"
-import {
-  getUserDeliveryLocationId,
-  isProcurementEligibleForUser,
-} from "@/shared/lib/procurement-eligibility"
+import { isProcurementEligibleForUser } from "@/shared/lib/procurement-eligibility"
+import { useUserDeliverySettlement } from "@/shared/hooks/useUserDeliverySettlement"
 import { formatShortDate } from "@/shared/lib/format"
 import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
 import { Button } from "@/shared/ui/button/Button"
@@ -32,14 +30,13 @@ import { ProcurementCard } from "@/widgets/procurement-card/ui/ProcurementCard"
 export const ProcurementDetailPage = () => {
   const { id = "" } = useParams()
   const navigate = useNavigate()
-  const user = useAuthStore((s) => s.user)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+  const { user, locationId: userLocationId, settlementName } = useUserDeliverySettlement()
   const setProcurement = useCartStore((s) => s.setProcurement)
   const clearProcurement = useCartStore((s) => s.clearProcurement)
   const procurementIdInCart = useCartStore((s) => s.procurementId)
 
   const { data: procurement, isLoading } = useProcurement(id)
-  const userLocationId = getUserDeliveryLocationId(user)
   const { data: memberships = [] } = useMyProcurementMemberships(user?.id)
   const join = useJoinProcurement(user?.id)
   const leave = useLeaveProcurement(user?.id)
@@ -60,7 +57,7 @@ export const ProcurementDetailPage = () => {
   )
   const inUserRoute = userLocationId
     ? procurement
-      ? isProcurementEligibleForUser(procurement, user)
+      ? isProcurementEligibleForUser(procurement, user, settlementName)
       : false
     : false
 
