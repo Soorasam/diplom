@@ -94,19 +94,24 @@ export class CatalogService {
       where: {
         createdByUserId: userId,
         status: RoundStatus.closed,
+        orders: {
+          some: {
+            status: { notIn: [OrderStatus.cancelled, OrderStatus.delivered] },
+          },
+        },
       },
       include: {
         deliveryStops: true,
         orders: {
           where: {
-            status: { in: [OrderStatus.in_transit, OrderStatus.at_pickup] },
+            status: { notIn: [OrderStatus.cancelled, OrderStatus.delivered] },
           },
-          select: { id: true },
+          select: { id: true, status: true },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
-    if (!round) return;
+    if (!round || round.orders.length === 0) return;
 
     const hasOpenStops = round.deliveryStops.some(
       (s) => s.status !== DeliveryStopStatus.completed,
@@ -114,15 +119,15 @@ export class CatalogService {
     const hasOpenProcurement = round.deliveryStops.some(
       (s) => s.isProcurementStop && !s.procurementCompletedAt,
     );
-    const hasPendingOrders = round.orders.length > 0;
+    const hasInTransit = round.orders.some(
+      (o) =>
+        o.status === OrderStatus.in_transit ||
+        o.status === OrderStatus.at_pickup,
+    );
 
-    if (
-      hasOpenProcurement ||
-      (round.deliveryStops.length > 0 && hasOpenStops) ||
-      (round.deliveryStops.length === 0 && hasPendingOrders)
-    ) {
+    if (hasOpenProcurement || hasOpenStops || hasInTransit) {
       throw new BadRequestException(
-        'Сначала завершите доставку по текущему маршруту: сотрудники ПВЗ должны принять все заказы.',
+        'Сначала завершите текущий сбор: закупка, маршрут или выдача заказов жителям.',
       );
     }
   }
@@ -432,6 +437,17 @@ export class CatalogService {
     });
 
     await this.cancelUnpaidOrders(id);
+
+    const activeOrders = await this.prisma.order.count({
+      where: {
+        roundId: id,
+        status: { notIn: [OrderStatus.cancelled, OrderStatus.delivered] },
+      },
+    });
+    if (activeOrders === 0) {
+      return attachVirtualRoute(updated);
+    }
+
     await this.deliveryStops.dispatchRound(id);
     await this.procurementChecklist.initForRound(id);
     const procCount = await this.prisma.roundWaypoint.count({
