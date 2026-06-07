@@ -233,4 +233,5 @@ export const mapRound = (r: BackendRound): Procurement => ({
   targetWeightKg: parseApiNumber(r.targetWeightKg ?? r.targetParticipants * 10),
   deliveryMode: mapTransport(r.route.transportType),
   estimatedDelivery: r.closesAt,
+  activeOrdersCount: r.activeOrdersCount,
 })

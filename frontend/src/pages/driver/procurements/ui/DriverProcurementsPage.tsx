@@ -33,6 +33,7 @@ import {
   validateRouteRows,
   type RouteBuilderRow,
 } from "@/features/driver-route/ui/RouteBuilder"
+import { getProcurementDisplayStatus } from "@/shared/lib/procurement-status"
 import { formatShortDate } from "@/shared/lib/format"
 import {
   CLOSES_AT_DATETIME_ERROR,
@@ -462,7 +463,9 @@ export const DriverProcurementsPage = () => {
         <>
           <p className="text-sm font-semibold text-slate-900">Завершённые сборы</p>
           <ul className="flex flex-col gap-2">
-            {closedProcurements.map((p) => (
+            {closedProcurements.map((p) => {
+              const display = getProcurementDisplayStatus(p)
+              return (
               <li key={p.id}>
                 <Card className="border-slate-200">
                   <div className="flex items-center justify-between gap-2">
@@ -473,11 +476,12 @@ export const DriverProcurementsPage = () => {
                         {formatShortDate(p.closesAt)}
                       </p>
                     </div>
-                    <Badge variant={p.status === "closed" ? "success" : "info"}>{p.status}</Badge>
+                    <Badge variant={display.variant}>{display.label}</Badge>
                   </div>
                 </Card>
               </li>
-            ))}
+              )
+            })}
           </ul>
         </>
       ) : !hasActiveRound && !hasDeliveryInProgress && !loading ? (

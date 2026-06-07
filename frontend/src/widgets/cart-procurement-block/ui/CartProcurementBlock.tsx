@@ -4,7 +4,7 @@ import { Package, Truck } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import {
-  useActiveProcurements,
+  useActiveProcurementsEnriched,
   useJoinProcurement,
   useLeaveProcurement,
 } from "@/entities/procurement/api/useProcurements"
@@ -14,6 +14,8 @@ import { LeaveProcurementPanel } from "@/features/procurement/ui/LeaveProcuremen
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { ApiError } from "@/shared/api/client"
 import { routes } from "@/shared/config/routes"
+import { useUserDeliverySettlement } from "@/shared/hooks/useUserDeliverySettlement"
+import { isProcurementEligibleForUser } from "@/shared/lib/procurement-eligibility"
 import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
@@ -35,7 +37,8 @@ export const CartProcurementBlock = () => {
     isAuthenticated,
   } = useProcurementParticipation()
 
-  const { data: activeProcurements } = useActiveProcurements()
+  const { data: activeProcurements } = useActiveProcurementsEnriched()
+  const { user: deliveryUser, settlementName } = useUserDeliverySettlement()
   const join = useJoinProcurement(user?.id)
   const leave = useLeaveProcurement(user?.id)
   const clearProcurement = useCartStore((s) => s.clearProcurement)
@@ -45,7 +48,8 @@ export const CartProcurementBlock = () => {
     activeProcurements?.filter(
       (p) =>
         joinedRoundIds.includes(p.id) &&
-        (p.status === "open" || p.status === "closing"),
+        (p.status === "open" || p.status === "closing") &&
+        isProcurementEligibleForUser(p, deliveryUser ?? user, settlementName),
     ) ?? []
 
   const handleJoinSelected = async () => {

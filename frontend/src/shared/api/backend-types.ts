@@ -69,4 +69,5 @@ export interface BackendRound {
   targetWeightKg?: number
   progressPercent: number
   route: BackendRoute
+  activeOrdersCount?: number
 }

@@ -46,7 +46,10 @@ export class CatalogService {
         status: RoundStatus.open,
         OR: [
           { emergencyCloseAt: { lte: new Date() } },
-          { closesAt: { lte: new Date() } },
+          {
+            emergencyCloseAt: null,
+            closesAt: { lte: new Date() },
+          },
         ],
       },
       select: { id: true },
@@ -236,18 +239,23 @@ export class CatalogService {
     return this.enrichRound(attachVirtualRoute(round));
   }
 
-  private enrichRound(round: {
-    participantsCount: number;
-    targetParticipants: number;
-    currentWeightKg: { toNumber(): number };
-    targetWeightKg: { toNumber(): number };
-  } & Record<string, unknown>) {
+  private enrichRound(
+    round: {
+      participantsCount: number;
+      targetParticipants: number;
+      currentWeightKg: { toNumber(): number };
+      targetWeightKg: { toNumber(): number };
+      _count?: { orders: number };
+    } & Record<string, unknown>,
+  ) {
     const { currentKg, targetKg } = roundWeightTotals(round);
+    const { _count, ...rest } = round;
     return {
-      ...round,
+      ...rest,
       currentWeightKg: currentKg,
       targetWeightKg: targetKg,
       progressPercent: calcRoundProgressPercent(round),
+      activeOrdersCount: _count?.orders ?? undefined,
     };
   }
 
@@ -285,6 +293,7 @@ export class CatalogService {
     await this.processDueEmergencyCloses();
     const round = await this.prisma.round.findUnique({
       where: { id: roundId },
+      include: roundWaypointsInclude,
     });
     if (!round) throw new NotFoundException('Сбор не найден');
     if (round.status !== RoundStatus.open) {
@@ -293,6 +302,19 @@ export class CatalogService {
     if (round.createdByUserId === user.id) {
       throw new BadRequestException(
         'Нельзя участвовать в сборе, который вы организовали как водитель',
+      );
+    }
+    if (!user.pickupPointId) {
+      throw new BadRequestException(
+        'Укажите населённый пункт доставки в профиле',
+      );
+    }
+    const onRoute = round.waypoints.some(
+      (w) => w.pickupPointId === user.pickupPointId,
+    );
+    if (!onRoute) {
+      throw new BadRequestException(
+        'Этот сбор не проходит через ваш населённый пункт',
       );
     }
     const { currentKg, targetKg } = roundWeightTotals(round);
@@ -364,16 +386,13 @@ export class CatalogService {
       where: {
         createdByUserId: user.id,
         status: RoundStatus.closed,
-        OR: [
-          { deliveryStops: { some: { status: { not: DeliveryStopStatus.completed } } } },
-          {
-            orders: {
-              some: {
-                status: { in: [OrderStatus.in_transit, OrderStatus.at_pickup] },
-              },
+        orders: {
+          some: {
+            status: {
+              notIn: [OrderStatus.cancelled, OrderStatus.delivered],
             },
           },
-        ],
+        },
       },
       include: roundWaypointsInclude,
       orderBy: { createdAt: 'desc' },
@@ -500,7 +519,20 @@ export class CatalogService {
     await this.processDueEmergencyCloses();
     const rounds = await this.prisma.round.findMany({
       where: status ? { status } : undefined,
-      include: roundWaypointsInclude,
+      include: {
+        ...roundWaypointsInclude,
+        _count: {
+          select: {
+            orders: {
+              where: {
+                status: {
+                  notIn: [OrderStatus.cancelled, OrderStatus.delivered],
+                },
+              },
+            },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
     return rounds.map((r) => this.enrichRound(attachVirtualRoute(r)));

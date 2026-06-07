@@ -108,6 +108,8 @@ export interface Procurement {
   targetWeightKg: number
   deliveryMode: DeliveryMode
   estimatedDelivery: string
+  /** Заказов не отменено и не доставлено (0 — сбор не состоялся). */
+  activeOrdersCount?: number
 }
 
 export interface DeliveryRoute {
