@@ -14,6 +14,7 @@ export const routes = {
     activeProcurements: "/user/active-procurements",
     procurement: (id: string) => `/user/procurements/${id}`,
     payment: "/user/payment",
+    paymentForOrder: (orderId: string) => `/user/payment?orderId=${orderId}`,
     profile: "/user/profile",
     profileEdit: "/user/profile/edit",
     disputes: "/user/disputes",

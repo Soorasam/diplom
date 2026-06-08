@@ -163,7 +163,6 @@ export class RoutesService {
       pickupPoint: {
         id: w.pickupPoint.id,
         name: w.pickupPoint.name,
-        coordinatorName: w.pickupPoint.name,
         address: w.pickupPoint.address,
         phone: w.pickupPoint.phone,
       },

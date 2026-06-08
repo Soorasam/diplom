@@ -12,7 +12,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   pending: 'Ожидает оплаты',
   held: 'Зарезервировано на платформе',
-  released: 'Выплачено координатору',
+  released: 'Выплачено водителю',
   refunded: 'Возвращено заказчику',
 };
 

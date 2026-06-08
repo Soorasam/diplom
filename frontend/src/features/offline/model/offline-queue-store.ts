@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware"
 
 export type OfflineActionStatus = "queued" | "processing" | "done" | "failed"
 
-/** Зарезервировано для будущих офлайн-сценариев координатора */
+/** Зарезервировано для будущих офлайн-сценариев водителя */
 export type OfflineActionType = never
 
 export interface OfflineAction<TPayload = unknown> {

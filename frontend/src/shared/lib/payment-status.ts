@@ -5,7 +5,7 @@ type BadgeVariant = "default" | "success" | "warning" | "info" | "danger"
 export const paymentStatusLabel: Record<PaymentStatus, string> = {
   pending: "Ожидает оплаты",
   held: "Зарезервировано на платформе",
-  released: "Выплачено координатору",
+  released: "Выплачено водителю",
   refunded: "Возвращено заказчику",
 }
 

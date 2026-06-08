@@ -26,12 +26,15 @@ export const useCheckoutFromCart = () => {
     mutationFn: ({
       procurementId,
       pickupPointId,
+      comment,
     }: {
       procurementId: string
       pickupPointId: string
-    }) => ordersApi.checkoutFromCart(procurementId, pickupPointId),
-    onSuccess: () => {
+      comment?: string
+    }) => ordersApi.checkoutFromCart(procurementId, pickupPointId, comment),
+    onSuccess: (order) => {
       useCartStore.getState().reset()
+      qc.setQueryData(queryKeys.orders.detail(order.id), order)
       void qc.invalidateQueries({ queryKey: queryKeys.cart })
       void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
       void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom"
-import { Package, MapPin, Trash2 } from "lucide-react"
+import { Package, Trash2 } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { useProducts } from "@/entities/product/api/useProducts"
@@ -77,6 +77,7 @@ export const CartPage = () => {
     isAuthenticated &&
     canCheckoutRound &&
     Boolean(deliveryPointId) &&
+    Boolean(user?.deliveryAddress?.trim()) &&
     cartProducts.length > 0 &&
     !weightOverLimit
 
@@ -88,13 +89,15 @@ export const CartPage = () => {
         ? "Вступите в сбор"
         : !deliveryPointId
           ? "Укажите посёлок в профиле"
+        : !user?.deliveryAddress?.trim()
+          ? "Укажите адрес дома"
           : weightOverLimit
             ? "Превышен лимит веса"
             : "Оформить и оплатить"
 
   return (
     <>
-    <PageShell withStickyFooter={cartProducts.length > 0}>
+      <PageShell withStickyFooter={cartProducts.length > 0}>
         <PageHeader
           title="Корзина"
           subtitle={
@@ -107,30 +110,9 @@ export const CartPage = () => {
 
         <CheckoutSteps current="cart" />
 
-        <CartProcurementBlock />
-
         <Card className="!p-4">
-          <div className="flex items-start gap-3">
-            <span className="ui-icon-soft flex h-10 w-10 shrink-0 rounded-xl">
-              <MapPin size={20} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-slate-900">Посёлок доставки</p>
-              {settlementName ? (
-                <p className="mt-2 text-sm text-slate-700">{settlementName}</p>
-              ) : (
-                <p className="mt-2 text-sm text-amber-700">
-                  Не выбран — укажите в профиле
-                </p>
-              )}
-              <Link
-                to={routes.user.addresses}
-                className="ui-link mt-2 inline-block text-xs"
-              >
-                Изменить населённый пункт
-              </Link>
-            </div>
-          </div>
+          <p className="mb-3 text-sm font-semibold text-slate-900">Сбор и доставка</p>
+          <CartProcurementBlock embedded settlementName={settlementName} />
         </Card>
 
         {cartProducts.length > 0 ? (
@@ -198,14 +180,14 @@ export const CartPage = () => {
               ))}
             </ul>
 
-            <div className="mb-2 scroll-mt-4">
+            <Card className="!p-4">
               <Input
-                label="Комментарий"
-                placeholder="Пожелания к заказу…"
+                label="Комментарий к заказу"
+                placeholder="Пожелания к заказу — увидит водитель при выдаче"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
-            </div>
+            </Card>
 
             {weightOverLimit ? (
               <AlertBanner variant="warning" title="Превышен лимит сбора">

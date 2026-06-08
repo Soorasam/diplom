@@ -29,7 +29,7 @@ export const createEmptyRouteRow = (isFirst: boolean): RouteBuilderRow => ({
 })
 
 export const RouteBuilder = ({ settlements, rows, onChange }: Props) => {
-  const [pvzPreviewId, setPvzPreviewId] = useState<string | null>(null)
+  const [settlementPreviewId, setSettlementPreviewId] = useState<string | null>(null)
 
   const usedIds = useMemo(
     () => new Set(rows.map((r) => r.settlementId).filter(Boolean)),
@@ -64,7 +64,7 @@ export const RouteBuilder = ({ settlements, rows, onChange }: Props) => {
           return (
             <li
               key={row.key}
-              className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/80 p-3 sm:flex-row sm:items-center"
+              className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/80 p-3 sm:flex-row sm:flex-wrap sm:items-center"
             >
               <div className="min-w-0 flex-1">
                 <span className="mb-1 block text-[11px] font-medium text-slate-500">
@@ -118,8 +118,8 @@ export const RouteBuilder = ({ settlements, rows, onChange }: Props) => {
                     size="sm"
                     aria-label="Адрес посёлка"
                     onClick={() =>
-                      setPvzPreviewId(
-                        pvzPreviewId === settlement.id ? null : settlement.id,
+                      setSettlementPreviewId(
+                        settlementPreviewId === settlement.id ? null : settlement.id,
                       )
                     }
                   >
@@ -140,8 +140,8 @@ export const RouteBuilder = ({ settlements, rows, onChange }: Props) => {
                 ) : null}
               </div>
 
-              {pvzPreviewId === settlement?.id && settlement ? (
-                <div className="w-full rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-600 sm:col-span-2">
+              {settlementPreviewId === settlement?.id && settlement ? (
+                <div className="w-full basis-full rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-600">
                   <p className="font-medium text-slate-800">{settlement.name}</p>
                   {settlement.address ? (
                     <p className="mt-1">{settlement.address}</p>

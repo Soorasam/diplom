@@ -88,6 +88,12 @@ export const DriverHandoutPage = () => {
           </Badge>
         </div>
         <p className="mt-2 text-sm text-slate-700">{itemsText}</p>
+        {order.comment ? (
+          <p className="mt-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            <span className="text-xs font-medium text-slate-500">Комментарий жителя: </span>
+            {order.comment}
+          </p>
+        ) : null}
         <p className="mt-1 text-sm font-medium text-slate-900">{formatPrice(order.total)}</p>
         {order.paymentStatus ? (
           <Badge variant={paymentStatusVariant[order.paymentStatus]} className="mt-2">

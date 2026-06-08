@@ -34,7 +34,6 @@ import { DriverDashboardPage } from "@/pages/driver/dashboard/ui/DriverDashboard
 import { DriverProcurementsPage } from "@/pages/driver/procurements/ui/DriverProcurementsPage"
 import { DriverRoutePage } from "@/pages/driver/route/ui/DriverRoutePage"
 import { DriverMapPage } from "@/pages/driver/map/ui/DriverMapPage"
-import { DriverHandoutPage } from "@/pages/driver/handout/ui/DriverHandoutPage"
 
 import { AdminDashboardPage } from "@/pages/admin/dashboard/ui/AdminDashboardPage"
 import { AdminUsersPage } from "@/pages/admin/users/ui/AdminUsersPage"
@@ -99,8 +98,6 @@ export const router = createBrowserRouter([
       { path: "support", element: <Navigate to={u.support} replace /> },
       { path: "addresses", element: <Navigate to={u.addresses} replace /> },
       { path: "pickup-points", element: <Navigate to={u.addresses} replace /> },
-      { path: "employee", element: <Navigate to={u.root} replace /> },
-      { path: "employee/*", element: <Navigate to={u.root} replace /> },
 
       {
         path: "/driver",
@@ -113,7 +110,7 @@ export const router = createBrowserRouter([
           { index: true, element: <DriverDashboardPage /> },
           { path: "procurements", element: <DriverProcurementsPage /> },
           { path: "route", element: <DriverRoutePage /> },
-          { path: "handout", element: <DriverHandoutPage /> },
+          { path: "handout", element: <Navigate to={routes.driver.route} replace /> },
           { path: "map", element: <DriverMapPage /> },
           { path: "profile", element: <ProfilePage /> },
           { path: "profile/edit", element: <EditProfilePage /> },
@@ -142,8 +139,6 @@ export const router = createBrowserRouter([
           { path: "settlements", element: <AdminSettlementsPage /> },
           { path: "analytics", element: <AdminAnalyticsPage /> },
           { path: "driver-applications", element: <AdminDriverApplicationsPage /> },
-          { path: "pvz", element: <Navigate to={routes.admin.settlements} replace /> },
-          { path: "pvz-employees", element: <Navigate to={routes.admin.settlements} replace /> },
           { path: "tickets", element: <AdminTicketsPage /> },
           { path: "tickets/:id", element: <AdminTicketDetailPage /> },
           { path: "profile", element: <ProfilePage /> },

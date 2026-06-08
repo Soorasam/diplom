@@ -14,6 +14,8 @@ import {
 
   Lock,
 
+  LogOut,
+
   Map as MapIcon,
 
   Package,
@@ -299,7 +301,7 @@ export const ActiveProcurementsPage = () => {
 
           </Link>{" "}
 
-          в профиле — тогда появятся сборы, куда координатор привезёт заказ.
+          в профиле — тогда появятся сборы, куда водитель привезёт заказ.
 
         </AlertBanner>
 
@@ -505,11 +507,13 @@ export const ActiveProcurementsPage = () => {
 
                               type="button"
 
-                              size="sm"
-
-                              variant="ghost"
+                              variant="outline"
 
                               fullWidth
+
+                              leftIcon={<LogOut size={16} />}
+
+                              className="border-amber-200 text-amber-900 hover:border-amber-300 hover:bg-amber-50 dark:border-amber-900/60 dark:text-amber-200 dark:hover:bg-amber-950/40"
 
                               onClick={() => setLeaveConfirmId(p.id)}
 
@@ -601,7 +605,7 @@ export const ActiveProcurementsPage = () => {
 
             userLocationId
 
-              ? "Когда координатор откроет маршрут с вашим населённым пунктом, сбор появится здесь"
+              ? "Когда водитель откроет маршрут с вашим населённым пунктом, сбор появится здесь"
 
               : "Новые сборы появятся здесь после выбора посёлка доставки"
 

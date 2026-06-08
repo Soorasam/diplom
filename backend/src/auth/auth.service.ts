@@ -32,6 +32,7 @@ export class AuthService {
       pickupPointId: user.pickupPointId,
       settlementId: user.pickupPointId,
       mustChangePassword: user.mustChangePassword,
+      deliveryAddress: user.deliveryAddress,
     };
   }
 

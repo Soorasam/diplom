@@ -8,6 +8,7 @@ export interface BackendUser {
   settlementId: string | null
   pickupPointId: string | null
   mustChangePassword?: boolean
+  deliveryAddress?: string | null
 }
 
 export interface AuthResponse {
@@ -56,6 +57,10 @@ export interface BackendRound {
   waypoints?: BackendRoundWaypoint[]
   title: string | null
   routeTitle?: string | null
+  routeChainTitle?: string | null
+  driverName?: string | null
+  driverPhone?: string | null
+  vehicleSummary?: string | null
   transportType?: "winter_road" | "river" | "highway"
   createdByUserId?: string | null
   status: "open" | "closed" | "fulfilled"

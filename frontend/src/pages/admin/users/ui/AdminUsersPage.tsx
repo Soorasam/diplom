@@ -10,16 +10,14 @@ import { Spinner } from "@/shared/ui/spinner/Spinner"
 import type { UserRole } from "@/shared/types"
 
 const roleLabel: Record<UserRole, string> = {
-  client: "Клиент",
+  client: "Житель",
   driver: "Водитель",
-  employee: "Сотрудник (устар.)",
   admin: "Администратор",
 }
 
 const roleVariant: Record<UserRole, "default" | "info" | "warning" | "success"> = {
   client: "default",
   driver: "info",
-  employee: "success",
   admin: "warning",
 }
 
@@ -28,7 +26,7 @@ export const AdminUsersPage = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader title="Пользователи" subtitle="Клиенты, водители и администраторы" />
+      <PageHeader title="Пользователи" subtitle="Жители, водители и администраторы" />
 
       {isLoading ? (
         <div className="flex justify-center py-12">

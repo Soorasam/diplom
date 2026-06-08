@@ -291,6 +291,9 @@ export class CoordinatorService {
         ...base,
         userName: user.fullName ?? user.email,
         userPhone: user.phone ?? '',
+        deliveryAddress:
+          o.deliveryAddress?.trim() || user.deliveryAddress?.trim() || null,
+        settlementName: o.pickupPoint?.name ?? null,
       };
     });
   }

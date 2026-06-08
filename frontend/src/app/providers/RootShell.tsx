@@ -32,9 +32,6 @@ export const RootShell = () => {
   if (user.role === "driver" && (isUserPath || isAdminPath)) {
     return <Navigate to={roleRoot} replace />
   }
-  if (user.role === "employee" && (isDriverPath || isAdminPath)) {
-    return <Navigate to={roleRoot} replace />
-  }
   if (user.role === "admin" && (isUserPath || isDriverPath)) {
     return <Navigate to={roleRoot} replace />
   }

@@ -27,7 +27,7 @@ export const parseApiNumber = (
 
 export const mapBackendRole = (role: BackendUser["role"]): UserRole => {
   if (role === "admin") return "admin"
-  if (role === "employee") return "employee"
+  if (role === "employee") return "client"
   if (role === "coordinator") return "driver"
   return "client"
 }
@@ -107,8 +107,11 @@ export const mapBackendOrder = (o: {
       },
     ],
   publicNumber: o.publicNumber,
+  title: o.title,
   userName: (o as { userName?: string }).userName,
   userPhone: (o as { userPhone?: string }).userPhone,
+  deliveryAddress: (o as { deliveryAddress?: string | null }).deliveryAddress ?? undefined,
+  settlementName: (o as { settlementName?: string | null }).settlementName ?? undefined,
   paymentStatus: o.paymentStatus,
   paymentStatusLabel: o.paymentStatusLabel,
   statusLabel: o.statusLabel,
@@ -133,16 +136,14 @@ export const mapPickupPoint = (p: {
   id: string
   name: string
   settlementId?: string
-  coordinatorName?: string
   address?: string | null
   phone?: string | null
 }): PickupPoint => ({
   id: p.id,
   settlementId: p.settlementId ?? p.id,
-  name: p.name ?? p.coordinatorName ?? "",
-  coordinatorName: p.coordinatorName ?? p.name ?? "",
+  name: p.name ?? "",
   address: p.address ?? "",
-  coordinatorPhone: p.phone ?? "",
+  phone: p.phone ?? undefined,
   coordinates: { lat: 0, lng: 0 },
 })
 
@@ -157,6 +158,7 @@ export const mapUser = (u: BackendUser): User => {
     settlementId: locationId,
     pickupPointId: locationId || undefined,
     mustChangePassword: u.mustChangePassword ?? false,
+    deliveryAddress: u.deliveryAddress ?? undefined,
   }
 }
 
@@ -184,9 +186,18 @@ const mapTransport = (t: BackendRound["route"]["transportType"]): DeliveryMode =
   return "mixed"
 }
 
-export const mapRound = (r: BackendRound): Procurement => ({
+const resolveRoundChainTitle = (r: BackendRound): string =>
+  r.routeChainTitle?.trim() ||
+  r.routeTitle?.trim() ||
+  r.route.title?.trim() ||
+  "Маршрут"
+
+export const mapRound = (r: BackendRound): Procurement => {
+  const routeTitle = resolveRoundChainTitle(r)
+  return {
   id: r.id,
-  title: r.title ?? r.route.title,
+  title: r.title?.trim() || routeTitle,
+  routeTitle,
   routeId: r.routeId,
   waypoints: (r.waypoints ?? []).map((w) => {
     const raw = w as typeof w & {
@@ -234,4 +245,8 @@ export const mapRound = (r: BackendRound): Procurement => ({
   deliveryMode: mapTransport(r.route.transportType),
   estimatedDelivery: r.closesAt,
   activeOrdersCount: r.activeOrdersCount,
-})
+  driverName: r.driverName ?? null,
+  driverPhone: r.driverPhone ?? null,
+  vehicleSummary: r.vehicleSummary ?? null,
+  }
+}

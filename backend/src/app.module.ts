@@ -13,7 +13,6 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { DriverApplicationsModule } from './driver-applications/driver-applications.module';
 import { CoordinatorModule } from './coordinator/coordinator.module';
-import { EmployeeModule } from './employee/employee.module';
 import { LogisticsModule } from './logistics/logistics.module';
 import { StorageModule } from './storage/storage.module';
 import { RoutesModule } from './routes/routes.module';
@@ -35,7 +34,6 @@ import { RoutesModule } from './routes/routes.module';
     TicketsModule,
     DriverApplicationsModule,
     CoordinatorModule,
-    EmployeeModule,
     RoutesModule,
   ],
   controllers: [HealthController],

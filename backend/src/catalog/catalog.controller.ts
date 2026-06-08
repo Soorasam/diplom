@@ -63,7 +63,7 @@ export class CatalogController {
 
   @Patch('rounds/:id/fulfill')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.admin, UserRole.employee)
+  @Roles(UserRole.admin)
   fulfillRound(@Param('id', ParseUUIDPipe) id: string) {
     return this.catalog.fulfillRound(id);
   }

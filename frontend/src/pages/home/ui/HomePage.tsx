@@ -101,7 +101,7 @@ export const HomePage = () => {
                 </p>
               ) : activeOrder.paymentStatus === "pending" ? (
                 <p className="mt-2 text-xs text-amber-700">
-                  Завершите оплату, чтобы координатор принял заказ в рейс
+                  Завершите оплату, чтобы водитель принял заказ в рейс
                 </p>
               ) : null}
             </Card>

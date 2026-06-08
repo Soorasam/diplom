@@ -26,7 +26,7 @@ export const AdminProcurementsPage = () => {
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Сборы"
-        subtitle="Закрытие сбора отправляет рейс: заказы «в пути», координатор видит точки"
+        subtitle="Закрытие сбора отправляет рейс: заказы «в пути», водитель видит точки"
       />
 
       {isLoading ? (
@@ -68,7 +68,7 @@ export const AdminProcurementsPage = () => {
                   </div>
                 ) : p.status === "closed" ? (
                   <p className="mt-2 text-xs text-slate-500">
-                    Рейс в доставке. Координатор раздаёт заказы в посёлках на маршруте.
+                    Рейс в доставке. Водитель раздаёт заказы в посёлках на маршруте.
                   </p>
                 ) : null}
               </Card>

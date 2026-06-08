@@ -33,7 +33,11 @@ interface AuthState {
   switchRole: (role: Extract<UserRole, "client" | "driver">) => Promise<void>
   logout: () => void
   updateSettlement: (settlementId: string) => Promise<void>
-  updateProfile: (payload: { fullName?: string; phone?: string }) => Promise<void>
+  updateProfile: (payload: {
+    fullName?: string
+    phone?: string
+    deliveryAddress?: string
+  }) => Promise<void>
   setPassword: (payload: { newPassword: string; currentPassword?: string }) => Promise<void>
 }
 
@@ -148,7 +152,6 @@ export const useAuthStore = create<AuthState>()(
 
 export const homeRouteForRole = (role: User["role"]) => {
   if (role === "driver") return routes.driver.root
-  if (role === "employee") return routes.user.root
   if (role === "admin") return routes.admin.root
   return routes.user.root
 }

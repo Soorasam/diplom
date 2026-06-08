@@ -9,6 +9,10 @@ import { queryKeys } from "@/shared/config/query-keys"
 import { routes } from "@/shared/config/routes"
 import { isCoordinatorRouteInProgress } from "@/shared/lib/driver-round-workload"
 import { getDriverRouteDisplayStatus } from "@/shared/lib/driver-route-display"
+import {
+  groupOrdersBySettlement,
+  isAwaitingTripAccept,
+} from "@/shared/lib/driver-orders"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Card } from "@/shared/ui/card/Card"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
@@ -46,12 +50,23 @@ export const DriverDashboardPage = () => {
   const todayRoutes = driverRoutes ?? []
   const nextSettlementId = activeRoute?.toSettlementIds[0]
   const nextStop = settlements?.find((s) => s.id === nextSettlementId)
+  const ordersBySettlement = groupOrdersBySettlement(driverOrders ?? [])
+  const awaitingAccept = (driverOrders ?? []).filter(isAwaitingTripAccept)
+  const awaitingAcceptCount = awaitingAccept.length
   const inTransitCount =
-    driverOrders?.filter((o) => o.status === "in_transit").length ?? 0
-  const awaitingAcceptCount =
     driverOrders?.filter(
-      (o) => o.status === "pending" && o.paymentStatus === "held",
+      (o) => o.status === "in_transit" || o.status === "at_pickup",
     ).length ?? 0
+
+  const currentStop = activeRoute?.deliveryStops?.find(
+    (s) => s.status !== "completed",
+  )
+  const currentStopOrders = currentStop
+    ? ordersBySettlement.get(currentStop.pickupPointId) ?? []
+    : []
+  const pendingConfirmCount = currentStopOrders.filter(
+    (o) => o.status === "in_transit" || o.status === "at_pickup",
+  ).length
 
   const isLoading = loadingRoutes || loadingOrders
 
@@ -68,6 +83,62 @@ export const DriverDashboardPage = () => {
         </div>
       ) : (
         <>
+          <Card className="ui-panel-gradient border-sky-200 !p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-sky-700">
+              Сейчас
+            </p>
+            {awaitingAcceptCount > 0 ? (
+              <>
+                <p className="mt-1 font-semibold text-slate-900">
+                  Примите {awaitingAcceptCount} оплаченных заказ(ов) в рейс
+                </p>
+                <Link
+                  to={routes.driver.route}
+                  className="ui-cta ui-cta-primary ui-cta-block mt-3"
+                >
+                  Открыть рейс
+                </Link>
+              </>
+            ) : activeRoute && currentStop ? (
+              <>
+                <p className="mt-1 font-semibold text-slate-900">
+                  {currentStop.label}
+                  {currentStop.expectsOrders
+                    ? ` · ${currentStop.receivedOrders}/${currentStop.totalOrders} подтвердили`
+                    : ""}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {currentStop.expectsOrders
+                    ? pendingConfirmCount > 0
+                      ? `Обойдите ${currentStopOrders.length} жителей по адресам · ${pendingConfirmCount} ждут подтверждения`
+                      : `Обойдите жителей по адресам в посёлке`
+                    : "Этап закупки или проезда"}
+                </p>
+                <Link
+                  to={routes.driver.route}
+                  className="ui-cta ui-cta-primary ui-cta-block mt-3"
+                >
+                  Открыть рейс
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 font-semibold text-slate-900">
+                  Нет активного рейса
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Откройте или закройте сбор в разделе «Сборы»
+                </p>
+                <Link
+                  to={routes.driver.procurements}
+                  className="ui-cta ui-cta-outline ui-cta-block mt-3"
+                >
+                  Перейти к сборам
+                </Link>
+              </>
+            )}
+          </Card>
+
           <div className="grid grid-cols-2 gap-3">
             <Card className="ui-panel p-4">
               <div className="flex items-center gap-2">
@@ -134,12 +205,6 @@ export const DriverDashboardPage = () => {
               </div>
             </Card>
           </div>
-
-          <Link to={routes.driver.handout}>
-            <Card className="ui-link-card p-4 text-center text-sm font-medium text-sky-700">
-              Заказы сбора — принять в рейс и выдача
-            </Card>
-          </Link>
 
           {nextStop ? (
             <Card className="ui-panel-gradient p-4">

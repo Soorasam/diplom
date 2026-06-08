@@ -32,10 +32,28 @@ export const cartApi = {
 
   clear: () => http.delete<BackendCart>("/cart", true),
 
-  checkout: (roundId?: string) =>
-    http.post<{ id: string; publicNumber: string }>(
+  checkout: (roundId?: string, comment?: string) =>
+    http.post<{
+      id: string
+      publicNumber: string
+      roundId: string
+      status: string
+      paymentStatus?: "pending" | "held" | "released" | "refunded"
+      totalEstimate: number
+      createdAt: string
+      title?: string
+      items?: {
+        productId: string
+        productName?: string
+        quantity: number
+        priceSnapshot: number
+      }[]
+    }>(
       "/cart/checkout",
-      roundId ? { roundId } : {},
+      {
+        ...(roundId ? { roundId } : {}),
+        ...(comment?.trim() ? { comment: comment.trim() } : {}),
+      },
       true,
     ),
 }

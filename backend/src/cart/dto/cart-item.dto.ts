@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min } from 'class-validator';
 
 export class CreateCartItemDto {
   @IsUUID()
@@ -26,4 +26,9 @@ export class CheckoutCartDto {
   @IsOptional()
   @IsUUID()
   roundId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  comment?: string;
 }

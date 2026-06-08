@@ -8,13 +8,17 @@ import { ProcurementProgress } from "@/widgets/procurement-progress/ui/Procureme
 
 interface ActiveProcurementBannerProps {
   procurement: Procurement
+  embedded?: boolean
 }
 
-export const ActiveProcurementBanner = ({ procurement }: ActiveProcurementBannerProps) => {
+export const ActiveProcurementBanner = ({
+  procurement,
+  embedded,
+}: ActiveProcurementBannerProps) => {
   const leftKg = Math.max(procurement.targetWeightKg - procurement.currentWeightKg, 0)
 
-  return (
-    <Card className="p-4" aria-label="Активный сбор">
+  const body = (
+    <>
       <div className="flex items-start gap-3">
         <span className="ui-icon-well flex h-9 w-9 shrink-0">
           <Truck size={18} />
@@ -43,6 +47,16 @@ export const ActiveProcurementBanner = ({ procurement }: ActiveProcurementBanner
       <div className="mt-3">
         <ProcurementProgress procurement={procurement} size="sm" />
       </div>
+    </>
+  )
+
+  if (embedded) {
+    return <div aria-label="Активный сбор">{body}</div>
+  }
+
+  return (
+    <Card className="p-4" aria-label="Активный сбор">
+      {body}
     </Card>
   )
 }

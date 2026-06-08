@@ -170,7 +170,7 @@ export const ProcurementSettlementCard = ({ roundId }: Props) => {
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-slate-500">К выплате координатору</dt>
+              <dt className="text-xs text-slate-500">К выплате водителю</dt>
               <dd className="font-semibold text-slate-900">{formatPrice(settlement.netTotal)}</dd>
             </div>
           </dl>

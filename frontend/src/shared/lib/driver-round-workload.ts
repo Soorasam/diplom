@@ -36,7 +36,7 @@ export const isOpenCollectionRound = (
   return activeRound.status === "open" || activeRound.status === "closing"
 }
 
-/** Маршрут на карте координатора ещё требует работы */
+/** Маршрут водителя ещё требует работы */
 export const isCoordinatorRouteInProgress = (
   route: CoordinatorRoute | undefined,
   orders: Order[] | undefined,

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   DeliveryStopStatus,
+  DriverApplicationStatus,
   OrderStatus,
   PaymentStatus,
   RoundStatus,
@@ -251,17 +252,82 @@ export class CatalogService {
       currentWeightKg: { toNumber(): number };
       targetWeightKg: { toNumber(): number };
       _count?: { orders: number };
+      waypoints?: { pickupPoint: { name: string }; sortOrder: number }[];
     } & Record<string, unknown>,
   ) {
     const { currentKg, targetKg } = roundWeightTotals(round);
     const { _count, ...rest } = round;
+    const routeChainTitle = round.waypoints?.length
+      ? buildRouteTitleFromWaypoints(round.waypoints)
+      : null;
     return {
       ...rest,
       currentWeightKg: currentKg,
       targetWeightKg: targetKg,
       progressPercent: calcRoundProgressPercent(round),
       activeOrdersCount: _count?.orders ?? undefined,
+      routeChainTitle,
     };
+  }
+
+  private async loadCoordinatorMap(userIds: Array<string | null | undefined>) {
+    const ids = [...new Set(userIds.filter((id): id is string => Boolean(id)))];
+    if (!ids.length) return new Map<string, { fullName: string | null; phone: string | null; vehicleSummary: string | null }>();
+
+    const [users, applications] = await Promise.all([
+      this.prisma.user.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, fullName: true, phone: true },
+      }),
+      this.prisma.driverApplication.findMany({
+        where: { userId: { in: ids }, status: DriverApplicationStatus.approved },
+        select: { userId: true, vehicleSummary: true },
+        orderBy: { reviewedAt: 'desc' },
+      }),
+    ]);
+
+    const vehicleByUser = new Map<string, string | null>();
+    for (const app of applications) {
+      if (!vehicleByUser.has(app.userId)) {
+        vehicleByUser.set(app.userId, app.vehicleSummary);
+      }
+    }
+
+    return new Map(
+      users.map((user) => [
+        user.id,
+        {
+          fullName: user.fullName,
+          phone: user.phone,
+          vehicleSummary: vehicleByUser.get(user.id) ?? null,
+        },
+      ]),
+    );
+  }
+
+  private attachDriverInfo<T extends Record<string, unknown>>(
+    round: T,
+    driver?: { fullName: string | null; phone: string | null; vehicleSummary: string | null },
+  ) {
+    if (!driver) return round;
+    return {
+      ...round,
+      driverName: driver.fullName,
+      driverPhone: driver.phone,
+      vehicleSummary: driver.vehicleSummary,
+    };
+  }
+
+  private async enrichRoundsForResidents(rounds: Array<Record<string, unknown>>) {
+    const driverMap = await this.loadCoordinatorMap(
+      rounds.map((round) => round.createdByUserId as string | null | undefined),
+    );
+    return rounds.map((round) =>
+      this.attachDriverInfo(
+        round,
+        driverMap.get(round.createdByUserId as string) ?? undefined,
+      ),
+    );
   }
 
   
@@ -369,7 +435,9 @@ export class CatalogService {
       include: roundWaypointsInclude,
     });
     if (!round) throw new NotFoundException('Сбор не найден');
-    return this.enrichRound(attachVirtualRoute(round));
+    const enriched = this.enrichRound(attachVirtualRoute(round));
+    const [withCoordinator] = await this.enrichRoundsForResidents([enriched]);
+    return withCoordinator;
   }
 
   async getDriverActiveRound(user: User) {
@@ -510,7 +578,8 @@ export class CatalogService {
       },
       orderBy: { createdAt: 'desc' },
     });
-    return rounds.map((r) => this.enrichRound(attachVirtualRoute(r)));
+    const enriched = rounds.map((r) => this.enrichRound(attachVirtualRoute(r)));
+    return this.enrichRoundsForResidents(enriched);
   }
 
   listCategories() {

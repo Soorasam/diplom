@@ -1,6 +1,6 @@
 export type { PaymentStatus } from "./payment-status"
 
-export type UserRole = "client" | "driver" | "employee" | "admin"
+export type UserRole = "client" | "driver" | "admin"
 
 export type DriverApplicationStatus = "pending" | "approved" | "rejected"
 

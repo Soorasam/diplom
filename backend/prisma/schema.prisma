@@ -76,7 +76,7 @@ enum OrderItemProcurementStatus {
   refunded
 }
 
-/// Населённый пункт = один ПВЗ (все данные в одной записи).
+/// Населённый пункт (точка раздачи в посёлке).
 model PickupPoint {
   id       String  @id @default(uuid()) @db.Uuid
   name     String
@@ -102,6 +102,7 @@ model User {
   fullName       String?  @map("full_name")
   role           UserRole @default(resident)
   pickupPointId  String?  @map("pickup_point_id") @db.Uuid
+  deliveryAddress      String?  @map("delivery_address")
   isActive             Boolean  @default(true) @map("is_active")
   mustChangePassword   Boolean  @default(false) @map("must_change_password")
   createdAt            DateTime @default(now()) @map("created_at")
@@ -289,10 +290,12 @@ model Order {
   userId         String      @map("user_id") @db.Uuid
   roundId        String      @map("round_id") @db.Uuid
   pickupPointId  String?       @map("pickup_point_id") @db.Uuid
+  deliveryAddress String?      @map("delivery_address")
   status         OrderStatus   @default(submitted)
   paymentStatus  PaymentStatus @default(pending) @map("payment_status")
   totalEstimate  Decimal       @default(0) @map("total_estimate") @db.Decimal(12, 2)
   refundAmount   Decimal       @default(0) @map("refund_amount") @db.Decimal(12, 2)
+  customerNote   String?     @map("customer_note")
   statusNote     String?     @map("status_note")
   expectedAt     DateTime?   @map("expected_at")
   createdAt      DateTime    @default(now()) @map("created_at")

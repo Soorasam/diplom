@@ -15,7 +15,16 @@ export const orderDetailInclude = {
 
 export const orderInclude = {
   ...orderDetailInclude,
-  user: { select: { id: true, fullName: true, phone: true, email: true } },
+  user: {
+    select: {
+      id: true,
+      fullName: true,
+      phone: true,
+      email: true,
+      deliveryAddress: true,
+    },
+  },
+  pickupPoint: { select: { id: true, name: true } },
 } satisfies Prisma.OrderInclude;
 
 export type OrderForMapper = Prisma.OrderGetPayload<{
@@ -56,6 +65,8 @@ export function mapOrderListItem(order: OrderForMapper) {
     refundAmount,
     netTotal: Math.max(totalEstimate - refundAmount, 0),
     total: totalEstimate,
+    comment: order.customerNote,
+    deliveryAddress: order.deliveryAddress,
     expectedAt: order.expectedAt,
     createdAt: order.createdAt,
   };
@@ -80,6 +91,8 @@ export function mapOrderDetail(order: OrderForMapper) {
     refundAmount,
     netTotal: Math.max(totalEstimate - refundAmount, 0),
     total: totalEstimate,
+    comment: order.customerNote,
+    deliveryAddress: order.deliveryAddress,
     statusNote: order.statusNote,
     expectedAt: order.expectedAt,
     createdAt: order.createdAt,

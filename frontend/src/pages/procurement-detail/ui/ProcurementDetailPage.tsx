@@ -26,6 +26,7 @@ import { Spinner } from "@/shared/ui/spinner/Spinner"
 import { StickyActionBar } from "@/shared/ui/sticky-action-bar/StickyActionBar"
 import { MapView } from "@/shared/ui/map/MapView"
 import { ProcurementCard } from "@/widgets/procurement-card/ui/ProcurementCard"
+import { ProcurementLogisticsCard } from "@/widgets/procurement-logistics/ui/ProcurementLogisticsCard"
 
 export const ProcurementDetailPage = () => {
   const { id = "" } = useParams()
@@ -42,7 +43,6 @@ export const ProcurementDetailPage = () => {
   const leave = useLeaveProcurement(user?.id)
   const { pushDraftItemsToServer } = useCartActions()
 
-  const [confirmOpen, setConfirmOpen] = useState(false)
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false)
   const [limitMessage, setLimitMessage] = useState<string | null>(null)
 
@@ -64,7 +64,6 @@ export const ProcurementDetailPage = () => {
   const handleParticipate = async () => {
     if (!procurement || atLimit) {
       setLimitMessage("Лимит веса сбора достигнут")
-      setConfirmOpen(false)
       return
     }
     try {
@@ -72,14 +71,12 @@ export const ProcurementDetailPage = () => {
         await join.mutateAsync(procurement.id)
         await pushDraftItemsToServer(procurement.id)
       }
-      setConfirmOpen(false)
       participateInProcurement(navigate, setProcurement, procurement.id)
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Не удалось выбрать сбор"
       setLimitMessage(
         msg.includes("лимит") || msg.includes("Лимит") ? "Лимит веса сбора достигнут" : msg,
       )
-      setConfirmOpen(false)
     }
   }
 
@@ -119,6 +116,8 @@ export const ProcurementDetailPage = () => {
         <PageHeader title="Детали сбора" backTo={routes.user.activeProcurements} className="!mb-0" />
 
         <ProcurementCard procurement={procurement} />
+
+        <ProcurementLogisticsCard procurement={procurement} />
 
         <Card className="!p-4">
           <dl className="grid grid-cols-2 gap-4 text-sm">
@@ -222,6 +221,7 @@ export const ProcurementDetailPage = () => {
                   type="button"
                   fullWidth
                   variant="outline"
+                  className="border-amber-200 text-amber-900 hover:border-amber-300 hover:bg-amber-50 dark:border-amber-900/60 dark:text-amber-200 dark:hover:bg-amber-950/40"
                   onClick={() => setLeaveConfirmOpen(true)}
                 >
                   Выйти из сбора
@@ -244,7 +244,7 @@ export const ProcurementDetailPage = () => {
               !inUserRoute
             }
             leftIcon={<Package size={18} />}
-            onClick={() => setConfirmOpen(true)}
+            onClick={() => void handleParticipate()}
           >
             {isOwnRound
               ? "Это ваш сбор"
@@ -263,33 +263,6 @@ export const ProcurementDetailPage = () => {
         )}
       </StickyActionBar>
 
-      {confirmOpen ? (
-        <div
-          className="fixed inset-0 z-[70] flex items-end justify-center bg-slate-900/50 p-4 backdrop-blur-[2px] sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setConfirmOpen(false)}
-        >
-          <Card
-            className="ornament-frame w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p className="text-lg font-bold text-slate-900">Вступление в сбор</p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              Откроется каталог «{procurement.title}». Добавьте товары, оплатите заказ — тогда
-              вес учтётся в прогрессе сбора.
-            </p>
-            <div className="mt-5 flex gap-3">
-              <Button variant="outline" fullWidth onClick={() => setConfirmOpen(false)}>
-                Отмена
-              </Button>
-              <Button fullWidth loading={join.isPending} onClick={() => void handleParticipate()}>
-                {inUserRoute ? "В каталог" : "Недоступно"}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      ) : null}
     </>
   )
 }

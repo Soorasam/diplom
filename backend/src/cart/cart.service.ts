@@ -167,8 +167,12 @@ export class CartService {
   }
 
   async checkout(user: User, dto?: CheckoutCartDto) {
-    if (!user.pickupPointId) {
+    const profile = await this.prisma.user.findUnique({ where: { id: user.id } });
+    if (!profile?.pickupPointId) {
       throw new BadRequestException('Укажите населённый пункт в профиле перед оформлением');
+    }
+    if (!profile.deliveryAddress?.trim()) {
+      throw new BadRequestException('Укажите адрес дома в профиле перед оформлением');
     }
 
     const items = await this.prisma.cartItem.findMany({
@@ -240,9 +244,11 @@ export class CartService {
           publicNumber,
           userId: user.id,
           roundId: round.id,
-          pickupPointId: user.pickupPointId,
+          pickupPointId: profile.pickupPointId,
+          deliveryAddress: profile.deliveryAddress?.trim() || null,
           status: OrderStatus.submitted,
           totalEstimate,
+          customerNote: dto?.comment?.trim() || null,
           statusNote: ORDER_STATUS_LABELS.submitted,
           items: { create: orderItemsData },
         },

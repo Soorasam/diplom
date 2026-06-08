@@ -170,7 +170,7 @@ export class ProcurementChecklistService {
         orderItemId: line.id,
         orderId: line.orderId,
         orderNumber: line.order.publicNumber,
-        deliveryPvzName: line.order.pickupPoint?.name ?? '—',
+        deliverySettlementName: line.order.pickupPoint?.name ?? '—',
         productId: line.productId,
         productName: line.productName,
         quantity: line.quantity,

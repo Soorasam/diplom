@@ -1,8 +1,11 @@
+import { cartApi } from "@/entities/cart/api/cartApi"
+import { useCartStore } from "@/features/cart/model/cart-store"
 import { http } from "@/shared/api/client"
 import {
   mapBackendOrder,
   mapFrontOrderStatusToBackend,
 } from "@/shared/api/mappers"
+import type { Order } from "@/shared/api/api-types"
 import type { OrderStatus } from "@/shared/types"
 
 type BackendOrderPayload = Parameters<typeof mapBackendOrder>[0]
@@ -27,12 +30,36 @@ export const ordersApi = {
   },
 
   /** Checkout корзины → заказ submitted + paymentStatus pending */
-  checkoutFromCart: async (procurementId: string, pickupPointId: string) => {
-    const { cartApi } = await import("@/entities/cart/api/cartApi")
-    await http.patch("/profile", { pickupPointId }, true)
-    const created = await cartApi.checkout(procurementId)
-    await cartApi.clear()
-    return ordersApi.getById(created.id)
+  checkoutFromCart: async (
+    procurementId: string,
+    pickupPointId: string,
+    comment?: string,
+  ): Promise<Order> => {
+    const draft = useCartStore.getState().items.filter((i) => !i.lineId)
+    for (const item of draft) {
+      await cartApi.addItem(item.productId, item.quantity, procurementId)
+    }
+
+    const created = await cartApi.checkout(procurementId, comment)
+    return mapBackendOrder({
+      id: created.id,
+      userId: "",
+      roundId: created.roundId,
+      procurementId: created.roundId,
+      pickupPointId,
+      status: created.status,
+      totalEstimate: created.totalEstimate,
+      paymentStatus: created.paymentStatus,
+      createdAt: created.createdAt,
+      publicNumber: created.publicNumber,
+      title: created.title,
+      items: (created.items ?? []).map((i) => ({
+        productId: i.productId,
+        productName: i.productName,
+        quantity: i.quantity,
+        priceSnapshot: i.priceSnapshot,
+      })),
+    })
   },
 
   /** Эскроу: симуляция оплаты, pending → held */

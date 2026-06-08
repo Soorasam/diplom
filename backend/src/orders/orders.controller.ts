@@ -19,14 +19,8 @@ export class OrdersController {
 
   @Get('pickup-point/:pickupPointId')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.employee, UserRole.admin)
-  listByPickup(
-    @CurrentUser() user: User,
-    @Param('pickupPointId', ParseUUIDPipe) pickupPointId: string,
-  ) {
-    if (user.role === UserRole.employee && user.pickupPointId !== pickupPointId) {
-      pickupPointId = user.pickupPointId!;
-    }
+  @Roles(UserRole.admin)
+  listByPickup(@Param('pickupPointId', ParseUUIDPipe) pickupPointId: string) {
     return this.orders.listByPickupPoint(pickupPointId);
   }
 
@@ -40,7 +34,7 @@ export class OrdersController {
 
   @Patch(':id/status')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.employee, UserRole.admin, UserRole.coordinator)
+  @Roles(UserRole.admin, UserRole.coordinator)
   updateStatus(
     @CurrentUser() user: User,
     @Param('id', ParseUUIDPipe) id: string,

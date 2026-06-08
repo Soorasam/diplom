@@ -42,6 +42,7 @@ export class ProfileService {
           fullName: dto.fullName,
           phone: dto.phone,
           pickupPointId: dto.pickupPointId ?? dto.settlementId,
+          deliveryAddress: dto.deliveryAddress,
         },
       });
       return this.toUserRead(updated);
@@ -51,10 +52,6 @@ export class ProfileService {
   }
 
   async setPassword(user: User, dto: SetPasswordDto) {
-    if (user.role !== UserRole.employee) {
-      throw new ForbiddenException('Смена пароля через этот метод только для сотрудника ПВЗ');
-    }
-
     if (user.mustChangePassword) {
       const updated = await this.prisma.user.update({
         where: { id: user.id },
@@ -84,7 +81,7 @@ export class ProfileService {
   }
 
   async switchRole(user: User, dto: SwitchRoleDto) {
-    if (user.role === UserRole.admin || user.role === UserRole.employee) {
+    if (user.role === UserRole.admin) {
       throw new ForbiddenException('Смена роли недоступна для этой учётной записи');
     }
 

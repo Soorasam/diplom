@@ -105,14 +105,28 @@ export const OrderDetailsPage = () => {
         </div>
       </div>
 
+      {order.title ? (
+        <Card>
+          <p className="text-xs text-slate-500">Сбор / маршрут</p>
+          <p className="mt-0.5 text-sm font-semibold text-slate-900">{order.title}</p>
+        </Card>
+      ) : null}
+
+      {order.comment ? (
+        <Card>
+          <p className="text-xs text-slate-500">Комментарий к заказу</p>
+          <p className="mt-0.5 text-sm text-slate-700">{order.comment}</p>
+        </Card>
+      ) : null}
+
       {order.paymentStatus === "held" ? (
         <Card className="border-sky-100 bg-sky-50/40 p-4!">
           <p className="flex items-start gap-2 text-sm text-slate-700">
             <ShieldCheck size={18} className="mt-0.5 shrink-0 text-sky-600" />
-            Средства зарезервированы на платформе. Координатор получит выплату после вашего
+            Средства зарезервированы на платформе. Водитель получит выплату после вашего
             подтверждения получения товара.
             {refund > 0
-              ? ` К выплате координатору: ${formatPrice(netAmount)}.`
+              ? ` К выплате водителю: ${formatPrice(netAmount)}.`
               : null}
           </p>
         </Card>
@@ -124,8 +138,8 @@ export const OrderDetailsPage = () => {
             Возврат переплаты после закупа: {formatPrice(refund)}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-emerald-800/90">
-            Цена в каталоге была ориентиром. По чекам координатора переплата возвращается на
-            платформе (эскроу, пилот — симуляция). Координатор получит {formatPrice(netAmount)} после
+            Цена в каталоге была ориентиром. По чекам водителя переплата возвращается на
+            платформе (эскроу, пилот — симуляция). Водитель получит {formatPrice(netAmount)} после
             подтверждения получения.
           </p>
         </Card>
@@ -136,7 +150,7 @@ export const OrderDetailsPage = () => {
           <p className="text-sm font-semibold text-slate-900">Посёлок доставки</p>
           <p className="mt-1 text-sm text-slate-600">{settlement.name}</p>
           <p className="mt-2 text-xs text-slate-500">
-            Заберите заказ на общей точке раздачи — координатор сообщит время и место
+            Водитель привезёт заказ по адресу из профиля
           </p>
         </Card>
       ) : null}
@@ -191,7 +205,7 @@ export const OrderDetailsPage = () => {
           {canConfirmReceipt ? (
             <>
               <p className="text-xs text-slate-500">
-                Проверьте товар при координаторе и подтвердите только после получения.
+                Проверьте товар у водителя и подтвердите только после получения.
               </p>
               <Button
                 fullWidth

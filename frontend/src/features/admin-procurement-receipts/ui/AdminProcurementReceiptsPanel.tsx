@@ -56,7 +56,7 @@ export const AdminProcurementReceiptsPanel = ({ roundId }: Props) => {
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-slate-500">К координатору</dt>
+            <dt className="text-xs text-slate-500">Водителю</dt>
             <dd className="font-semibold">{formatPrice(settlement.netTotal)}</dd>
           </div>
         </dl>

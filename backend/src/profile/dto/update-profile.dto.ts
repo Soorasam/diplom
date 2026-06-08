@@ -38,4 +38,10 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsUUID()
   pickupPointId?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  @Transform(({ value }) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : value))
+  deliveryAddress?: string;
 }

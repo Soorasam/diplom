@@ -18,6 +18,7 @@ export interface User {
   avatarUrl?: string
   
   mustChangePassword?: boolean
+  deliveryAddress?: string
 }
 
 export interface DriverApplicationDocument {
@@ -52,8 +53,7 @@ export interface PickupPoint {
   settlementId: string
   name: string
   address: string
-  coordinatorName: string
-  coordinatorPhone: string
+  phone?: string
   coordinates: { lat: number; lng: number }
 }
 
@@ -88,6 +88,8 @@ export interface ProcurementWaypoint {
 export interface Procurement {
   id: string
   title: string
+  /** Цепочка посёлков по waypoints — не зависит от названия сбора */
+  routeTitle?: string
   routeId: string
   waypoints?: ProcurementWaypoint[]
   status: ProcurementStatus
@@ -95,6 +97,9 @@ export interface Procurement {
   closesAt: string
   emergencyCloseAt?: string | null
   organizerUserId?: string | null
+  driverName?: string | null
+  driverPhone?: string | null
+  vehicleSummary?: string | null
   minVolumePercent: number
   currentVolumePercent: number
   participantsCount: number
@@ -137,8 +142,11 @@ export interface Order {
   createdAt: string
   timeline: { status: OrderStatus; at: string; label: string }[]
   publicNumber?: string
+  title?: string
   userName?: string
   userPhone?: string
+  deliveryAddress?: string | null
+  settlementName?: string | null
   paymentStatus?: PaymentStatus
   paymentStatusLabel?: string
   statusLabel?: string

@@ -1,6 +1,6 @@
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Package, Truck } from "lucide-react"
+import { LogOut, MapPin, Package, Truck } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import {
@@ -16,12 +16,23 @@ import { ApiError } from "@/shared/api/client"
 import { routes } from "@/shared/config/routes"
 import { useUserDeliverySettlement } from "@/shared/hooks/useUserDeliverySettlement"
 import { isProcurementEligibleForUser } from "@/shared/lib/procurement-eligibility"
+import { resolveProcurementRouteTitle } from "@/shared/lib/procurement-route-title"
 import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { ActiveProcurementBanner } from "@/widgets/active-procurement-banner/ui/ActiveProcurementBanner"
 
-export const CartProcurementBlock = () => {
+type Props = {
+  /** Встроенный режим — без отдельных карточек, для единой панели корзины */
+  embedded?: boolean
+  settlementName?: string | null
+}
+
+const SectionDivider = () => (
+  <div className="my-4 border-t border-slate-100 dark:border-slate-800" />
+)
+
+export const CartProcurementBlock = ({ embedded, settlementName }: Props) => {
   const [leaveError, setLeaveError] = useState<string | null>(null)
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false)
   const navigate = useNavigate()
@@ -38,18 +49,21 @@ export const CartProcurementBlock = () => {
   } = useProcurementParticipation()
 
   const { data: activeProcurements } = useActiveProcurementsEnriched()
-  const { user: deliveryUser, settlementName } = useUserDeliverySettlement()
+  const { user: deliveryUser, settlementName: profileSettlement } =
+    useUserDeliverySettlement()
   const join = useJoinProcurement(user?.id)
   const leave = useLeaveProcurement(user?.id)
   const clearProcurement = useCartStore((s) => s.clearProcurement)
   const { pushDraftItemsToServer } = useCartActions()
+
+  const deliverySettlement = settlementName ?? profileSettlement
 
   const joinedOpen =
     activeProcurements?.filter(
       (p) =>
         joinedRoundIds.includes(p.id) &&
         (p.status === "open" || p.status === "closing") &&
-        isProcurementEligibleForUser(p, deliveryUser ?? user, settlementName),
+        isProcurementEligibleForUser(p, deliveryUser ?? user, deliverySettlement),
     ) ?? []
 
   const handleJoinSelected = async () => {
@@ -80,76 +94,86 @@ export const CartProcurementBlock = () => {
     setProcurement(id)
   }
 
+  const wrap = (content: ReactNode) =>
+    embedded ? content : <Card className="w-full p-4">{content}</Card>
+
+  const leaveButton = (
+    <Button
+      type="button"
+      variant="outline"
+      fullWidth
+      leftIcon={<LogOut size={16} />}
+      className="border-amber-200 text-amber-900 hover:border-amber-300 hover:bg-amber-50 dark:border-amber-900/60 dark:text-amber-200 dark:hover:bg-amber-950/40"
+      onClick={() => setLeaveConfirmOpen(true)}
+    >
+      Выйти из сбора
+    </Button>
+  )
+
   if (!isAuthenticated) {
-    return (
+    return wrap(
       <AlertBanner variant="info" title="Войдите для оформления">
         <Link to={routes.auth} className="ui-link font-semibold underline">
           Авторизация
         </Link>{" "}
         нужна, чтобы вступить в сбор и оплатить заказ.
-      </AlertBanner>
+      </AlertBanner>,
     )
   }
 
   if (!procurementId) {
-    return (
-      <Card className="w-full p-4">
+    return wrap(
+      <>
         <div className="flex items-start gap-3">
           <span className="ui-icon-well flex h-10 w-10 shrink-0">
             <Truck size={20} />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold leading-normal text-slate-900 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Сбор не выбран
             </p>
-            <p className="mt-2 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
-              Одна корзина на все сборы. Выберите сбор для оформления заказа — товары
-              сохранятся.
+            <p className="mt-1 text-sm text-slate-500">
+              Одна корзина на все сборы. Выберите сбор — товары сохранятся.
             </p>
-            {joinedOpen.length > 0 ? (
-              <div className="mt-3">
-                <label className="text-xs font-medium leading-normal text-slate-500 dark:text-slate-400">
-                  Ваши сборы
-                </label>
-                <select
-                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                  value=""
-                  onChange={(e) => {
-                    if (e.target.value) handleSelectRound(e.target.value)
-                  }}
-                >
-                  <option value="">Выберите сбор</option>
-                  {joinedOpen.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : null}
-            <Button
-              type="button"
-              fullWidth
-              className="mt-3"
-              onClick={() => navigate(routes.user.activeProcurements)}
-            >
-              Перейти к сборам
-            </Button>
           </div>
         </div>
-      </Card>
+        {joinedOpen.length > 0 ? (
+          <label className="mt-4 block text-xs font-medium text-slate-500">
+            Ваши сборы
+            <select
+              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) handleSelectRound(e.target.value)
+              }}
+            >
+              <option value="">Выберите сбор</option>
+              {joinedOpen.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+        <Button
+          type="button"
+          fullWidth
+          className="mt-3"
+          onClick={() => navigate(routes.user.activeProcurements)}
+        >
+          Перейти к сборам
+        </Button>
+      </>,
     )
   }
 
   if (roundClosed) {
-    return (
-      <Card className="w-full p-4">
-        <p className="text-sm font-semibold leading-normal text-slate-900 dark:text-slate-100">
-          Сбор закрыт
-        </p>
-        <p className="mt-2 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
-          {procurement?.title ?? "Выбранный сбор"} больше не принимает заказы. Выберите другой
-          открытый сбор.
+    return wrap(
+      <>
+        <p className="text-sm font-semibold text-slate-900">Сбор закрыт</p>
+        <p className="mt-2 text-sm text-slate-500">
+          {procurement?.title ?? "Выбранный сбор"} больше не принимает заказы.
         </p>
         <Button
           type="button"
@@ -160,21 +184,25 @@ export const CartProcurementBlock = () => {
         >
           Открытые сборы
         </Button>
-      </Card>
+      </>,
     )
   }
 
   if (!hasJoined) {
-    return (
-      <Card className="w-full p-4">
-        <p className="text-sm font-semibold leading-normal text-slate-900 dark:text-slate-100">
+    return wrap(
+      <>
+        <p className="text-sm font-semibold text-slate-900">
           {procurement?.title ?? "Выбранный сбор"}
         </p>
-        <p className="mt-2 text-sm font-normal leading-relaxed text-slate-500 dark:text-slate-400">
-          Вступите в этот сбор, чтобы оформить заказ. Товары в корзине общие для всех
-          сборов.
+        {procurement ? (
+          <p className="mt-1 text-xs text-slate-500">
+            Маршрут: {resolveProcurementRouteTitle(procurement)}
+          </p>
+        ) : null}
+        <p className="mt-2 text-sm text-slate-500">
+          Вступите в сбор, чтобы оформить заказ.
         </p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+        <div className="mt-3 flex flex-col gap-2">
           <Button
             type="button"
             fullWidth
@@ -193,7 +221,7 @@ export const CartProcurementBlock = () => {
             Другой сбор
           </Button>
         </div>
-      </Card>
+      </>,
     )
   }
 
@@ -201,34 +229,33 @@ export const CartProcurementBlock = () => {
     return null
   }
 
-  return (
-    <div className="flex w-full flex-col gap-2">
+  const routeTitle = resolveProcurementRouteTitle(procurement)
+
+  return wrap(
+    <div className="flex flex-col gap-3">
       {leaveError ? (
         <AlertBanner variant="warning" title="Выйти нельзя">
           {leaveError}
         </AlertBanner>
       ) : null}
-      <ActiveProcurementBanner procurement={procurement} />
-      {leaveConfirmOpen ? (
-        <LeaveProcurementPanel
-          procurementTitle={procurement.title}
-          loading={leave.isPending}
-          onConfirm={() => void handleLeaveSelected()}
-          onCancel={() => setLeaveConfirmOpen(false)}
-        />
-      ) : (
-        <Button
-          type="button"
-          variant="outline"
-          fullWidth
-          size="sm"
-          onClick={() => setLeaveConfirmOpen(true)}
-        >
-          Выйти из сбора
-        </Button>
-      )}
-      {joinedOpen.length > 0 ? (
-        <label className="block text-xs font-medium text-slate-500 dark:text-slate-400">
+
+      <ActiveProcurementBanner procurement={procurement} embedded={embedded} />
+
+      <div className="text-xs text-slate-500">
+        <p>
+          <span className="font-medium text-slate-600">Маршрут:</span> {routeTitle}
+        </p>
+        {procurement.driverName ? (
+          <p className="mt-1">
+            <span className="font-medium text-slate-600">Водитель:</span>{" "}
+            {procurement.driverName}
+            {procurement.vehicleSummary ? ` · ${procurement.vehicleSummary}` : ""}
+          </p>
+        ) : null}
+      </div>
+
+      {joinedOpen.length > 1 ? (
+        <label className="block text-xs font-medium text-slate-500">
           Сбор для заказа
           <select
             className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
@@ -241,17 +268,46 @@ export const CartProcurementBlock = () => {
               </option>
             ))}
           </select>
-          <span className="mt-1 block text-xs font-normal text-slate-400 dark:text-slate-500">
-            Оформление пойдёт в выбранный сбор
-          </span>
         </label>
       ) : null}
+
+      {embedded && deliverySettlement ? (
+        <>
+          <SectionDivider />
+          <div className="flex items-start gap-3">
+            <span className="ui-icon-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-xl">
+              <MapPin size={18} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-slate-500">Посёлок доставки</p>
+              <p className="mt-0.5 text-sm font-semibold text-slate-900">
+                {deliverySettlement}
+              </p>
+              <Link to={routes.user.addresses} className="ui-link mt-1 inline-block text-xs">
+                Изменить
+              </Link>
+            </div>
+          </div>
+        </>
+      ) : null}
+
+      {leaveConfirmOpen ? (
+        <LeaveProcurementPanel
+          procurementTitle={procurement.title}
+          loading={leave.isPending}
+          onConfirm={() => void handleLeaveSelected()}
+          onCancel={() => setLeaveConfirmOpen(false)}
+        />
+      ) : (
+        leaveButton
+      )}
+
       <Link
         to={routes.user.activeProcurements}
-        className="ui-link inline-block text-xs hover:underline"
+        className="ui-link text-center text-xs hover:underline"
       >
         Все сборы
       </Link>
-    </div>
+    </div>,
   )
 }
