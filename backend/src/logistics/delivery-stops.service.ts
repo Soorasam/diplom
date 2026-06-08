@@ -3,7 +3,13 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DeliveryStopStatus, OrderStatus, Prisma } from '@prisma/client';
+import {
+  DeliveryStopStatus,
+  OrderItemProcurementStatus,
+  OrderStatus,
+  Prisma,
+  RoundStatus,
+} from '@prisma/client';
 import { ORDER_STATUS_LABELS } from '../common/order-labels';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -110,6 +116,15 @@ export class DeliveryStopsService {
         update: { sortOrder: sortOrder++, isProcurementStop },
       });
     }
+
+    if (orderedIds.length > 0) {
+      await this.prisma.roundDeliveryStop.deleteMany({
+        where: {
+          roundId,
+          pickupPointId: { notIn: orderedIds },
+        },
+      });
+    }
   }
 
   private async markInTransitStopsInProgress(roundId: string) {
@@ -199,8 +214,187 @@ export class DeliveryStopsService {
       },
     });
 
+    await this.autoCompleteTrailingEmptyStops(roundId, stop.sortOrder);
+
     const roundCompleted = await this.isRoundFullyCompleted(roundId);
     return { stopCompleted: true, roundCompleted };
+  }
+
+  /** Пустые точки «проезд» в хвосте маршрута не должны блокировать завершение рейса */
+  private async autoCompleteTrailingEmptyStops(
+    roundId: string,
+    afterSortOrder: number,
+  ) {
+    const trailing = await this.prisma.roundDeliveryStop.findMany({
+      where: { roundId, sortOrder: { gt: afterSortOrder } },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    for (const stop of trailing) {
+      const ordersAtStop = await this.prisma.order.count({
+        where: {
+          roundId,
+          pickupPointId: stop.pickupPointId,
+          status: { not: OrderStatus.cancelled },
+        },
+      });
+      if (ordersAtStop > 0) break;
+      if (stop.isProcurementStop && !stop.procurementCompletedAt) break;
+      if (stop.status === DeliveryStopStatus.completed) continue;
+
+      await this.prisma.roundDeliveryStop.update({
+        where: {
+          uq_round_delivery_stop: { roundId, pickupPointId: stop.pickupPointId },
+        },
+        data: {
+          status: DeliveryStopStatus.completed,
+          completedAt: new Date(),
+        },
+      });
+    }
+  }
+
+  /** Закрывает «застрявшие» закупки, если маршрут уже ушёл дальше по этапам */
+  async repairStuckProcurementStops(roundId: string) {
+    const stops = await this.prisma.roundDeliveryStop.findMany({
+      where: { roundId },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    for (const stop of stops) {
+      if (!stop.isProcurementStop || stop.procurementCompletedAt) continue;
+
+      const pendingItems = await this.prisma.orderItem.count({
+        where: {
+          procurementPickupPointId: stop.pickupPointId,
+          procurementStatus: OrderItemProcurementStatus.pending,
+          order: { roundId, status: { not: OrderStatus.cancelled } },
+        },
+      });
+      if (pendingItems > 0) continue;
+
+      const routeProgressedPast = stops.some(
+        (s) =>
+          s.sortOrder > stop.sortOrder &&
+          (s.status !== DeliveryStopStatus.pending ||
+            (s.isProcurementStop && s.procurementCompletedAt != null)),
+      );
+      if (!routeProgressedPast) continue;
+
+      await this.prisma.roundDeliveryStop.update({
+        where: {
+          uq_round_delivery_stop: { roundId, pickupPointId: stop.pickupPointId },
+        },
+        data: {
+          procurementCompletedAt: new Date(),
+          status: DeliveryStopStatus.completed,
+          completedAt: new Date(),
+        },
+      });
+    }
+  }
+
+  /** Старые незакрытые сборы после более нового рейса — автозавершение */
+  async fulfillSupersededRounds(driverId: string) {
+    const rounds = await this.prisma.round.findMany({
+      where: {
+        createdByUserId: driverId,
+        status: { in: [RoundStatus.closed, RoundStatus.fulfilled] },
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, status: true },
+    });
+    if (rounds.length < 2) return;
+
+    for (const round of rounds.slice(1)) {
+      if (round.status === RoundStatus.fulfilled) continue;
+      await this.repairStuckProcurementStops(round.id);
+      await this.repairRoundIfWorkComplete(round.id);
+      const row = await this.prisma.round.findUnique({
+        where: { id: round.id },
+        select: { status: true },
+      });
+      if (row?.status !== RoundStatus.closed) continue;
+      if (!(await this.isRoundFullyCompleted(round.id))) {
+        await this.forceFulfillRound(round.id);
+      }
+    }
+  }
+
+  private async forceFulfillRound(roundId: string) {
+    await this.prisma.roundDeliveryStop.updateMany({
+      where: {
+        roundId,
+        status: { not: DeliveryStopStatus.completed },
+      },
+      data: {
+        status: DeliveryStopStatus.completed,
+        completedAt: new Date(),
+      },
+    });
+    await this.prisma.roundDeliveryStop.updateMany({
+      where: { roundId, isProcurementStop: true, procurementCompletedAt: null },
+      data: { procurementCompletedAt: new Date() },
+    });
+    await this.prisma.round.update({
+      where: { id: roundId },
+      data: { status: RoundStatus.fulfilled },
+    });
+  }
+
+  /** Закрывает пустые точки «проезд» в хвосте, если все рабочие этапы уже пройдены */
+  async repairRoundIfWorkComplete(roundId: string) {
+    await this.repairStuckProcurementStops(roundId);
+
+    const stops = await this.prisma.roundDeliveryStop.findMany({
+      where: { roundId },
+      orderBy: { sortOrder: 'asc' },
+    });
+    if (stops.length === 0) return false;
+
+    for (const stop of stops) {
+      const ordersAtStop = await this.prisma.order.count({
+        where: {
+          roundId,
+          pickupPointId: stop.pickupPointId,
+          status: { not: OrderStatus.cancelled },
+        },
+      });
+      const isMeaningful = stop.isProcurementStop || ordersAtStop > 0;
+      if (!isMeaningful) continue;
+
+      if (stop.isProcurementStop) {
+        if (!stop.procurementCompletedAt) return false;
+        if (stop.status !== DeliveryStopStatus.completed) return false;
+        continue;
+      }
+
+      if (stop.status !== DeliveryStopStatus.completed) return false;
+    }
+
+    let repaired = false;
+    for (const stop of stops) {
+      if (stop.status === DeliveryStopStatus.completed) continue;
+      await this.prisma.roundDeliveryStop.update({
+        where: {
+          uq_round_delivery_stop: { roundId, pickupPointId: stop.pickupPointId },
+        },
+        data: {
+          status: DeliveryStopStatus.completed,
+          completedAt: new Date(),
+        },
+      });
+      repaired = true;
+    }
+
+    if (repaired && (await this.isRoundFullyCompleted(roundId))) {
+      await this.prisma.round.update({
+        where: { id: roundId },
+        data: { status: RoundStatus.fulfilled },
+      });
+    }
+
+    return repaired;
   }
 
   private async isRoundFullyCompleted(roundId: string) {
@@ -317,17 +511,38 @@ export class DeliveryStopsService {
   }
 
   orderCountsForStop(
-    orders: { status: OrderStatus; pickupPointId: string | null }[],
+    orders: {
+      status: OrderStatus;
+      pickupPointId: string | null;
+      userId: string;
+    }[],
     pickupPointId: string,
   ) {
-    const scoped = orders.filter((o) => o.pickupPointId === pickupPointId);
+    const scoped = orders.filter(
+      (o) =>
+        o.pickupPointId === pickupPointId && o.status !== OrderStatus.cancelled,
+    );
+    const byUser = new Map<string, typeof scoped>();
+    for (const order of scoped) {
+      const list = byUser.get(order.userId) ?? [];
+      list.push(order);
+      byUser.set(order.userId, list);
+    }
+    const groups = [...byUser.values()];
+
     return {
-      total: scoped.filter((o) => o.status !== OrderStatus.cancelled).length,
-      inTransit: scoped.filter((o) => o.status === OrderStatus.in_transit).length,
-      atPickup: scoped.filter((o) => o.status === OrderStatus.at_pickup).length,
-      delivered: scoped.filter((o) => o.status === OrderStatus.delivered).length,
-      received: scoped.filter(
-        (o) => o.status === OrderStatus.at_pickup || o.status === OrderStatus.delivered,
+      total: groups.length,
+      inTransit: groups.filter((g) =>
+        g.some((o) => o.status === OrderStatus.in_transit),
+      ).length,
+      atPickup: groups.filter((g) =>
+        g.some((o) => o.status === OrderStatus.at_pickup),
+      ).length,
+      delivered: groups.filter((g) =>
+        g.every((o) => o.status === OrderStatus.delivered),
+      ).length,
+      received: groups.filter((g) =>
+        g.every((o) => o.status === OrderStatus.delivered),
       ).length,
     };
   }

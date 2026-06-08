@@ -6,6 +6,7 @@ import { queryKeys } from "@/shared/config/query-keys"
 import {
   isDeliveryRoundInProgress,
   isOpenCollectionRound,
+  resolveDriverActiveRoute,
 } from "@/shared/lib/driver-round-workload"
 import {
   MapPin,
@@ -28,7 +29,6 @@ import {
 import { routes } from "@/shared/config/routes"
 import { randomId } from "@/shared/lib/random-id"
 import { EmergencyCloseModal } from "@/features/driver-procurement/ui/EmergencyCloseModal"
-import { ProcurementSettlementCard } from "@/features/driver-procurement-settlement/ui/ProcurementSettlementCard"
 import {
   driverRoutesApi,
   transportToDeliveryMode,
@@ -43,7 +43,7 @@ import {
   type RouteBuilderRow,
 } from "@/features/driver-route/ui/RouteBuilder"
 import { getProcurementDisplayStatus } from "@/shared/lib/procurement-status"
-import { formatShortDate } from "@/shared/lib/format"
+import { formatShortDate, formatShortDateTime } from "@/shared/lib/format"
 import {
   CLOSES_AT_DATETIME_ERROR,
   getClosesAtDatetimeMax,
@@ -116,13 +116,8 @@ export const DriverProcurementsPage = () => {
   })
 
   const deliveryRoute = useMemo(
-    () =>
-      driverRoutes?.find(
-        (r) =>
-          r.status === "active" &&
-          (r.activeRoundId === deliveryRound?.id || r.id === deliveryRound?.id),
-      ),
-    [driverRoutes, deliveryRound?.id],
+    () => resolveDriverActiveRoute(driverRoutes, deliveryRound, activeRound),
+    [driverRoutes, deliveryRound, activeRound],
   )
 
   const hasActiveRound = isOpenCollectionRound(activeRound)
@@ -277,7 +272,7 @@ export const DriverProcurementsPage = () => {
                 {activeRound.title}
               </p>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Дедлайн: {formatShortDate(activeRound.closesAt)}
+                Закрытие: {formatShortDateTime(activeRound.closesAt)}
               </p>
               {activeRound.emergencyCloseAt ? (
                 <div className="mt-3">
@@ -293,7 +288,7 @@ export const DriverProcurementsPage = () => {
               )}
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                 <Link
-                  to={routes.driver.orders}
+                  to={routes.driver.route}
                   className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-sky-600 text-sm font-semibold text-white"
                 >
                   <Package size={16} />
@@ -318,7 +313,7 @@ export const DriverProcurementsPage = () => {
             <>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Link
-                  to={routes.driver.orders}
+                  to={routes.driver.route}
                   className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
                 >
                   <Package size={16} />
@@ -332,7 +327,6 @@ export const DriverProcurementsPage = () => {
                   Рейс
                 </Link>
               </div>
-              <ProcurementSettlementCard roundId={deliveryRound.id} />
             </>
           ) : null}
 
@@ -383,7 +377,7 @@ export const DriverProcurementsPage = () => {
               </label>
 
               <Input
-                label="Дедлайн закрытия"
+                label="Дата и время закрытия"
                 type="datetime-local"
                 min={minClosesAt}
                 max={maxClosesAt}
@@ -497,10 +491,16 @@ export const DriverProcurementsPage = () => {
                       {p.title}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {formatShortDate(p.createdAt)} · {formatShortDate(p.closesAt)}
+                      {formatShortDate(p.createdAt)} · закрытие {formatShortDateTime(p.closesAt)}
                     </p>
                   </div>
-                  <Badge variant={display.variant}>{display.label}</Badge>
+                  <Badge
+                    variant={display.variant}
+                    title={display.label}
+                    className="max-w-[4.5rem] truncate text-[10px] px-1.5"
+                  >
+                    {display.shortLabel}
+                  </Badge>
                 </li>
               )
             })}

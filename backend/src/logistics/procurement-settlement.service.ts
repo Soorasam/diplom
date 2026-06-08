@@ -45,6 +45,7 @@ export class ProcurementSettlementService {
 
   async listReceipts(user: User, roundId: string) {
     await this.assertRoundAccess(user, roundId);
+    await this.storage.ensurePublicRead(this.storage.receiptsBucket());
     return this.prisma.roundProcurementReceipt.findMany({
       where: { roundId },
       orderBy: { createdAt: 'asc' },
@@ -68,6 +69,7 @@ export class ProcurementSettlementService {
     }
 
     const bucket = this.storage.receiptsBucket();
+    await this.storage.ensurePublicRead(bucket);
     const key = `rounds/${roundId}/${Date.now()}-${file.originalname.replace(/[^\w.\-]+/g, '_')}`;
     const url = await this.storage.upload(bucket, key, file.buffer, file.mimetype);
 

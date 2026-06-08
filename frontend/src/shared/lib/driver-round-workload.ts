@@ -1,34 +1,6 @@
 import type { CoordinatorRoute } from "@/entities/route/api/routesApi"
 import type { Order, Procurement } from "@/shared/api/api-types"
 
-export const ordersForRound = (orders: Order[] | undefined, roundId: string) =>
-  (orders ?? []).filter(
-    (o) => o.procurementId === roundId && o.status !== "cancelled",
-  )
-
-/** Сбор закрыт, но рейса по сути нет — нет заказов или все доставлены */
-export const isDeliveryRoundInProgress = (
-  deliveryRound: Procurement | null | undefined,
-  route: CoordinatorRoute | undefined,
-  orders: Order[] | undefined,
-): boolean => {
-  if (!deliveryRound) return false
-
-  const roundOrders = ordersForRound(orders, deliveryRound.id)
-  if (roundOrders.length === 0) return false
-
-  const hasOpenOrders = roundOrders.some((o) => o.status !== "delivered")
-  if (!hasOpenOrders) return false
-
-  const stops = route?.deliveryStops ?? []
-  if (stops.length > 0) {
-    const allStopsDone = stops.every((s) => s.status === "completed")
-    if (allStopsDone && !hasOpenOrders) return false
-  }
-
-  return true
-}
-
 export const isOpenCollectionRound = (
   activeRound: Procurement | null | undefined,
 ): boolean => {
@@ -36,24 +8,77 @@ export const isOpenCollectionRound = (
   return activeRound.status === "open" || activeRound.status === "closing"
 }
 
-/** Маршрут водителя ещё требует работы */
+/** Текущий маршрут: сначала рейс закрытого сбора, затем открытый сбор, иначе первый active */
+export const resolveDriverActiveRoute = (
+  routes: CoordinatorRoute[] | undefined,
+  deliveryRound?: Procurement | null,
+  activeRound?: Procurement | null,
+): CoordinatorRoute | undefined => {
+  if (!routes?.length) return undefined
+
+  const byRoundId = (roundId?: string | null) => {
+    if (!roundId) return undefined
+    return routes.find(
+      (r) => r.id === roundId || r.activeRoundId === roundId,
+    )
+  }
+
+  if (deliveryRound) {
+    const matched = byRoundId(deliveryRound.id)
+    if (matched && matched.status !== "completed") return matched
+    return undefined
+  }
+
+  if (activeRound && isOpenCollectionRound(activeRound)) {
+    const matched = byRoundId(activeRound.id)
+    if (matched && matched.status !== "completed") return matched
+    return undefined
+  }
+
+  return undefined
+}
+
+export const ordersForRound = (orders: Order[] | undefined, roundId: string) =>
+  (orders ?? []).filter(
+    (o) => o.procurementId === roundId && o.status !== "cancelled",
+  )
+
+/** Сбор закрыт, рейс ещё идёт — пока не закрыты все точки маршрута */
+export const isDeliveryRoundInProgress = (
+  deliveryRound: Procurement | null | undefined,
+  route: CoordinatorRoute | undefined,
+  orders: Order[] | undefined,
+): boolean => {
+  if (!deliveryRound) return false
+
+  const stops = route?.deliveryStops ?? []
+  if (stops.length > 0) {
+    return stops.some((s) => s.status !== "completed")
+  }
+
+  if (route?.status === "active") return true
+
+  const roundOrders = ordersForRound(orders, deliveryRound.id)
+  if (roundOrders.length === 0) return false
+
+  return roundOrders.some((o) => o.status !== "delivered")
+}
+
+/** Маршрут водителя ещё требует работы (не смотрим только на незавершённые заказы в workbench) */
 export const isCoordinatorRouteInProgress = (
   route: CoordinatorRoute | undefined,
   orders: Order[] | undefined,
 ): boolean => {
   if (!route || route.status !== "active") return false
 
-  const roundId = route.activeRoundId ?? route.id
-  const roundOrders = ordersForRound(orders, roundId)
-  if (roundOrders.length === 0) return false
-
-  const hasUndelivered = roundOrders.some((o) => o.status !== "delivered")
-  if (!hasUndelivered) return false
-
   const stops = route.deliveryStops ?? []
-  if (stops.length > 0 && stops.every((s) => s.status === "completed")) {
-    return hasUndelivered
+  if (stops.length > 0) {
+    return stops.some((s) => s.status !== "completed")
   }
 
-  return true
+  const roundId = route.activeRoundId ?? route.id
+  const roundOrders = ordersForRound(orders, roundId)
+  if (roundOrders.length === 0) return true
+
+  return roundOrders.some((o) => o.status !== "delivered")
 }

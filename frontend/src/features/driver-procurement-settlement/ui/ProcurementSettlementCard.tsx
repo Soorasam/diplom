@@ -17,9 +17,13 @@ import { Spinner } from "@/shared/ui/spinner/Spinner"
 
 type Props = {
   roundId: string
+  embedded?: boolean
 }
 
-export const ProcurementSettlementCard = ({ roundId }: Props) => {
+export const ProcurementSettlementCard = ({
+  roundId,
+  embedded,
+}: Props) => {
   const fileRef = useRef<HTMLInputElement>(null)
   const [actualTotal, setActualTotal] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -86,15 +90,27 @@ export const ProcurementSettlementCard = ({ roundId }: Props) => {
   if (!settlement) return null
 
   return (
-    <Card className="border-emerald-200 bg-emerald-50/40">
+    <Card
+      className={
+        embedded
+          ? "border-emerald-200/80 bg-emerald-50/50 !p-3 dark:border-emerald-900/40 dark:bg-emerald-950/20"
+          : "border-emerald-200 bg-emerald-50/40"
+      }
+    >
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800">
-          <Receipt size={20} />
-        </div>
+        {!embedded ? (
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800">
+            <Receipt size={20} />
+          </div>
+        ) : null}
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-emerald-800">Сверка по чекам</p>
-          <p className="text-sm text-slate-700">
-            Цена в каталоге — ориентир. После закупа по чекам возможен возврат переплаты жителям.
+          <p className="text-xs font-medium text-emerald-800 dark:text-emerald-300">
+            Сверка по чекам
+          </p>
+          <p className="text-sm text-slate-700 dark:text-slate-300">
+            {embedded
+              ? "Прикрепите чек и укажите фактическую сумму — без этого нельзя выехать."
+              : "Цена в каталоге — ориентир. После закупа по чекам возможен возврат переплаты жителям."}
           </p>
         </div>
       </div>

@@ -32,7 +32,6 @@ import { DriverApplyPage } from "@/pages/driver-apply/ui/DriverApplyPage"
 
 import { DriverDashboardPage } from "@/pages/driver/dashboard/ui/DriverDashboardPage"
 import { DriverProcurementsPage } from "@/pages/driver/procurements/ui/DriverProcurementsPage"
-import { DriverOrdersPage } from "@/pages/driver/orders/ui/DriverOrdersPage"
 import { DriverRoutePage } from "@/pages/driver/route/ui/DriverRoutePage"
 import { DriverMapPage } from "@/pages/driver/map/ui/DriverMapPage"
 
@@ -110,9 +109,9 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <DriverDashboardPage /> },
           { path: "procurements", element: <DriverProcurementsPage /> },
-          { path: "orders", element: <DriverOrdersPage /> },
+          { path: "orders", element: <Navigate to={routes.driver.route} replace /> },
           { path: "route", element: <DriverRoutePage /> },
-          { path: "handout", element: <Navigate to={routes.driver.orders} replace /> },
+          { path: "handout", element: <Navigate to={routes.driver.route} replace /> },
           { path: "map", element: <DriverMapPage /> },
           { path: "profile", element: <ProfilePage /> },
           { path: "profile/edit", element: <EditProfilePage /> },

@@ -37,7 +37,7 @@ export class CoordinatorService {
       roundWhere.createdByUserId = user.id;
     }
 
-    const [rounds, orders, allStops] = await Promise.all([
+    const [rounds, orders] = await Promise.all([
       this.prisma.round.findMany({
         where: roundWhere,
         orderBy: { createdAt: 'desc' },
@@ -54,11 +54,21 @@ export class CoordinatorService {
         },
         orderBy: { createdAt: 'asc' },
       }),
-      this.prisma.roundDeliveryStop.findMany({
-        include: { pickupPoint: true },
-        orderBy: { sortOrder: 'asc' },
-      }),
     ]);
+
+    if (user.role === UserRole.coordinator) {
+      await this.deliveryStops.fulfillSupersededRounds(user.id);
+      await Promise.all(
+        rounds
+          .filter((r) => r.status === RoundStatus.closed)
+          .map((r) => this.deliveryStops.repairRoundIfWorkComplete(r.id)),
+      );
+    }
+
+    const allStops = await this.prisma.roundDeliveryStop.findMany({
+      include: { pickupPoint: true },
+      orderBy: { sortOrder: 'asc' },
+    });
 
     const stopsByRound = new Map<string, typeof allStops>();
     for (const stop of allStops) {
@@ -66,6 +76,11 @@ export class CoordinatorService {
       list.push(stop);
       stopsByRound.set(stop.roundId, list);
     }
+
+    const primaryWorkRoundId =
+      user.role === UserRole.coordinator
+        ? this.resolvePrimaryWorkRoundId(rounds, stopsByRound, orders)
+        : null;
 
     const mapped = rounds.map((round) => {
       const chainTitle = resolveRoundRouteTitle(round);
@@ -139,15 +154,28 @@ export class CoordinatorService {
           };
         });
 
+        const meaningfulStops = deliveryStops.filter((s, stopIndex) => {
+          const rawStop = stops[stopIndex];
+          const counts = this.deliveryStops.orderCountsForStop(
+            roundOrders,
+            s.pickupPointId,
+          );
+          return rawStop?.isProcurementStop || counts.total > 0;
+        });
         const allStopsDone =
-          deliveryStops.length > 0 &&
-          deliveryStops.every((s) => s.status === 'completed');
+          meaningfulStops.length > 0 &&
+          meaningfulStops.every((s) => s.status === 'completed');
+        const openStopsInDb = this.hasOpenMeaningfulStops(
+          round.id,
+          stops,
+          orders,
+        );
         const hasDelivery =
           roundOrders.some((o) => o.status === OrderStatus.in_transit) ||
           stops.some((s) => s.status !== DeliveryStopStatus.pending);
 
         if (roundOrders.length === 0) {
-          status = 'completed';
+          status = openStopsInDb ? 'active' : 'completed';
         } else if (round.status === RoundStatus.fulfilled || allStopsDone) {
           status = 'completed';
         } else if (hasDelivery || round.status === RoundStatus.closed) {
@@ -203,7 +231,56 @@ export class CoordinatorService {
       };
     });
 
-    return mapped.filter((route) => this.isRouteVisibleToDriver(route));
+    const normalized =
+      primaryWorkRoundId == null
+        ? mapped
+        : mapped.map((route) => {
+            if (
+              route.status === 'active' &&
+              route.activeRoundId !== primaryWorkRoundId
+            ) {
+              return { ...route, status: 'completed' as const };
+            }
+            return route;
+          });
+
+    return normalized.filter((route) => this.isRouteVisibleToDriver(route));
+  }
+
+  /** Один актуальный сбор на водителя: открытый или последний незавершённый закрытый */
+  private resolvePrimaryWorkRoundId(
+    rounds: { id: string; status: RoundStatus }[],
+    stopsByRound: Map<
+      string,
+      {
+        status: DeliveryStopStatus;
+        isProcurementStop: boolean;
+        pickupPointId: string;
+      }[]
+    >,
+    orders: {
+      pickupPointId: string | null;
+      round?: { id: string } | null;
+      status: OrderStatus;
+    }[],
+  ): string | null {
+    const open = rounds.find((r) => r.status === RoundStatus.open);
+    if (open) return open.id;
+
+    for (const round of rounds) {
+      if (round.status !== RoundStatus.closed) continue;
+      const roundOrders = orders.filter((o) => o.round?.id === round.id);
+      const stops = stopsByRound.get(round.id) ?? [];
+      const hasUndelivered = roundOrders.some(
+        (o) =>
+          o.status !== OrderStatus.delivered &&
+          o.status !== OrderStatus.cancelled,
+      );
+      const hasOpenStops = this.hasOpenMeaningfulStops(round.id, stops, orders);
+      if (hasUndelivered || hasOpenStops) return round.id;
+    }
+
+    return null;
   }
 
   private isRouteVisibleToDriver(route: {
@@ -326,6 +403,28 @@ export class CoordinatorService {
       orders_in_transit: inTransit,
       orders_total: orders.length,
     };
+  }
+
+  private hasOpenMeaningfulStops(
+    roundId: string,
+    stops: {
+      status: DeliveryStopStatus;
+      isProcurementStop: boolean;
+      pickupPointId: string;
+    }[],
+    orders: {
+      pickupPointId: string | null;
+      round?: { id: string } | null;
+    }[],
+  ): boolean {
+    const roundOrders = orders.filter((o) => o.round?.id === roundId);
+    return stops.some((s) => {
+      if (s.status === DeliveryStopStatus.completed) return false;
+      const ordersAtStop = roundOrders.filter(
+        (o) => o.pickupPointId === s.pickupPointId,
+      ).length;
+      return s.isProcurementStop || ordersAtStop > 0;
+    });
   }
 
   private deriveStopUiStatus(

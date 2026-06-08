@@ -478,17 +478,27 @@ export class CatalogService {
 
   async getDriverDeliveryRound(user: User) {
     await this.processDueEmergencyCloses();
+    await this.deliveryStops.fulfillSupersededRounds(user.id);
     const round = await this.prisma.round.findFirst({
       where: {
         createdByUserId: user.id,
         status: RoundStatus.closed,
-        orders: {
-          some: {
-            status: {
-              notIn: [OrderStatus.cancelled, OrderStatus.delivered],
+        OR: [
+          {
+            orders: {
+              some: {
+                status: {
+                  notIn: [OrderStatus.cancelled, OrderStatus.delivered],
+                },
+              },
             },
           },
-        },
+          {
+            deliveryStops: {
+              some: { status: { not: DeliveryStopStatus.completed } },
+            },
+          },
+        ],
       },
       include: roundWaypointsInclude,
       orderBy: { createdAt: 'desc' },

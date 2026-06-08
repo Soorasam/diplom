@@ -23,17 +23,26 @@ export const isProcurementFailed = (procurement: Pick<Procurement, "status" | "a
   typeof procurement.activeOrdersCount === "number" &&
   procurement.activeOrdersCount === 0
 
+const procurementStatusShortLabel: Record<ProcurementStatus, string> = {
+  open: "Открыт",
+  closing: "Закр.",
+  closed: "Закрыт",
+  shipped: "Готов",
+}
+
 export const getProcurementDisplayStatus = (
   procurement: Pick<Procurement, "status" | "activeOrdersCount">,
 ) => {
   if (isProcurementFailed(procurement)) {
     return {
       label: "Не состоялся",
+      shortLabel: "Срыв",
       variant: "danger" as const,
     }
   }
   return {
     label: procurementStatusLabel[procurement.status],
+    shortLabel: procurementStatusShortLabel[procurement.status],
     variant: procurementStatusVariant[procurement.status],
   }
 }

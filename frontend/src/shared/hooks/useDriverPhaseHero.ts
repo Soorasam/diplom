@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 
+import { useAuthStore } from "@/app/model/auth-store"
 import { procurementChecklistApi } from "@/entities/driver-procurement/api/procurementChecklistApi"
 import { useDriverWorkbench } from "@/shared/hooks/useDriverWorkbench"
-import {
-  buildDriverDashboardHero,
-  buildRouteChain,
-} from "@/shared/lib/driver-phase-hero"
+import { buildDriverDashboardHero } from "@/shared/lib/driver-phase-hero"
+import { resolveDriverRouteChain } from "@/shared/lib/driver-route-stops"
 
 export const useDriverPhaseHero = () => {
+  const user = useAuthStore((s) => s.user)
   const workbench = useDriverWorkbench()
   const {
     activeRoute,
@@ -44,7 +44,7 @@ export const useDriverPhaseHero = () => {
       : 0,
   })
 
-  const routeChain = buildRouteChain(activeRoute?.deliveryStops)
+  const routeChain = resolveDriverRouteChain(activeRoute, user?.pickupPointId)
 
   return {
     ...workbench,

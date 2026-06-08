@@ -1,7 +1,11 @@
 import type { Order, Procurement } from "@/shared/api/api-types"
 import type { RouteDeliveryStop } from "@/entities/route/api/routesApi"
 import { routes } from "@/shared/config/routes"
-import { isDelivered } from "@/shared/lib/driver-orders"
+import {
+  isDelivered,
+  ordersAtPickupPoint,
+  residentDeliveryStats,
+} from "@/shared/lib/driver-orders"
 
 export type DriverPhaseId =
   | "idle"
@@ -93,13 +97,14 @@ export const buildDriverDashboardHero = (input: {
       ],
       nextLabel: nextStop ? `Далее ${nextStop.label}…` : undefined,
       ctaLabel: "Чек-лист",
-      ctaTo: routes.driver.orders,
+      ctaTo: routes.driver.route,
     }
   }
 
   if (currentStop?.expectsOrders) {
-    const residents = currentStop.totalOrders ?? 0
-    const delivered = currentStop.receivedOrders ?? 0
+    const { total: residents, delivered } = residentDeliveryStats(
+      ordersAtPickupPoint(orders, currentStop.pickupPointId),
+    )
     const inSettlement = currentStop.status === "in_progress"
     return {
       phase: inSettlement ? "delivery_stop" : "delivery_transit",
@@ -138,18 +143,19 @@ export const buildDriverDashboardHero = (input: {
     }
   }
 
-  if (deliveryRound) {
+  if (deliveryRound && !activeRoute) {
     return {
       phase: "pre_delivery",
       phaseLabel: "После закрытия",
       title: deliveryRound.title,
-      subtitle: "Закупка и доставка по маршруту",
+      subtitle:
+        deliveryRound.routeTitle?.trim() || "Закупка и доставка по маршруту",
       stats: [
         { label: "заказов", value: String(countActiveOrders(orders)) },
         { label: "позиций", value: String(countActiveItems(orders)) },
       ],
       ctaLabel: "Заказы по НП",
-      ctaTo: routes.driver.orders,
+      ctaTo: routes.driver.route,
     }
   }
 
@@ -232,7 +238,7 @@ export const buildRoutePageHero = (input: {
       : [],
     nextLabel: nextStopLabel ? `Далее ${nextStopLabel}…` : undefined,
     ctaLabel: "Заказы",
-    ctaTo: routes.driver.orders,
+    ctaTo: routes.driver.route,
   }
 }
 
@@ -256,7 +262,7 @@ export const buildProcurementsPageHero = (
         { label: "заказов", value: String(orderCount) },
       ],
       ctaLabel: "Заказы жителей",
-      ctaTo: routes.driver.orders,
+      ctaTo: routes.driver.route,
     }
   }
 

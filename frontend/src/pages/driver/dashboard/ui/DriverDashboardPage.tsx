@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/app/model/auth-store"
+import { groupOrdersByResident } from "@/shared/lib/driver-orders"
 import { useDriverPhaseHero } from "@/shared/hooks/useDriverPhaseHero"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { PageShell } from "@/shared/ui/page-shell/PageShell"
@@ -19,12 +20,12 @@ export const DriverDashboardPage = () => {
     routeChain,
   } = useDriverPhaseHero()
 
-  const inTransitCount = orders.filter(
-    (o) => o.status === "in_transit" || o.status === "at_pickup",
+  const inTransitCount = groupOrdersByResident(
+    orders.filter((o) => o.status === "in_transit" || o.status === "at_pickup"),
   ).length
 
-  const activeOrdersCount = orders.filter(
-    (o) => o.status !== "delivered" && o.status !== "cancelled",
+  const activeOrdersCount = groupOrdersByResident(
+    orders.filter((o) => o.status !== "delivered" && o.status !== "cancelled"),
   ).length
 
   return (

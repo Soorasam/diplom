@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { Link } from "react-router-dom"
 import { ArrowRight, MapPin, ShoppingCart, Truck } from "lucide-react"
 
@@ -7,6 +8,7 @@ import { cn } from "@/shared/lib/cn"
 type Props = {
   hero: HeroModel
   hideFooter?: boolean
+  footer?: ReactNode
 }
 
 const phaseIcon = (phase: HeroModel["phase"]) => {
@@ -19,7 +21,7 @@ const phaseIcon = (phase: HeroModel["phase"]) => {
   return MapPin
 }
 
-export const DriverPhaseHero = ({ hero, hideFooter }: Props) => {
+export const DriverPhaseHero = ({ hero, hideFooter, footer }: Props) => {
   const Icon = phaseIcon(hero.phase)
 
   return (
@@ -57,7 +59,9 @@ export const DriverPhaseHero = ({ hero, hideFooter }: Props) => {
         ) : null}
       </div>
 
-      {!hideFooter && hero.ctaLabel && hero.ctaTo ? (
+      {footer ? (
+        <div className="ui-phase-hero-footer px-5 py-3">{footer}</div>
+      ) : !hideFooter && hero.ctaLabel && hero.ctaTo ? (
         <div className="ui-phase-hero-footer flex items-center justify-between gap-3 px-5 py-3">
           <p className="ui-phase-hero-footer-hint min-w-0 truncate">
             {hero.nextLabel ?? "\u00a0"}

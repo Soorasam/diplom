@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { useAuthStore } from "@/app/model/auth-store"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { queryKeys } from "@/shared/config/query-keys"
+import { invalidateDriverWorkbench } from "@/shared/lib/invalidate-driver-workbench"
 import type { OrderStatus } from "@/shared/types"
 
 import { ordersApi } from "./ordersApi"
@@ -85,13 +87,15 @@ export const useConfirmAllReceipts = () => {
 
 export const useUpdateOrderStatus = () => {
   const qc = useQueryClient()
+  const user = useAuthStore((s) => s.user)
+  const driverId = user?.role === "driver" ? user.id : ""
   return useMutation({
     mutationFn: ({ orderId, status }: { orderId: string; status: OrderStatus }) =>
       ordersApi.updateStatus(orderId, status),
     onSuccess: (order) => {
       void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
       void qc.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) })
-      void qc.invalidateQueries({ queryKey: ["routes", "driver"] })
+      invalidateDriverWorkbench(qc, driverId)
     },
   })
 }

@@ -6,6 +6,8 @@ export type ProcurementChecklistLine = {
   orderItemId: string
   orderId: string
   orderNumber: string
+  residentId: string
+  residentName: string
   deliverySettlementName: string
   productId: string
   productName: string

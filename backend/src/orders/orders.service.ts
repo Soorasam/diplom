@@ -222,16 +222,7 @@ export class OrdersService {
     }
 
     if (newStatus === OrderStatus.at_pickup || newStatus === OrderStatus.delivered) {
-      const completion = await this.deliveryStops.refreshStopCompletion(
-        roundId,
-        pickupPointId,
-      );
-      if (completion.roundCompleted) {
-        await this.prisma.round.update({
-          where: { id: roundId },
-          data: { status: RoundStatus.fulfilled },
-        });
-      }
+      await this.deliveryStops.refreshStopCompletion(roundId, pickupPointId);
     }
   }
 

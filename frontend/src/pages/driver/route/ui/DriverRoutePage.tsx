@@ -1,22 +1,19 @@
-import { Link } from "react-router-dom"
-import { useMemo } from "react"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { AlertTriangle, Check, MapPin } from "lucide-react"
+import { useMemo, useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { AlertTriangle, Check, MapPin, Package } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
-import { ProcurementSettlementCard } from "@/features/driver-procurement-settlement/ui/ProcurementSettlementCard"
-import { useDriverDeliveryProcurement } from "@/entities/procurement/api/useProcurements"
+import { ProcurementChecklistCard } from "@/features/driver-procurement-checklist/ui/ProcurementChecklistCard"
 import { routesApi } from "@/entities/route/api/routesApi"
-import type { RouteDeliveryStop } from "@/entities/route/api/routesApi"
-import { routes } from "@/shared/config/routes"
-import { queryKeys } from "@/shared/config/query-keys"
-import { buildRouteChain, buildRoutePageHero } from "@/shared/lib/driver-phase-hero"
-import { buildDriverRouteAction } from "@/shared/lib/driver-route-action"
-import { isCoordinatorRouteInProgress } from "@/shared/lib/driver-round-workload"
+import { useDriverWorkbench } from "@/shared/hooks/useDriverWorkbench"
 import {
-  groupOrdersBySettlement,
-  isAwaitingTripAccept,
-} from "@/shared/lib/driver-orders"
+  areAllDriverStopsCompleted,
+  filterDriverRouteStops,
+  isDriverProcurementStop,
+  resolveDriverRouteChain,
+} from "@/shared/lib/driver-route-stops"
+import { buildDriverTripView } from "@/shared/lib/driver-trip-phase"
+import { invalidateDriverWorkbench } from "@/shared/lib/invalidate-driver-workbench"
 import { cn } from "@/shared/lib/cn"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
@@ -28,38 +25,27 @@ import { DriverPhaseHero } from "@/widgets/driver-phase-hero/ui/DriverPhaseHero"
 import { DriverRouteChain } from "@/widgets/driver-route-chain/ui/DriverRouteChain"
 import { DriverSettlementResidents } from "@/widgets/driver-settlement-residents/ui/DriverSettlementResidents"
 
-const filterStops = (
-  stops: RouteDeliveryStop[],
-  driverPickupPointId?: string,
-) =>
-  stops.filter((ds, index, arr) => {
-    const isLast = index === arr.length - 1
-    const isDriverOwnTailStop =
-      Boolean(driverPickupPointId) &&
-      ds.pickupPointId === driverPickupPointId &&
-      isLast &&
-      (ds.totalOrders ?? 0) === 0 &&
-      (ds.receivedOrders ?? 0) === 0 &&
-      !ds.expectsOrders
-    return !isDriverOwnTailStop
-  })
-
 export const DriverRoutePage = () => {
   const user = useAuthStore((s) => s.user)
-  const driverId = user?.role === "driver" ? user.id : "d1"
+  const workbench = useDriverWorkbench()
+  const {
+    isLoading,
+    driverId,
+    orders,
+    awaitingAccept,
+    awaitingAcceptCount,
+    hasOpenCollection,
+    activeRound,
+    activeRoute,
+    deliveryRound,
+    workRoundId,
+    ordersBySettlement,
+    routeStops,
+  } = workbench
+
   const qc = useQueryClient()
-
-  const { data: driverRoutes, isLoading } = useQuery({
-    queryKey: queryKeys.routes.driver(driverId),
-    queryFn: () => routesApi.getByDriver(driverId),
-  })
-
-  const { data: driverOrders } = useQuery({
-    queryKey: [...queryKeys.routes.driver(driverId), "orders"],
-    queryFn: () => routesApi.getDriverOrders(driverId),
-  })
-
-  const { data: deliveryRound } = useDriverDeliveryProcurement(user?.id)
+  const [checklistPurchased, setChecklistPurchased] = useState(0)
+  const [checklistTotal, setChecklistTotal] = useState(0)
 
   const completeStop = useMutation({
     mutationFn: ({
@@ -69,86 +55,26 @@ export const DriverRoutePage = () => {
       roundId: string
       pickupPointId: string
     }) => routesApi.completeRouteStop(roundId, pickupPointId),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.routes.driver(driverId) })
-    },
+    onSuccess: () => invalidateDriverWorkbench(qc, driverId),
   })
 
-  const rawActiveRoute = driverRoutes?.find((r) => r.status === "active")
-  const activeRoute =
-    rawActiveRoute && isCoordinatorRouteInProgress(rawActiveRoute, driverOrders)
-      ? rawActiveRoute
-      : undefined
-
-  const ordersBySettlement = useMemo(
-    () => groupOrdersBySettlement(driverOrders ?? []),
-    [driverOrders],
+  const deliveryStops = useMemo(
+    () =>
+      routeStops.length > 0
+        ? routeStops
+        : filterDriverRouteStops(activeRoute?.deliveryStops ?? [], user?.pickupPointId),
+    [routeStops, activeRoute?.deliveryStops, user?.pickupPointId],
   )
-
-  const awaitingAccept = useMemo(
-    () => (driverOrders ?? []).filter(isAwaitingTripAccept),
-    [driverOrders],
-  )
-
-  if (isLoading) {
-    return (
-      <PageShell>
-        <div className="flex justify-center py-10">
-          <Spinner />
-        </div>
-      </PageShell>
-    )
-  }
-
-  if (!activeRoute) {
-    return (
-      <PageShell>
-        <PageHeader title="Рейс" subtitle="Маршрут по порядку" />
-        {awaitingAccept.length > 0 ? (
-          <Card className="!p-4">
-            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {awaitingAccept.length} заказ(ов) ждут принятия
-            </p>
-            <Link
-              to={routes.driver.orders}
-              className="ui-cta-primary mt-3 flex min-h-10 items-center justify-center rounded-xl text-sm font-semibold"
-            >
-              Открыть заказы
-            </Link>
-          </Card>
-        ) : null}
-        <EmptyState
-          icon={MapPin}
-          title="Нет активного рейса"
-          description="Рейс появится после закрытия сбора с оплаченными заказами."
-        />
-      </PageShell>
-    )
-  }
-
-  const deliveryStops = filterStops(
-    activeRoute.deliveryStops ?? [],
-    user?.pickupPointId,
-  )
-
-  if (deliveryStops.length === 0) {
-    return (
-      <PageShell>
-        <PageHeader title={activeRoute.name} subtitle="Точки на маршруте" />
-        <EmptyState
-          icon={MapPin}
-          title="Точки маршрута не заданы"
-          description="После закрытия сбора появятся посёлки на маршруте"
-        />
-      </PageShell>
-    )
-  }
 
   const currentIndex = deliveryStops.findIndex((s) => s.status !== "completed")
   const currentStop = currentIndex >= 0 ? deliveryStops[currentIndex] : undefined
   const nextStop = currentIndex >= 0 ? deliveryStops[currentIndex + 1] : undefined
-  const tripCompleted = activeRoute.status === "completed"
-  const roundId = activeRoute.activeRoundId
+  const allStopsCompleted = areAllDriverStopsCompleted(deliveryStops)
+  const tripCompleted =
+    allStopsCompleted ||
+    (!activeRoute &&
+      !hasOpenCollection &&
+      deliveryRound?.status === "shipped")
 
   const currentResidents = currentStop
     ? ordersBySettlement.get(currentStop.pickupPointId) ?? []
@@ -160,139 +86,264 @@ export const DriverRoutePage = () => {
       ),
   )
 
-  const hero = buildRoutePageHero({
-    routeName: activeRoute.name,
+  const trip = buildDriverTripView({
+    orders,
+    awaitingAcceptCount,
+    hasOpenCollection,
+    activeRound: activeRound ?? undefined,
+    deliveryRound: deliveryRound ?? undefined,
+    activeRoute,
+    deliveryStops,
     currentStop,
-    step: currentIndex >= 0 ? currentIndex + 1 : deliveryStops.length,
-    totalSteps: deliveryStops.length,
-    nextStopLabel: nextStop?.label,
-  })
-
-  const routeChain = buildRouteChain(deliveryStops)
-  const action = buildDriverRouteAction({
-    currentStop,
-    roundId: roundId ?? undefined,
+    nextStop,
     tripCompleted,
     pendingConfirm,
+    checklistPurchased,
+    checklistPositions: checklistTotal,
   })
 
+  const routeChain = resolveDriverRouteChain(activeRoute, user?.pickupPointId)
+  const deliveryInProgress =
+    !allStopsCompleted &&
+    deliveryRound != null &&
+    deliveryRound.status !== "open" &&
+    deliveryRound.status !== "shipped"
+  const hasWork =
+    awaitingAcceptCount > 0 ||
+    hasOpenCollection ||
+    (Boolean(activeRoute) && !allStopsCompleted) ||
+    deliveryInProgress
+
+  const heroFooter = (() => {
+    if (trip.contentPhase === "depart" && trip.roundId && trip.currentStop) {
+      return (
+        <Button
+          fullWidth
+          size="lg"
+          className="ui-cta-primary"
+          loading={completeStop.isPending}
+          onClick={() =>
+            completeStop.mutate({
+              roundId: trip.roundId!,
+              pickupPointId: trip.currentStop!.pickupPointId,
+            })
+          }
+        >
+          {trip.nextStop
+            ? `Поехали в ${trip.nextStop.label}`
+            : "Поехали дальше"}
+        </Button>
+      )
+    }
+    if (
+      (trip.contentPhase === "handout" ||
+        trip.contentPhase === "close_settlement" ||
+        trip.contentPhase === "transit") &&
+      trip.canCompleteStop &&
+      trip.roundId &&
+      trip.currentStop
+    ) {
+      const isLast = !trip.nextStop
+      return (
+        <Button
+          fullWidth
+          size="lg"
+          className="ui-cta-primary"
+          loading={completeStop.isPending}
+          onClick={() =>
+            completeStop.mutate({
+              roundId: trip.roundId!,
+              pickupPointId: trip.currentStop!.pickupPointId,
+            })
+          }
+        >
+          {isLast
+            ? "Завершить рейс"
+            : "Посёлок завершён — ехать дальше"}
+        </Button>
+      )
+    }
+    if (pendingConfirm) {
+      return (
+        <p className="text-center text-xs text-amber-700 dark:text-amber-300">
+          Дождитесь подтверждений всех жителей
+        </p>
+      )
+    }
+    if (trip.contentPhase === "procurement") {
+      return (
+        <p className="text-center text-xs text-slate-500 dark:text-slate-400">
+          Отметьте позиции ниже · {checklistPurchased}/{checklistTotal || "…"}
+        </p>
+      )
+    }
+    if (trip.contentPhase === "accept_orders") {
+      return (
+        <p className="text-center text-xs text-slate-500 dark:text-slate-400">
+          Примите оплаченные заказы в рейс
+        </p>
+      )
+    }
+    return null
+  })()
+
+  if (isLoading) {
+    return (
+      <PageShell>
+        <div className="flex justify-center py-10">
+          <Spinner />
+        </div>
+      </PageShell>
+    )
+  }
+
+  if (!hasWork) {
+    return (
+      <PageShell>
+        <PageHeader title="Рейс" subtitle="Всё по этапам в одном месте" />
+        <EmptyState
+          icon={MapPin}
+          title="Пока нечего делать"
+          description="Откройте сбор в разделе «Сборы» — здесь появятся заказы и этапы маршрута."
+        />
+      </PageShell>
+    )
+  }
+
   return (
-    <PageShell withStickyFooter>
-      <PageHeader title="Рейс" subtitle={activeRoute.name} />
+    <PageShell withStickyFooter={Boolean(heroFooter && trip.contentPhase !== "procurement")}>
+      <PageHeader
+        title="Рейс"
+        subtitle={routeChain || activeRound?.title || "По этапам"}
+      />
 
       <div className="flex flex-col gap-4">
-        <DriverPhaseHero hero={hero} hideFooter />
-        <DriverRouteChain chain={routeChain} />
+        <DriverPhaseHero hero={trip.hero} hideFooter footer={heroFooter} />
+        {routeChain ? <DriverRouteChain chain={routeChain} /> : null}
 
-        {currentStop?.expectsOrders && currentResidents.length > 0 ? (
+        {trip.contentPhase === "accept_orders" ? (
           <Card className="!p-4">
             <p className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Жители в {currentStop.label}
+              Оплаченные заказы
             </p>
-            <DriverSettlementResidents orders={currentResidents} compact />
-            {pendingConfirm ? (
-              <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                <span>Обойдите по адресам — все должны подтвердить получение</span>
-              </div>
-            ) : null}
+            <DriverSettlementResidents orders={awaitingAccept} showAcceptActions />
           </Card>
         ) : null}
 
-        {deliveryRound?.id ? (
-          <ProcurementSettlementCard roundId={deliveryRound.id} />
+        {trip.contentPhase === "waiting_close" ? (
+          <Card className="border-sky-200 bg-sky-50/50 !p-4 dark:border-sky-900/40 dark:bg-sky-950/20">
+            <p className="text-sm text-slate-700 dark:text-slate-300">
+              Все заказы приняты. После закрытия сбора начнётся закупка и доставка по
+              маршруту — этапы появятся здесь автоматически.
+            </p>
+          </Card>
         ) : null}
 
-        <div>
-          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            Маршрут
-          </p>
-          <ol className="flex flex-col gap-1.5">
-            {deliveryStops.map((stop, index) => {
-              const isDone = stop.status === "completed"
-              const isCurrent = index === currentIndex
-              return (
-                <li
-                  key={stop.pickupPointId}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl border px-3 py-2 text-sm",
-                    isCurrent && "ui-stop-active border-sky-300",
-                    isDone && "ui-stop-done opacity-80",
-                    !isCurrent && !isDone && "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/40",
-                  )}
-                >
-                  <span
+        {trip.contentPhase === "procurement" &&
+        workRoundId &&
+        isDriverProcurementStop(currentStop) ? (
+          <ProcurementChecklistCard
+            roundId={workRoundId}
+            compact
+            onProgress={(purchased, total) => {
+              setChecklistPurchased(purchased)
+              setChecklistTotal(total)
+            }}
+          />
+        ) : null}
+
+        {trip.contentPhase === "close_settlement" ? (
+          <Card className="border-emerald-200 bg-emerald-50/60 !p-4 dark:border-emerald-900/50 dark:bg-emerald-950/25">
+            <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-200">
+              Все жители подтвердили получение
+            </p>
+            <p className="mt-1 text-sm text-emerald-800/90 dark:text-emerald-300/90">
+              Нажмите кнопку внизу, чтобы закрыть посёлок
+              {trip.nextStop ? ` и выехать в ${trip.nextStop.label}` : " и завершить рейс"}.
+            </p>
+          </Card>
+        ) : null}
+
+        {trip.contentPhase === "handout" && currentResidents.length > 0 ? (
+          <div>
+            <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+              <Package size={18} className="text-sky-600" />
+              Обход по адресам
+            </p>
+            <DriverSettlementResidents orders={currentResidents} compact />
+            {pendingConfirm ? (
+              <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <span>
+                  Вручите заказ лично. Житель подтверждает в приложении — без этого
+                  нельзя уезжать.
+                </span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {deliveryStops.length > 0 ? (
+          <div>
+            <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Этапы маршрута
+            </p>
+            <ol className="flex flex-col gap-1.5">
+              {deliveryStops.map((stop, index) => {
+                const isDone = stop.status === "completed"
+                const isCurrent = index === currentIndex
+                return (
+                  <li
+                    key={stop.pickupPointId}
                     className={cn(
-                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                      isDone && "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300",
-                      isCurrent && "bg-slate-900 text-white dark:bg-sky-600",
-                      !isDone && !isCurrent && "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
+                      "flex items-center gap-3 rounded-xl border px-3 py-2 text-sm",
+                      isCurrent && "ui-stop-active",
+                      isDone && "ui-stop-done opacity-80",
+                      !isCurrent &&
+                        !isDone &&
+                        "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/40",
                     )}
                   >
-                    {isDone ? <Check size={14} /> : index + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">
-                      {stop.label}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {stop.isProcurementStop
-                        ? "Закупка"
-                        : stop.expectsOrders
-                          ? `${stop.receivedOrders ?? 0}/${stop.totalOrders ?? 0} подтвердили`
-                          : "Проезд"}
-                    </p>
-                  </div>
-                  {isCurrent ? (
-                    <span className="shrink-0 text-[10px] font-semibold uppercase text-sky-700 dark:text-sky-300">
-                      Сейчас
+                    <span
+                      className={cn(
+                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                        isDone &&
+                          "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300",
+                        isCurrent && "bg-slate-900 text-white dark:bg-sky-600",
+                        !isDone &&
+                          !isCurrent &&
+                          "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
+                      )}
+                    >
+                      {isDone ? <Check size={14} /> : index + 1}
                     </span>
-                  ) : null}
-                </li>
-              )
-            })}
-          </ol>
-        </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-slate-900 dark:text-slate-100">
+                        {stop.label}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {stop.isProcurementStop
+                          ? "Закупка"
+                          : stop.expectsOrders
+                            ? `${stop.receivedOrders ?? 0}/${stop.totalOrders ?? 0} выдано`
+                            : "Проезд"}
+                      </p>
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
+          </div>
+        ) : null}
 
-        {tripCompleted ? (
+        {trip.contentPhase === "done" ? (
           <Card className="border-emerald-200 bg-emerald-50/50 !p-4 dark:border-emerald-900/50 dark:bg-emerald-950/30">
             <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
-              Рейс завершён
+              Рейс завершён — все точки маршрута пройдены
             </p>
           </Card>
         ) : null}
       </div>
-
-      {!tripCompleted && action.kind !== "none" ? (
-        <div className="fixed bottom-20 left-0 right-0 z-10 mx-auto max-w-[480px] px-4 sm:bottom-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-            {action.kind === "link" ? (
-              <Link
-                to={action.to}
-                className="ui-cta-primary flex min-h-12 w-full items-center justify-center rounded-xl text-base font-semibold"
-              >
-                {action.label}
-              </Link>
-            ) : (
-              <Button
-                fullWidth
-                size="lg"
-                variant={action.disabled ? "outline" : "primary"}
-                disabled={action.disabled || completeStop.isPending}
-                onClick={() =>
-                  roundId &&
-                  completeStop.mutate({
-                    roundId,
-                    pickupPointId: action.pickupPointId,
-                  })
-                }
-              >
-                {action.label}
-              </Button>
-            )}
-          </div>
-        </div>
-      ) : null}
     </PageShell>
   )
 }

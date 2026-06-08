@@ -43,9 +43,11 @@ services:
       mc mb local/coop-products --ignore-existing &&
       mc mb local/coop-driver-docs --ignore-existing &&
       mc mb local/coop-tickets --ignore-existing &&
+      mc mb local/coop-receipts --ignore-existing &&
       mc anonymous set download local/coop-products &&
       mc anonymous set download local/coop-driver-docs &&
       mc anonymous set download local/coop-tickets &&
+      mc anonymous set download local/coop-receipts &&
       echo 'MinIO buckets ready'
       "
 

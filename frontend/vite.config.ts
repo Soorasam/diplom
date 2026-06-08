@@ -78,6 +78,8 @@ export default defineConfig(({ mode }) => {
             /^\/coop-products\//,
             /^\/coop-driver-docs\//,
             /^\/coop-tickets\//,
+            /^\/coop-receipts\//,
+            /^\/coop-procurement\//,
           ],
         },
       }),
@@ -98,6 +100,14 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
         "/coop-tickets": {
+          target: "http://127.0.0.1:9000",
+          changeOrigin: true,
+        },
+        "/coop-receipts": {
+          target: "http://127.0.0.1:9000",
+          changeOrigin: true,
+        },
+        "/coop-procurement": {
           target: "http://127.0.0.1:9000",
           changeOrigin: true,
         },

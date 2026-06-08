@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  DeliveryStopStatus,
   OrderItemProcurementStatus,
   OrderStatus,
   Prisma,
@@ -92,21 +93,29 @@ export class ProcurementChecklistService {
   async getActiveChecklist(user: User, roundId: string) {
     await this.assertDriverRound(user, roundId);
 
-    const stop = await this.prisma.roundDeliveryStop.findFirst({
-      where: {
-        roundId,
-        isProcurementStop: true,
-        procurementCompletedAt: null,
-      },
+    const stops = await this.prisma.roundDeliveryStop.findMany({
+      where: { roundId },
       orderBy: { sortOrder: 'asc' },
       include: { pickupPoint: true },
     });
 
-    if (!stop) {
+    const current = stops.find(
+      (s) =>
+        s.status !== DeliveryStopStatus.completed ||
+        (s.isProcurementStop && !s.procurementCompletedAt),
+    );
+    if (
+      !current?.isProcurementStop ||
+      current.procurementCompletedAt != null
+    ) {
       return { active: false as const };
     }
 
-    return this.buildChecklistPayload(roundId, stop.pickupPointId, stop.pickupPoint);
+    return this.buildChecklistPayload(
+      roundId,
+      current.pickupPointId,
+      current.pickupPoint,
+    );
   }
 
   async getChecklist(user: User, roundId: string, pickupPointId: string) {
@@ -145,6 +154,7 @@ export class ProcurementChecklistService {
             publicNumber: true,
             userId: true,
             pickupPoint: { select: { name: true } },
+            user: { select: { fullName: true, email: true } },
           },
         },
       },
@@ -170,6 +180,8 @@ export class ProcurementChecklistService {
         orderItemId: line.id,
         orderId: line.orderId,
         orderNumber: line.order.publicNumber,
+        residentId: line.order.userId,
+        residentName: line.order.user.fullName ?? line.order.user.email,
         deliverySettlementName: line.order.pickupPoint?.name ?? '—',
         productId: line.productId,
         productName: line.productName,
@@ -351,6 +363,26 @@ export class ProcurementChecklistService {
     });
     if (pending > 0) {
       throw new BadRequestException('Сначала заполните чек-лист по всем позициям');
+    }
+
+    const openProcStops = await this.prisma.roundDeliveryStop.count({
+      where: {
+        roundId,
+        isProcurementStop: true,
+        procurementCompletedAt: null,
+      },
+    });
+    if (openProcStops === 1) {
+      const [round, receiptCount] = await Promise.all([
+        this.prisma.round.findUnique({ where: { id: roundId } }),
+        this.prisma.roundProcurementReceipt.count({ where: { roundId } }),
+      ]);
+      if (receiptCount === 0) {
+        throw new BadRequestException('Прикрепите фото чека перед выездом');
+      }
+      if (!round?.purchaseSettledAt) {
+        throw new BadRequestException('Укажите сумму по чекам и проведите сверку');
+      }
     }
 
     await this.prisma.roundDeliveryStop.update({

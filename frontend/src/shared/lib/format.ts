@@ -18,6 +18,14 @@ export const formatShortDate = (iso: string) =>
     month: "short",
   }).format(new Date(iso))
 
+export const formatShortDateTime = (iso: string) =>
+  new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(iso))
+
 export const formatWeightKg = (kg: number) => {
   if (kg >= 1000) return `${(kg / 1000).toFixed(1)} т`
   if (kg >= 10) return `${kg.toFixed(0)} кг`

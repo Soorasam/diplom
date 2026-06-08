@@ -1,6 +1,6 @@
 import { useMemo } from "react"
 import { Outlet } from "react-router-dom"
-import { LayoutDashboard, Package, Route, ShoppingBasket, User } from "lucide-react"
+import { LayoutDashboard, Route, ShoppingBasket, User } from "lucide-react"
 
 import { routes } from "@/shared/config/routes"
 import { useDriverWorkbench } from "@/shared/hooks/useDriverWorkbench"
@@ -22,13 +22,6 @@ export const DriverLayout = () => {
         match: (p) => p === routes.driver.root,
       },
       {
-        label: "Заказы",
-        path: routes.driver.orders,
-        icon: Package,
-        badge: ordersBadgeCount,
-        match: (p) => p.startsWith(routes.driver.orders),
-      },
-      {
         label: "Сборы",
         path: routes.driver.procurements,
         icon: ShoppingBasket,
@@ -38,7 +31,9 @@ export const DriverLayout = () => {
         label: "Рейс",
         path: routes.driver.route,
         icon: Route,
-        match: (p) => p.startsWith(routes.driver.route),
+        badge: ordersBadgeCount,
+        match: (p) =>
+          p.startsWith(routes.driver.route) || p.startsWith(routes.driver.orders),
       },
       {
         label: "Профиль",

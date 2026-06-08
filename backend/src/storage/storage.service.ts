@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
   CreateBucketCommand,
   HeadBucketCommand,
+  PutBucketPolicyCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -10,6 +11,7 @@ import {
 export class StorageService {
   private readonly log = new Logger(StorageService.name);
   private readonly ensuredBuckets = new Set<string>();
+  private readonly publicReadBuckets = new Set<string>();
 
   private client(): S3Client {
     return new S3Client({
@@ -53,6 +55,33 @@ export class StorageService {
       this.log.log(`Created MinIO bucket: ${bucket}`);
     }
     this.ensuredBuckets.add(bucket);
+  }
+
+  async ensurePublicRead(bucket: string): Promise<void> {
+    await this.ensureBucket(bucket);
+    if (this.publicReadBuckets.has(bucket)) return;
+
+    const policy = JSON.stringify({
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Effect: 'Allow',
+          Principal: { AWS: ['*'] },
+          Action: ['s3:GetObject'],
+          Resource: [`arn:aws:s3:::${bucket}/*`],
+        },
+      ],
+    });
+
+    try {
+      await this.client().send(
+        new PutBucketPolicyCommand({ Bucket: bucket, Policy: policy }),
+      );
+      this.publicReadBuckets.add(bucket);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.log.warn(`Public read policy for ${bucket}: ${message}`);
+    }
   }
 
   async upload(

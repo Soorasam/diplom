@@ -4,6 +4,7 @@ import { ProcurementChecklistCard } from "@/features/driver-procurement-checklis
 import { useDriverWorkbench } from "@/shared/hooks/useDriverWorkbench"
 import { buildOrdersPageHero } from "@/shared/lib/driver-phase-hero"
 import { isAwaitingTripAccept } from "@/shared/lib/driver-orders"
+import { isDriverProcurementStop } from "@/shared/lib/driver-route-stops"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { PageShell } from "@/shared/ui/page-shell/PageShell"
@@ -50,7 +51,8 @@ export const DriverOrdersPage = () => {
     settlementCount: settlementBlocks.length,
   })
 
-  const showChecklist = Boolean(workRoundId && activeRoute)
+  const showChecklist =
+    Boolean(workRoundId && activeRoute) && isDriverProcurementStop(currentStop)
   const hasAnyOrders = orders.length > 0
 
   return (

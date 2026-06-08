@@ -95,13 +95,17 @@ const resolveRoutePhase = (
   const userStop = userStopIndex >= 0 ? progress[userStopIndex] : undefined
   const steps = buildRouteSteps(progress, userPickupPointId)
   const toConfirm = confirmableOrders(orders)
+  const routeStillActive = progress.some((s) => s.status !== "completed")
 
   if (orders.length > 0 && orders.every((o) => o.status === "delivered")) {
     return {
       phaseId: "delivered",
       headline: "Заказы получены",
-      subline: `${orders.length} заказ(ов) в этом сборе`,
-      steps: steps.map((s) => ({ ...s, status: "done" as const })),
+      subline: routeStillActive
+        ? `Водитель продолжает маршрут${currentStop ? ` · сейчас ${currentStop.label}` : ""}`
+        : `${orders.length} заказ(ов) в этом сборе`,
+      steps: routeStillActive ? steps : steps.map((s) => ({ ...s, status: "done" as const })),
+      currentLocationLabel: routeStillActive ? currentStop?.label : undefined,
     }
   }
 
@@ -131,9 +135,12 @@ const resolveRoutePhase = (
   if (userStop?.status === "completed") {
     return {
       phaseId: "delivered",
-      headline: "Посёлок пройден",
-      subline: "Заказ доставлен или в процессе подтверждения",
+      headline: "Ваш посёлок пройден",
+      subline: routeStillActive
+        ? `Водитель продолжает маршрут${currentStop ? ` · сейчас ${currentStop.label}` : ""}`
+        : "Заказы получены",
       steps,
+      currentLocationLabel: routeStillActive ? currentStop?.label : undefined,
     }
   }
 
@@ -214,10 +221,14 @@ export const getResidentProcurementPhase = ({
     }))
 
   if (orders.length > 0 && orders.every((o) => o.status === "delivered")) {
+    const routeDone = procurement.status === "shipped"
     return {
       phaseId: "delivered",
       headline: "Заказы получены",
-      steps: markStep(steps.length - 1).map((s) => ({ ...s, status: "done" as const })),
+      subline: routeDone ? undefined : "Водитель завершает доставку по маршруту",
+      steps: routeDone
+        ? markStep(steps.length - 1).map((s) => ({ ...s, status: "done" as const }))
+        : markStep(4),
     }
   }
 
