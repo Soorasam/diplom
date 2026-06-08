@@ -1,45 +1,61 @@
+import { useMemo } from "react"
 import { Outlet } from "react-router-dom"
-import { LayoutDashboard, Route, ShoppingBasket, User } from "lucide-react"
+import { LayoutDashboard, Package, Route, ShoppingBasket, User } from "lucide-react"
 
 import { routes } from "@/shared/config/routes"
+import { useDriverWorkbench } from "@/shared/hooks/useDriverWorkbench"
 import { MobilePageLayout } from "@/shared/ui/mobile-page-layout/MobilePageLayout"
 import {
   MobileBottomNav,
   type MobileNavTab,
 } from "@/widgets/mobile-bottom-nav/ui/MobileBottomNav"
 
-const tabs: MobileNavTab[] = [
-  {
-    label: "Сводка",
-    path: routes.driver.root,
-    icon: LayoutDashboard,
-    match: (p) => p === routes.driver.root,
-  },
-  {
-    label: "Сборы",
-    path: routes.driver.procurements,
-    icon: ShoppingBasket,
-    match: (p) => p.startsWith(routes.driver.procurements),
-  },
-  {
-    label: "Рейс",
-    path: routes.driver.route,
-    icon: Route,
-    match: (p) => p.startsWith(routes.driver.route),
-  },
-  {
-    label: "Профиль",
-    path: routes.driver.profile,
-    icon: User,
-    match: (p) => p.startsWith(routes.driver.profile),
-  },
-]
+export const DriverLayout = () => {
+  const { ordersBadgeCount } = useDriverWorkbench()
 
-export const DriverLayout = () => (
-  <MobilePageLayout>
-    <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col">
-      <Outlet />
-    </main>
-    <MobileBottomNav tabs={tabs} />
-  </MobilePageLayout>
-)
+  const tabs: MobileNavTab[] = useMemo(
+    () => [
+      {
+        label: "Сводка",
+        path: routes.driver.root,
+        icon: LayoutDashboard,
+        match: (p) => p === routes.driver.root,
+      },
+      {
+        label: "Заказы",
+        path: routes.driver.orders,
+        icon: Package,
+        badge: ordersBadgeCount,
+        match: (p) => p.startsWith(routes.driver.orders),
+      },
+      {
+        label: "Сборы",
+        path: routes.driver.procurements,
+        icon: ShoppingBasket,
+        match: (p) => p.startsWith(routes.driver.procurements),
+      },
+      {
+        label: "Рейс",
+        path: routes.driver.route,
+        icon: Route,
+        match: (p) => p.startsWith(routes.driver.route),
+      },
+      {
+        label: "Профиль",
+        path: routes.driver.profile,
+        icon: User,
+        match: (p) => p.startsWith(routes.driver.profile),
+      },
+    ],
+    [ordersBadgeCount],
+  )
+
+  return (
+    <MobilePageLayout>
+      <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col">
+        <Outlet />
+      </main>
+      <MobileBottomNav tabs={tabs} />
+    </MobilePageLayout>
+  )
+}

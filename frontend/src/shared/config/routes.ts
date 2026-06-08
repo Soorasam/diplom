@@ -30,6 +30,7 @@ export const routes = {
   driver: {
     root: "/driver",
     procurements: "/driver/procurements",
+    orders: "/driver/orders",
     route: "/driver/route",
     handout: "/driver/handout",
     map: "/driver/map",

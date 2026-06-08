@@ -437,7 +437,30 @@ export class CatalogService {
     if (!round) throw new NotFoundException('Сбор не найден');
     const enriched = this.enrichRound(attachVirtualRoute(round));
     const [withCoordinator] = await this.enrichRoundsForResidents([enriched]);
-    return withCoordinator;
+
+    if (round.status === RoundStatus.open) {
+      return withCoordinator;
+    }
+
+    const stops = await this.prisma.roundDeliveryStop.findMany({
+      where: { roundId: id },
+      include: { pickupPoint: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    const routeProgress = stops.map((s) => ({
+      pickupPointId: s.pickupPointId,
+      label: s.pickupPoint.name,
+      status:
+        s.status === DeliveryStopStatus.completed
+          ? 'completed'
+          : s.status === DeliveryStopStatus.in_progress
+            ? 'in_progress'
+            : 'pending',
+      isProcurementStop: s.isProcurementStop,
+    }));
+
+    return { ...withCoordinator, routeProgress };
   }
 
   async getDriverActiveRound(user: User) {

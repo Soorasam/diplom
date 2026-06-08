@@ -76,6 +76,13 @@ export interface Product {
   popular?: boolean
 }
 
+export interface ProcurementRouteProgressStop {
+  pickupPointId: string
+  label: string
+  status: "pending" | "in_progress" | "completed"
+  isProcurementStop: boolean
+}
+
 export interface ProcurementWaypoint {
   pickupPointId: string
   settlementId: string
@@ -110,6 +117,7 @@ export interface Procurement {
   estimatedDelivery: string
   /** Заказов не отменено и не доставлено (0 — сбор не состоялся). */
   activeOrdersCount?: number
+  routeProgress?: ProcurementRouteProgressStop[]
 }
 
 export interface DeliveryRoute {

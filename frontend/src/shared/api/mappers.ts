@@ -248,5 +248,6 @@ export const mapRound = (r: BackendRound): Procurement => {
   driverName: r.driverName ?? null,
   driverPhone: r.driverPhone ?? null,
   vehicleSummary: r.vehicleSummary ?? null,
+  routeProgress: r.routeProgress,
   }
 }

@@ -65,6 +65,24 @@ export const useConfirmReceipt = () => {
   })
 }
 
+export const useConfirmAllReceipts = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (orderIds: string[]) => {
+      const results = await Promise.all(
+        orderIds.map((id) => ordersApi.confirmReceipt(id)),
+      )
+      return results
+    },
+    onSuccess: (orders) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
+      for (const order of orders) {
+        void qc.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) })
+      }
+    },
+  })
+}
+
 export const useUpdateOrderStatus = () => {
   const qc = useQueryClient()
   return useMutation({

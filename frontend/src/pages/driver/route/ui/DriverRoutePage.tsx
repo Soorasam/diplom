@@ -1,64 +1,48 @@
+import { Link } from "react-router-dom"
 import { useMemo } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { AlertTriangle, CheckCircle2, MapPin, Truck } from "lucide-react"
+import { AlertTriangle, Check, MapPin } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
-import { ProcurementChecklistCard } from "@/features/driver-procurement-checklist/ui/ProcurementChecklistCard"
 import { ProcurementSettlementCard } from "@/features/driver-procurement-settlement/ui/ProcurementSettlementCard"
 import { useDriverDeliveryProcurement } from "@/entities/procurement/api/useProcurements"
 import { routesApi } from "@/entities/route/api/routesApi"
 import type { RouteDeliveryStop } from "@/entities/route/api/routesApi"
+import { routes } from "@/shared/config/routes"
 import { queryKeys } from "@/shared/config/query-keys"
+import { buildRouteChain, buildRoutePageHero } from "@/shared/lib/driver-phase-hero"
+import { buildDriverRouteAction } from "@/shared/lib/driver-route-action"
 import { isCoordinatorRouteInProgress } from "@/shared/lib/driver-round-workload"
 import {
   groupOrdersBySettlement,
   isAwaitingTripAccept,
-  isDelivered,
 } from "@/shared/lib/driver-orders"
-import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
-import { Badge } from "@/shared/ui/badge/Badge"
+import { cn } from "@/shared/lib/cn"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
+import { DriverPhaseHero } from "@/widgets/driver-phase-hero/ui/DriverPhaseHero"
+import { DriverRouteChain } from "@/widgets/driver-route-chain/ui/DriverRouteChain"
 import { DriverSettlementResidents } from "@/widgets/driver-settlement-residents/ui/DriverSettlementResidents"
 
-type PointStatus = "pending" | "arrived" | "done"
-
-const mapStopStatus = (s: RouteDeliveryStop["status"]): PointStatus => {
-  if (s === "completed") return "done"
-  if (s === "in_progress") return "arrived"
-  return "pending"
-}
-
-const stopPhaseLabel = (ds: RouteDeliveryStop) => {
-  if (ds.isProcurementStop) return "Этап: закупка"
-  if (ds.expectsOrders) return "Этап: обход жителей"
-  return "Этап: проезд"
-}
-
-const stopInstruction = (ds: RouteDeliveryStop, residentCount: number) => {
-  if (ds.isProcurementStop && ds.expectsOrders) {
-    return ds.procurementCompleted
-      ? "Закупка завершена — везите товар в посёлки"
-      : "Сначала отметьте закупку в чек-листе ниже"
-  }
-  if (ds.isProcurementStop) {
-    return ds.procurementCompleted
-      ? "Закупка на этой точке завершена"
-      : "Точка закупа — заполните чек-лист"
-  }
-  if (ds.expectsOrders) {
-    const pending = (ds.inTransitOrders ?? 0) + (ds.totalOrders ?? 0) - (ds.receivedOrders ?? 0)
-    if (pending > 0) {
-      return `Обойдите ${residentCount} ${residentCount === 1 ? "жителя" : "жителей"} по адресам. Вручите заказ и попросите подтвердить получение в приложении. Не уезжайте, пока все не подтвердят.`
-    }
-    return "Все жители подтвердили — можно закрыть посёлок"
-  }
-  return "Техническая остановка маршрута"
-}
+const filterStops = (
+  stops: RouteDeliveryStop[],
+  driverPickupPointId?: string,
+) =>
+  stops.filter((ds, index, arr) => {
+    const isLast = index === arr.length - 1
+    const isDriverOwnTailStop =
+      Boolean(driverPickupPointId) &&
+      ds.pickupPointId === driverPickupPointId &&
+      isLast &&
+      (ds.totalOrders ?? 0) === 0 &&
+      (ds.receivedOrders ?? 0) === 0 &&
+      !ds.expectsOrders
+    return !isDriverOwnTailStop
+  })
 
 export const DriverRoutePage = () => {
   const user = useAuthStore((s) => s.user)
@@ -119,18 +103,18 @@ export const DriverRoutePage = () => {
   if (!activeRoute) {
     return (
       <PageShell>
-        <PageHeader title="Рейс" subtitle="Маршрут и жители по посёлкам" />
+        <PageHeader title="Рейс" subtitle="Маршрут по порядку" />
         {awaitingAccept.length > 0 ? (
           <Card className="!p-4">
-            <p className="text-sm font-semibold text-slate-900">
-              Оплаченные заказы ждут принятия в рейс
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {awaitingAccept.length} заказ(ов) ждут принятия
             </p>
-            <p className="mt-1 text-xs text-slate-500">
-              Примите заказы до закрытия сбора и старта рейса
-            </p>
-            <div className="mt-3">
-              <DriverSettlementResidents orders={awaitingAccept} showAcceptActions />
-            </div>
+            <Link
+              to={routes.driver.orders}
+              className="ui-cta-primary mt-3 flex min-h-10 items-center justify-center rounded-xl text-sm font-semibold"
+            >
+              Открыть заказы
+            </Link>
           </Card>
         ) : null}
         <EmptyState
@@ -142,61 +126,12 @@ export const DriverRoutePage = () => {
     )
   }
 
-  const deliveryStopsRaw = activeRoute.deliveryStops ?? []
-  const driverPickupPointId = user?.pickupPointId
-  const deliveryStops = deliveryStopsRaw.filter((ds, index, arr) => {
-    const isLast = index === arr.length - 1
-    const isDriverOwnTailStop =
-      Boolean(driverPickupPointId) &&
-      ds.pickupPointId === driverPickupPointId &&
-      isLast &&
-      (ds.totalOrders ?? 0) === 0 &&
-      (ds.receivedOrders ?? 0) === 0 &&
-      !ds.expectsOrders
+  const deliveryStops = filterStops(
+    activeRoute.deliveryStops ?? [],
+    user?.pickupPointId,
+  )
 
-    return !isDriverOwnTailStop
-  })
-
-  const stops = deliveryStops.map((ds, index) => {
-    const settlementOrders = (ordersBySettlement.get(ds.pickupPointId) ?? []).filter(
-      (o) => !isDelivered(o) || ds.status === "completed",
-    )
-    const activeSettlementOrders = ordersBySettlement.get(ds.pickupPointId) ?? []
-    const undeliveredCount = activeSettlementOrders.filter((o) => !isDelivered(o)).length
-
-    return {
-      step: index + 1,
-      pickupPointId: ds.pickupPointId,
-      label: ds.label,
-      phase: stopPhaseLabel(ds),
-      instruction: stopInstruction(ds, activeSettlementOrders.length),
-      address: ds.address ?? ds.settlementName,
-      status: mapStopStatus(ds.status),
-      totalOrders: ds.totalOrders ?? 0,
-      inTransitOrders: ds.inTransitOrders ?? 0,
-      receivedOrders: ds.receivedOrders ?? 0,
-      driverCanComplete: ds.driverCanComplete,
-      expectsOrders: ds.expectsOrders,
-      isProcurementStop: ds.isProcurementStop,
-      needsHandout:
-        ds.expectsOrders &&
-        ds.status !== "completed" &&
-        undeliveredCount > 0 &&
-        activeSettlementOrders.some(
-          (o) => o.status === "in_transit" || o.status === "at_pickup",
-        ),
-      pendingConfirm:
-        ds.expectsOrders &&
-        activeSettlementOrders.some(
-          (o) => o.status === "in_transit" || o.status === "at_pickup",
-        ),
-      residents: activeSettlementOrders,
-      residentCount: activeSettlementOrders.length,
-      settlementOrders,
-    }
-  })
-
-  if (stops.length === 0) {
+  if (deliveryStops.length === 0) {
     return (
       <PageShell>
         <PageHeader title={activeRoute.name} subtitle="Точки на маршруте" />
@@ -209,185 +144,154 @@ export const DriverRoutePage = () => {
     )
   }
 
-  const nextStop = stops.find((s) => s.status !== "done") ?? null
+  const currentIndex = deliveryStops.findIndex((s) => s.status !== "completed")
+  const currentStop = currentIndex >= 0 ? deliveryStops[currentIndex] : undefined
+  const nextStop = currentIndex >= 0 ? deliveryStops[currentIndex + 1] : undefined
   const tripCompleted = activeRoute.status === "completed"
   const roundId = activeRoute.activeRoundId
 
+  const currentResidents = currentStop
+    ? ordersBySettlement.get(currentStop.pickupPointId) ?? []
+    : []
+  const pendingConfirm = Boolean(
+    currentStop?.expectsOrders &&
+      currentResidents.some(
+        (o) => o.status === "in_transit" || o.status === "at_pickup",
+      ),
+  )
+
+  const hero = buildRoutePageHero({
+    routeName: activeRoute.name,
+    currentStop,
+    step: currentIndex >= 0 ? currentIndex + 1 : deliveryStops.length,
+    totalSteps: deliveryStops.length,
+    nextStopLabel: nextStop?.label,
+  })
+
+  const routeChain = buildRouteChain(deliveryStops)
+  const action = buildDriverRouteAction({
+    currentStop,
+    roundId: roundId ?? undefined,
+    tripCompleted,
+    pendingConfirm,
+  })
+
   return (
-    <PageShell>
-      <PageHeader
-        title={activeRoute.name}
-        subtitle={`Рейс · ${stops.length} ${
-          stops.length === 1 ? "точка" : stops.length < 5 ? "точки" : "точек"
-        }`}
-      />
+    <PageShell withStickyFooter>
+      <PageHeader title="Рейс" subtitle={activeRoute.name} />
 
-      <AlertBanner variant="info" title="Как работать в посёлке">
-        Приехали в НП — обходите жителей по адресам из списка. Вручите заказ лично.
-        Житель подтверждает получение в приложении. Уезжайте только когда все в посёлке
-        подтвердили.
-      </AlertBanner>
+      <div className="flex flex-col gap-4">
+        <DriverPhaseHero hero={hero} hideFooter />
+        <DriverRouteChain chain={routeChain} />
 
-      {awaitingAccept.length > 0 ? (
-        <Card className="!p-4 border-amber-200 bg-amber-50/30">
-          <p className="text-sm font-semibold text-amber-950">
-            Принять в рейс: {awaitingAccept.length} заказ(ов)
+        {currentStop?.expectsOrders && currentResidents.length > 0 ? (
+          <Card className="!p-4">
+            <p className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
+              Жители в {currentStop.label}
+            </p>
+            <DriverSettlementResidents orders={currentResidents} compact />
+            {pendingConfirm ? (
+              <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <span>Обойдите по адресам — все должны подтвердить получение</span>
+              </div>
+            ) : null}
+          </Card>
+        ) : null}
+
+        {deliveryRound?.id ? (
+          <ProcurementSettlementCard roundId={deliveryRound.id} />
+        ) : null}
+
+        <div>
+          <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Маршрут
           </p>
-          <div className="mt-3">
-            <DriverSettlementResidents
-              orders={awaitingAccept}
-              showAcceptActions
-              compact
-            />
-          </div>
-        </Card>
-      ) : null}
-
-      {roundId && activeRoute.status === "active" ? (
-        <ProcurementChecklistCard roundId={roundId} />
-      ) : null}
-
-      {deliveryRound?.id ? (
-        <ProcurementSettlementCard roundId={deliveryRound.id} />
-      ) : null}
-
-      {nextStop && !tripCompleted ? (
-        <Card className="ui-panel-gradient border-sky-200">
-          <div className="flex items-start gap-3">
-            <div className="ui-icon-solid flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl">
-              <Truck size={20} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-medium text-sky-700">
-                Сейчас: шаг {nextStop.step} из {stops.length}
-              </p>
-              <p className="truncate font-semibold text-slate-900">{nextStop.label}</p>
-              <p className="text-xs text-slate-600">{nextStop.phase}</p>
-              {nextStop.expectsOrders ? (
-                <p className="mt-1 text-xs font-medium text-slate-700">
-                  Жителей: {nextStop.receivedOrders}/{nextStop.totalOrders} подтвердили
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </Card>
-      ) : null}
-
-      <div>
-        <p className="mb-3 text-sm font-semibold text-slate-800">Этапы рейса</p>
-        <ol className="relative flex flex-col gap-0">
-          {stops.map((stop, index) => {
-            const isLast = index === stops.length - 1
-            const isCurrent = stop.status === "arrived"
-            const isDone = stop.status === "done"
-            const showResidents = stop.expectsOrders && stop.residents.length > 0
-
-            return (
-              <li key={stop.pickupPointId} className="relative flex gap-3 pb-4">
-                {!isLast ? (
+          <ol className="flex flex-col gap-1.5">
+            {deliveryStops.map((stop, index) => {
+              const isDone = stop.status === "completed"
+              const isCurrent = index === currentIndex
+              return (
+                <li
+                  key={stop.pickupPointId}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl border px-3 py-2 text-sm",
+                    isCurrent && "ui-stop-active border-sky-300",
+                    isDone && "ui-stop-done opacity-80",
+                    !isCurrent && !isDone && "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/40",
+                  )}
+                >
                   <span
-                    className={`absolute left-4 top-10 bottom-0 w-0.5 ${
-                      isDone ? "bg-emerald-200" : "bg-slate-200"
-                    }`}
-                    aria-hidden
-                  />
-                ) : null}
-
-                <div
-                  className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                    isDone
-                      ? "bg-emerald-100 text-emerald-800"
-                      : isCurrent
-                        ? "bg-sky-600 text-white"
-                        : "bg-slate-100 text-slate-500"
-                  }`}
-                >
-                  {isDone ? <CheckCircle2 size={16} /> : stop.step}
-                </div>
-
-                <Card
-                  className={`min-w-0 flex-1 !p-4 ${
-                    isCurrent ? "border-sky-300 ring-1 ring-sky-200" : ""
-                  } ${stop.pendingConfirm ? "border-amber-300 bg-amber-50/40" : ""}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                        {stop.phase}
-                      </p>
-                      <p className="font-semibold text-slate-900">{stop.label}</p>
-                    </div>
-                    <Badge
-                      variant={isDone ? "success" : isCurrent ? "info" : "default"}
-                      className="shrink-0"
-                    >
-                      {isDone ? "Пройден" : isCurrent ? "Сейчас" : "Впереди"}
-                    </Badge>
-                  </div>
-
-                  <p className="mt-1 text-sm text-slate-600">{stop.address}</p>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-700">
-                    {stop.instruction}
-                  </p>
-
-                  {stop.expectsOrders ? (
-                    <p className="mt-2 text-xs font-medium text-slate-600">
-                      Подтвердили получение: {stop.receivedOrders}/{stop.totalOrders}
-                      {stop.inTransitOrders > 0
-                        ? ` · ${stop.inTransitOrders} ждут вручения`
-                        : ""}
+                    className={cn(
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                      isDone && "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300",
+                      isCurrent && "bg-slate-900 text-white dark:bg-sky-600",
+                      !isDone && !isCurrent && "bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400",
+                    )}
+                  >
+                    {isDone ? <Check size={14} /> : index + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-slate-900 dark:text-slate-100">
+                      {stop.label}
                     </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {stop.isProcurementStop
+                        ? "Закупка"
+                        : stop.expectsOrders
+                          ? `${stop.receivedOrders ?? 0}/${stop.totalOrders ?? 0} подтвердили`
+                          : "Проезд"}
+                    </p>
+                  </div>
+                  {isCurrent ? (
+                    <span className="shrink-0 text-[10px] font-semibold uppercase text-sky-700 dark:text-sky-300">
+                      Сейчас
+                    </span>
                   ) : null}
+                </li>
+              )
+            })}
+          </ol>
+        </div>
 
-                  {showResidents ? (
-                    <div className="mt-4">
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        Жители в {stop.label}
-                      </p>
-                      <DriverSettlementResidents orders={stop.residents} compact />
-                    </div>
-                  ) : null}
-
-                  {stop.pendingConfirm ? (
-                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950">
-                      <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                      <span>
-                        Есть жители без подтверждения — обойдите по адресам перед отъездом
-                      </span>
-                    </div>
-                  ) : null}
-
-                  {stop.driverCanComplete && roundId ? (
-                    <Button
-                      size="sm"
-                      className="mt-3"
-                      variant={stop.pendingConfirm ? "outline" : "primary"}
-                      disabled={completeStop.isPending || stop.pendingConfirm}
-                      onClick={() =>
-                        completeStop.mutate({
-                          roundId,
-                          pickupPointId: stop.pickupPointId,
-                        })
-                      }
-                    >
-                      {stop.pendingConfirm
-                        ? "Дождитесь подтверждений всех жителей"
-                        : "Посёлок завершён — ехать дальше"}
-                    </Button>
-                  ) : null}
-                </Card>
-              </li>
-            )
-          })}
-        </ol>
+        {tripCompleted ? (
+          <Card className="border-emerald-200 bg-emerald-50/50 !p-4 dark:border-emerald-900/50 dark:bg-emerald-950/30">
+            <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+              Рейс завершён
+            </p>
+          </Card>
+        ) : null}
       </div>
 
-      {tripCompleted ? (
-        <Card className="ui-panel">
-          <p className="text-sm font-semibold text-emerald-800">
-            Рейс завершён: все посёлки пройдены.
-          </p>
-        </Card>
+      {!tripCompleted && action.kind !== "none" ? (
+        <div className="fixed bottom-20 left-0 right-0 z-10 mx-auto max-w-[480px] px-4 sm:bottom-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+            {action.kind === "link" ? (
+              <Link
+                to={action.to}
+                className="ui-cta-primary flex min-h-12 w-full items-center justify-center rounded-xl text-base font-semibold"
+              >
+                {action.label}
+              </Link>
+            ) : (
+              <Button
+                fullWidth
+                size="lg"
+                variant={action.disabled ? "outline" : "primary"}
+                disabled={action.disabled || completeStop.isPending}
+                onClick={() =>
+                  roundId &&
+                  completeStop.mutate({
+                    roundId,
+                    pickupPointId: action.pickupPointId,
+                  })
+                }
+              >
+                {action.label}
+              </Button>
+            )}
+          </div>
+        </div>
       ) : null}
     </PageShell>
   )

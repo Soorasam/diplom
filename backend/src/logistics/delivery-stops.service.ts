@@ -140,6 +140,20 @@ export class DeliveryStopsService {
   }
 
   async completeStopByDriver(roundId: string, pickupPointId: string) {
+    const orderedStops = await this.prisma.roundDeliveryStop.findMany({
+      where: { roundId },
+      include: { pickupPoint: true },
+      orderBy: { sortOrder: 'asc' },
+    });
+    const firstIncomplete = orderedStops.find(
+      (s) => s.status !== DeliveryStopStatus.completed,
+    );
+    if (firstIncomplete && firstIncomplete.pickupPointId !== pickupPointId) {
+      throw new BadRequestException(
+        `Сначала завершите «${firstIncomplete.pickupPoint.name}» — маршрут строго по порядку`,
+      );
+    }
+
     const stop = await this.prisma.roundDeliveryStop.findUnique({
       where: { uq_round_delivery_stop: { roundId, pickupPointId } },
     });

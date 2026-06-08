@@ -1,7 +1,9 @@
-import { MapPin, Phone } from "lucide-react"
+import { useState } from "react"
+import { Check, Copy, MapPin, Phone } from "lucide-react"
 
 import type { Order } from "@/shared/api/api-types"
 import { useUpdateOrderStatus } from "@/entities/order/api/useOrders"
+import { copyTextToClipboard } from "@/shared/lib/copy-text"
 import { formatPrice } from "@/shared/lib/format"
 import {
   isAwaitingTripAccept,
@@ -17,6 +19,27 @@ type Props = {
   orders: Order[]
   showAcceptActions?: boolean
   compact?: boolean
+}
+
+const CopyPhoneButton = ({ phone }: { phone: string }) => {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      type="button"
+      className="inline-flex items-center gap-1 text-xs font-medium text-sky-700"
+      onClick={() => {
+        void copyTextToClipboard(phone).then((ok) => {
+          if (ok) {
+            setCopied(true)
+            window.setTimeout(() => setCopied(false), 2000)
+          }
+        })
+      }}
+    >
+      {copied ? <Check size={12} /> : <Copy size={12} />}
+      {copied ? "Скопировано" : "Копировать"}
+    </button>
+  )
 }
 
 export const DriverSettlementResidents = ({
@@ -66,13 +89,16 @@ export const DriverSettlementResidents = ({
               )}
 
               {order.userPhone ? (
-                <a
-                  href={`tel:${order.userPhone.replace(/\s/g, "")}`}
-                  className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-sky-700"
-                >
-                  <Phone size={14} />
-                  {order.userPhone}
-                </a>
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <a
+                    href={`tel:${order.userPhone.replace(/\s/g, "")}`}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-sky-700"
+                  >
+                    <Phone size={14} />
+                    {order.userPhone}
+                  </a>
+                  <CopyPhoneButton phone={order.userPhone} />
+                </div>
               ) : null}
 
               <ul className="mt-2 space-y-1 text-sm text-slate-700">

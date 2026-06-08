@@ -101,14 +101,20 @@ export class CoordinatorService {
         const roundOrders = orders.filter((o) => o.round?.id === round.id);
         const stops = stopsByRound.get(round.id) ?? [];
 
-        deliveryStops = stops.map((s) => {
+        const firstOpenStopIndex = stops.findIndex(
+          (s) => s.status !== DeliveryStopStatus.completed,
+        );
+
+        deliveryStops = stops.map((s, stopIndex) => {
           const counts = this.deliveryStops.orderCountsForStop(
             roundOrders,
             s.pickupPointId,
           );
           const derivedStatus = this.deriveStopUiStatus(s, counts);
           const expectsOrders = counts.total > 0;
+          const isCurrentStop = stopIndex === firstOpenStopIndex;
           const driverCanComplete =
+            isCurrentStop &&
             (
               !expectsOrders ||
               counts.received === counts.total

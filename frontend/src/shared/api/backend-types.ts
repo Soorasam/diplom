@@ -51,6 +51,13 @@ export interface BackendRoundWaypoint {
   pickupPoint?: { id: string; name: string }
 }
 
+export interface BackendRouteProgressStop {
+  pickupPointId: string
+  label: string
+  status: "pending" | "in_progress" | "completed"
+  isProcurementStop: boolean
+}
+
 export interface BackendRound {
   id: string
   routeId: string
@@ -75,4 +82,5 @@ export interface BackendRound {
   progressPercent: number
   route: BackendRoute
   activeOrdersCount?: number
+  routeProgress?: BackendRouteProgressStop[]
 }

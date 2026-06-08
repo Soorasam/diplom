@@ -7,7 +7,16 @@ import {
   isDeliveryRoundInProgress,
   isOpenCollectionRound,
 } from "@/shared/lib/driver-round-workload"
-import { MapPin, PlusCircle, RotateCcw, Save, Sparkles, Trash2, Truck } from "lucide-react"
+import {
+  MapPin,
+  Package,
+  PlusCircle,
+  RotateCcw,
+  Save,
+  Sparkles,
+  Trash2,
+  Truck,
+} from "lucide-react"
 
 import {
   useCreateProcurement,
@@ -258,53 +267,17 @@ export const DriverProcurementsPage = () => {
           <Spinner />
         </div>
       ) : (
-        <>
-          {templates.length > 0 ? (
-            <Card className="border-slate-200">
-              <p className="text-sm font-semibold text-slate-900">Сохранённые маршруты</p>
-              <p className="mt-1 text-xs text-slate-500">
-                Подставить копирует маршрут в форму — его можно изменить перед созданием сбора.
-              </p>
-              <ul className="mt-3 flex flex-col gap-2">
-                {templates.map((t) => (
-                  <li
-                    key={t.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-900">{t.title}</p>
-                      <p className="text-xs text-slate-500">{t.waypoints.length} пунктов</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => applyTemplate(t.id)}
-                      >
-                        Подставить
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => deleteTemplate.mutate(t.id)}
-                        disabled={deleteTemplate.isPending}
-                      >
-                        <Trash2 size={16} />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </Card>
-          ) : null}
-
+        <div className="flex flex-col gap-4">
           {hasActiveRound && activeRound ? (
-            <Card className="border-sky-200 bg-sky-50/40">
-              <p className="text-sm font-semibold text-slate-900">Активный сбор</p>
-              <p className="mt-1 truncate text-base font-bold text-slate-900">{activeRound.title}</p>
-              <p className="mt-1 text-xs text-slate-600">
-                Создан: {formatShortDate(activeRound.createdAt)} · дедлайн:{" "}
-                {formatShortDate(activeRound.closesAt)}
+            <Card className="border-sky-200 bg-sky-50/40 !p-4 dark:border-sky-900/50 dark:bg-sky-950/20">
+              <p className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-400">
+                Текущий сбор
+              </p>
+              <p className="mt-1 truncate text-lg font-bold text-slate-900 dark:text-slate-100">
+                {activeRound.title}
+              </p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Дедлайн: {formatShortDate(activeRound.closesAt)}
               </p>
               {activeRound.emergencyCloseAt ? (
                 <div className="mt-3">
@@ -315,21 +288,27 @@ export const DriverProcurementsPage = () => {
                 </div>
               ) : (
                 <p className="mt-2 text-xs text-slate-600">
-                  Одновременно может быть только один активный сбор. Новый сбор можно создать
-                  после закрытия текущего.
+                  Одновременно может быть только один активный сбор.
                 </p>
               )}
-              <div className="mt-4 border-t border-slate-200/80 pt-4">
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <Link
+                  to={routes.driver.orders}
+                  className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-sky-600 text-sm font-semibold text-white"
+                >
+                  <Package size={16} />
+                  Заказы жителей
+                </Link>
                 <Button
                   type="button"
                   variant="ghost"
-                  className="h-auto min-h-0 w-full justify-center px-2 py-2 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                  className="text-xs text-slate-500"
                   disabled={Boolean(activeRound.emergencyCloseAt) || scheduleEmergencyClose.isPending}
                   onClick={() => setEmergencyModalOpen(true)}
                 >
                   {activeRound.emergencyCloseAt
-                    ? "Закрытие уже запланировано"
-                    : "Закрыть сбор досрочно…"}
+                    ? "Закрытие запланировано"
+                    : "Закрыть досрочно…"}
                 </Button>
               </div>
             </Card>
@@ -337,20 +316,22 @@ export const DriverProcurementsPage = () => {
 
           {hasDeliveryInProgress && deliveryRound ? (
             <>
-              <Card className="border-amber-200 bg-amber-50/50">
-                <p className="text-sm font-semibold text-amber-950">Доставка по маршруту</p>
-                <p className="mt-1 text-sm text-amber-900/80">
-                  Сбор «{deliveryRound.title}» закрыт. Новый сбор можно создать после того, как
-                  завершите выдачу заказов в посёлках на маршруте.
-                </p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Link
+                  to={routes.driver.orders}
+                  className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-sm font-semibold text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                >
+                  <Package size={16} />
+                  Заказы по посёлкам
+                </Link>
                 <Link
                   to={routes.driver.route}
-                  className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl border border-amber-300 bg-white px-4 text-sm font-semibold text-amber-900 hover:bg-amber-50"
+                  className="ui-cta-primary inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl text-sm font-semibold"
                 >
-                  <MapPin size={18} />
-                  Открыть маршрут
+                  <MapPin size={16} />
+                  Рейс
                 </Link>
-              </Card>
+              </div>
               <ProcurementSettlementCard roundId={deliveryRound.id} />
             </>
           ) : null}
@@ -391,7 +372,7 @@ export const DriverProcurementsPage = () => {
                   onChange={(e) =>
                     setTransportType(e.target.value as CreateRoutePlanPayload["transportType"])
                   }
-                  className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                  className="min-h-11 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
                 >
                   {transportOptions.map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -449,7 +430,46 @@ export const DriverProcurementsPage = () => {
           </div>
             </>
           ) : null}
-        </>
+
+          {templates.length > 0 ? (
+            <Card className="border-slate-200">
+              <p className="text-sm font-semibold text-slate-900">Сохранённые маршруты</p>
+              <p className="mt-1 text-xs text-slate-500">
+                Подставить копирует маршрут в форму — его можно изменить перед созданием сбора.
+              </p>
+              <ul className="mt-3 flex flex-col gap-2">
+                {templates.map((t) => (
+                  <li
+                    key={t.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-slate-900">{t.title}</p>
+                      <p className="text-xs text-slate-500">{t.waypoints.length} пунктов</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => applyTemplate(t.id)}
+                      >
+                        Подставить
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => deleteTemplate.mutate(t.id)}
+                        disabled={deleteTemplate.isPending}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ) : null}
+        </div>
       )}
 
       <EmergencyCloseModal
@@ -461,25 +481,27 @@ export const DriverProcurementsPage = () => {
 
       {closedProcurements.length > 0 ? (
         <>
-          <p className="text-sm font-semibold text-slate-900">Завершённые сборы</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            Завершённые сборы
+          </p>
           <ul className="flex flex-col gap-2">
             {closedProcurements.map((p) => {
               const display = getProcurementDisplayStatus(p)
               return (
-              <li key={p.id}>
-                <Card className="border-slate-200">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-slate-900">{p.title}</p>
-                      <p className="text-xs text-slate-500">
-                        Создан: {formatShortDate(p.createdAt)} · закрытие:{" "}
-                        {formatShortDate(p.closesAt)}
-                      </p>
-                    </div>
-                    <Badge variant={display.variant}>{display.label}</Badge>
+                <li
+                  key={p.id}
+                  className="flex items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800/60"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {p.title}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {formatShortDate(p.createdAt)} · {formatShortDate(p.closesAt)}
+                    </p>
                   </div>
-                </Card>
-              </li>
+                  <Badge variant={display.variant}>{display.label}</Badge>
+                </li>
               )
             })}
           </ul>
