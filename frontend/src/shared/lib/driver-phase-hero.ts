@@ -32,10 +32,10 @@ export type DriverPhaseHero = {
 /** @deprecated use DriverPhaseHero */
 export type DriverDashboardHero = DriverPhaseHero
 
-const countActiveItems = (orders: Order[]) =>
+const countActiveLineItems = (orders: Order[]) =>
   orders
     .filter((o) => !isDelivered(o) && o.status !== "cancelled")
-    .reduce((sum, o) => sum + o.items.reduce((s, i) => s + i.quantity, 0), 0)
+    .reduce((sum, o) => sum + o.items.length, 0)
 
 const countActiveOrders = (orders: Order[]) =>
   orders.filter((o) => !isDelivered(o) && o.status !== "cancelled").length
@@ -85,7 +85,7 @@ export const buildDriverDashboardHero = (input: {
 
   if (currentStop?.isProcurementStop && !currentStop.procurementCompleted) {
     const orderCount = countActiveOrders(orders)
-    const itemTotal = checklistItemCount || countActiveItems(orders)
+    const itemTotal = checklistItemCount || countActiveLineItems(orders)
     return {
       phase: "procurement",
       phaseLabel: "Закупка",
@@ -152,7 +152,7 @@ export const buildDriverDashboardHero = (input: {
         deliveryRound.routeTitle?.trim() || "Закупка и доставка по маршруту",
       stats: [
         { label: "заказов", value: String(countActiveOrders(orders)) },
-        { label: "позиций", value: String(countActiveItems(orders)) },
+        { label: "позиций", value: String(countActiveLineItems(orders)) },
       ],
       ctaLabel: "Заказы по НП",
       ctaTo: routes.driver.route,

@@ -73,6 +73,8 @@ export const CartPage = () => {
     procurement.currentWeightKg + cartWeightKg >
       procurement.targetWeightKg + 0.001
 
+  const missingAddress = isAuthenticated && !user?.deliveryAddress?.trim()
+
   const canCheckout =
     isAuthenticated &&
     canCheckoutRound &&
@@ -214,6 +216,15 @@ export const CartPage = () => {
                   Оформить и оплатить
                 </Button>
               </Link>
+            ) : missingAddress ? (
+              <Button
+                type="button"
+                fullWidth
+                size="lg"
+                onClick={() => navigate(routes.user.addresses)}
+              >
+                Укажите адрес дома
+              </Button>
             ) : (
               <Button type="button" fullWidth size="lg" disabled>
                 {checkoutHint}

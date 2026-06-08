@@ -2,6 +2,8 @@ import { useState } from "react"
 import { Link } from "react-router-dom"
 import { Check, Copy, Phone, Truck } from "lucide-react"
 
+import { ResidentPhaseStepIcon } from "./ResidentPhaseStepIcon"
+
 import { useConfirmAllReceipts } from "@/entities/order/api/useOrders"
 import type { Order, Procurement } from "@/shared/api/api-types"
 import { routes } from "@/shared/config/routes"
@@ -44,8 +46,8 @@ export const ResidentProcurementHero = ({
   const unpaid = activeOrders.filter((o) => o.paymentStatus === "pending")
 
   const combinedTotal = activeOrders.reduce((sum, o) => sum + o.total, 0)
-  const combinedItems = activeOrders.reduce(
-    (sum, o) => sum + o.items.reduce((s, i) => s + i.quantity, 0),
+  const combinedLineItems = activeOrders.reduce(
+    (sum, o) => sum + o.items.length,
     0,
   )
 
@@ -85,11 +87,11 @@ export const ResidentProcurementHero = ({
         ) : null}
 
         <ol className="ui-phase-hero-divider mt-5 flex items-center justify-between gap-1 border-t pt-4">
-          {phase.steps.map((step, index) => (
+          {phase.steps.map((step) => (
             <li key={step.id} className="flex min-w-0 flex-1 flex-col items-center gap-1">
               <span
                 className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold",
+                  "flex h-8 w-8 items-center justify-center rounded-full",
                   step.status === "done" &&
                     "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
                   step.status === "active" &&
@@ -98,7 +100,7 @@ export const ResidentProcurementHero = ({
                     "bg-slate-100 text-slate-400 dark:bg-white/10 dark:text-slate-500",
                 )}
               >
-                {step.status === "done" ? <Check size={14} /> : index + 1}
+                <ResidentPhaseStepIcon step={step} />
               </span>
               <span
                 className={cn(
@@ -162,8 +164,8 @@ export const ResidentProcurementHero = ({
         {activeOrders.length > 0 ? (
           <p className="text-sm text-slate-700 dark:text-slate-300">
             {activeOrders.length > 1
-              ? `${activeOrders.length} заказа · ${combinedItems} поз. · ${formatPrice(combinedTotal)}`
-              : `${combinedItems} поз. · ${formatPrice(combinedTotal)}`}
+              ? `${activeOrders.length} заказа · ${combinedLineItems} поз. · ${formatPrice(combinedTotal)}`
+              : `${combinedLineItems} поз. · ${formatPrice(combinedTotal)}`}
           </p>
         ) : null}
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Check, MapPin } from "lucide-react"
 
@@ -6,6 +6,14 @@ import { useAuthStore } from "@/app/model/auth-store"
 import { useSettlements } from "@/entities/settlement/api/useSettlements"
 import { queryKeys } from "@/shared/config/query-keys"
 import { useProfileRoutes } from "@/shared/hooks/useProfileRoutes"
+import {
+  formatDeliveryAddress,
+  hasDeliveryAddressErrors,
+  parseDeliveryAddress,
+  validateDeliveryAddressParts,
+  type DeliveryAddressFieldErrors,
+  type DeliveryAddressParts,
+} from "@/shared/lib/delivery-address"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { Card } from "@/shared/ui/card/Card"
 import { Input } from "@/shared/ui/input/Input"
@@ -21,16 +29,30 @@ export const AddressesPage = () => {
   const updateProfile = useAuthStore((s) => s.updateProfile)
   const { data: settlements, isLoading } = useSettlements()
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
-  const [address, setAddress] = useState(user?.deliveryAddress ?? "")
+  const [addressParts, setAddressParts] = useState<DeliveryAddressParts>(() =>
+    parseDeliveryAddress(user?.deliveryAddress),
+  )
+  const [fieldErrors, setFieldErrors] = useState<DeliveryAddressFieldErrors>({})
   const [savingAddress, setSavingAddress] = useState(false)
 
   useEffect(() => {
-    setAddress(user?.deliveryAddress ?? "")
+    setAddressParts(parseDeliveryAddress(user?.deliveryAddress))
+    setFieldErrors({})
   }, [user?.deliveryAddress])
+
+  const formattedPreview = useMemo(() => {
+    const street = addressParts.street.trim()
+    const house = addressParts.house.trim()
+    if (!street && !house) return null
+    if (!street || !house) return null
+    return formatDeliveryAddress(addressParts)
+  }, [addressParts])
 
   const handleSelect = async (settlementId: string) => {
     setError(null)
+    setSuccess(null)
     setSavingId(settlementId)
     try {
       await updateSettlement(settlementId)
@@ -43,17 +65,34 @@ export const AddressesPage = () => {
     }
   }
 
+  const updatePart = (key: keyof DeliveryAddressParts, value: string) => {
+    setSuccess(null)
+    setAddressParts((prev) => ({ ...prev, [key]: value }))
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev
+      const next = { ...prev }
+      delete next[key]
+      return next
+    })
+  }
+
   const handleSaveAddress = async () => {
-    const trimmed = address.trim()
-    if (!trimmed) {
-      setError("Укажите адрес дома — водитель привезёт заказ лично")
+    const errors = validateDeliveryAddressParts(addressParts)
+    if (hasDeliveryAddressErrors(errors)) {
+      setFieldErrors(errors)
+      setError("Проверьте адрес: улица, дом и при необходимости корпус")
+      setSuccess(null)
       return
     }
+
+    const formatted = formatDeliveryAddress(addressParts)
     setError(null)
     setSavingAddress(true)
     try {
-      await updateProfile({ deliveryAddress: trimmed })
+      await updateProfile({ deliveryAddress: formatted })
+      setSuccess("Адрес сохранён — водитель увидит его при доставке")
     } catch (e) {
+      setSuccess(null)
       setError(e instanceof Error ? e.message : "Не удалось сохранить адрес")
     } finally {
       setSavingAddress(false)
@@ -74,13 +113,51 @@ export const AddressesPage = () => {
         </p>
       ) : null}
 
+      {success ? (
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          {success}
+        </p>
+      ) : null}
+
       <Card className="!p-4">
-        <Input
-          label="Адрес дома"
-          placeholder="Улица, дом, ориентир для водителя"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-        />
+        <p className="mb-3 text-sm font-semibold text-slate-900">Адрес дома</p>
+        <div className="space-y-3">
+          <Input
+            label="Улица"
+            placeholder="Петровского"
+            value={addressParts.street}
+            error={fieldErrors.street}
+            onChange={(e) => updatePart("street", e.target.value)}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Дом"
+              placeholder="32"
+              inputMode="text"
+              value={addressParts.house}
+              error={fieldErrors.house}
+              onChange={(e) => updatePart("house", e.target.value)}
+            />
+            <Input
+              label="Корпус"
+              placeholder="Необязательно"
+              inputMode="text"
+              value={addressParts.building}
+              error={fieldErrors.building}
+              onChange={(e) => updatePart("building", e.target.value)}
+            />
+          </div>
+        </div>
+        {formattedPreview ? (
+          <p className="mt-3 text-xs text-slate-500">
+            Будет сохранено как:{" "}
+            <span className="font-medium text-slate-700">{formattedPreview}</span>
+          </p>
+        ) : (
+          <p className="mt-3 text-xs text-slate-500">
+            Формат: улица Петровского, дом 32, корпус 1
+          </p>
+        )}
         <Button
           type="button"
           fullWidth

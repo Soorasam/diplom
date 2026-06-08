@@ -69,6 +69,14 @@ export function mapOrderListItem(order: OrderForMapper) {
     deliveryAddress: order.deliveryAddress,
     expectedAt: order.expectedAt,
     createdAt: order.createdAt,
+    items: order.items.map((i) => ({
+      productId: i.productId,
+      productName: i.productName,
+      quantity: i.quantity,
+      unit: i.unit,
+      price: decimalToNumber(i.priceSnapshot),
+      priceSnapshot: decimalToNumber(i.priceSnapshot),
+    })),
   };
 }
 

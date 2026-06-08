@@ -43,5 +43,8 @@ export class UpdateProfileDto {
   @IsString()
   @MaxLength(500)
   @Transform(({ value }) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim() : value))
+  @Matches(/^улица .+, дом [^,]+(, корпус .+)?$/, {
+    message: 'Адрес: улица …, дом …, корпус … (корпус необязателен)',
+  })
   deliveryAddress?: string;
 }

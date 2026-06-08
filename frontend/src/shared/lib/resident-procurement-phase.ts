@@ -23,7 +23,7 @@ const COLLECTION_STEPS: ResidentPhaseStep[] = [
   { id: "collection", label: "Сбор", shortLabel: "Сбор", status: "pending" },
   { id: "pay", label: "Оплата", shortLabel: "Оплата", status: "pending" },
   { id: "procurement", label: "Закупка", shortLabel: "Закупка", status: "pending" },
-  { id: "transit", label: "В пути", shortLabel: "Путь", status: "pending" },
+  { id: "transit", label: "В пути", shortLabel: "В пути", status: "pending" },
   { id: "delivery", label: "Выдача", shortLabel: "Выдача", status: "pending" },
 ]
 
@@ -49,53 +49,59 @@ const activeOrders = (orders: Order[]) =>
 const confirmableOrders = (orders: Order[]) =>
   orders.filter((o) => o.status === "in_transit" || o.status === "at_pickup")
 
-const buildRouteSteps = (
-  progress: ProcurementRouteProgressStop[],
-  userPickupPointId?: string | null,
-): ResidentPhaseStep[] => {
-  const currentIndex = progress.findIndex((s) => s.status !== "completed")
+const isPaymentDone = (orders: Order[]) =>
+  orders.some(
+    (o) =>
+      o.status !== "cancelled" &&
+      (o.paymentStatus === "held" ||
+        o.paymentStatus === "released" ||
+        o.status === "confirmed" ||
+        o.status === "in_transit" ||
+        o.status === "at_pickup" ||
+        o.status === "delivered"),
+  )
 
-  return progress.map((stop, index) => {
-    const isUserStop = Boolean(
-      userPickupPointId && stop.pickupPointId === userPickupPointId,
-    )
-    const shortLabel = stop.isProcurementStop
-      ? "Закупка"
-      : isUserStop
-        ? "Ваш НП"
-        : stop.label.length > 8
-          ? `${stop.label.slice(0, 7)}…`
-          : stop.label
-
-    let status: ResidentPhaseStep["status"] = "pending"
-    if (stop.status === "completed") status = "done"
-    else if (index === currentIndex) status = "active"
-    else if (stop.status === "in_progress") status = "active"
-
-    return {
-      id: stop.pickupPointId,
-      label: stop.label,
-      shortLabel,
-      status,
-    }
-  })
+type CollectionStepOptions = {
+  paymentDone?: boolean
+  stepOverrides?: Partial<Record<number, Pick<ResidentPhaseStep, "label" | "shortLabel">>>
 }
 
-const resolveRoutePhase = (
+const markCollectionSteps = (
+  activeIndex: number,
+  options?: CollectionStepOptions,
+): ResidentPhaseStep[] =>
+  COLLECTION_STEPS.map((s, i) => {
+    let step: ResidentPhaseStep = { ...s, ...options?.stepOverrides?.[i] }
+    if (options?.paymentDone && i === 1) {
+      step = { ...step, label: "Оплачено", shortLabel: "Оплачено" }
+    }
+    return {
+      ...step,
+      status: (i < activeIndex
+        ? "done"
+        : i === activeIndex
+          ? "active"
+          : "pending") as ResidentPhaseStep["status"],
+    }
+  })
+
+type RoutePhaseMeta = Omit<ResidentPhaseView, "steps"> & { collectionStepIndex: number }
+
+const resolveRoutePhaseMeta = (
   progress: ProcurementRouteProgressStop[],
   orders: Order[],
   np: string,
   userPickupPointId?: string | null,
-): ResidentPhaseView | null => {
+): RoutePhaseMeta | null => {
   const userStopIndex = userPickupPointId
     ? progress.findIndex((s) => s.pickupPointId === userPickupPointId)
     : -1
   const currentIndex = progress.findIndex((s) => s.status !== "completed")
   const currentStop = currentIndex >= 0 ? progress[currentIndex] : undefined
   const userStop = userStopIndex >= 0 ? progress[userStopIndex] : undefined
-  const steps = buildRouteSteps(progress, userPickupPointId)
   const toConfirm = confirmableOrders(orders)
   const routeStillActive = progress.some((s) => s.status !== "completed")
+  const paymentDone = isPaymentDone(orders)
 
   if (orders.length > 0 && orders.every((o) => o.status === "delivered")) {
     return {
@@ -104,7 +110,7 @@ const resolveRoutePhase = (
       subline: routeStillActive
         ? `Водитель продолжает маршрут${currentStop ? ` · сейчас ${currentStop.label}` : ""}`
         : `${orders.length} заказ(ов) в этом сборе`,
-      steps: routeStillActive ? steps : steps.map((s) => ({ ...s, status: "done" as const })),
+      collectionStepIndex: 4,
       currentLocationLabel: routeStillActive ? currentStop?.label : undefined,
     }
   }
@@ -117,7 +123,7 @@ const resolveRoutePhase = (
         toConfirm.length > 1
           ? `${toConfirm.length} заказа — одной кнопкой ниже`
           : "Водитель вручил заказ — подтвердите в приложении",
-      steps,
+      collectionStepIndex: 4,
       currentLocationLabel: np,
     }
   }
@@ -127,7 +133,7 @@ const resolveRoutePhase = (
       phaseId: "soon_delivery",
       headline: "Скоро выдача",
       subline: `Водитель в ${np} — ожидайте по адресу`,
-      steps,
+      collectionStepIndex: 4,
       currentLocationLabel: np,
     }
   }
@@ -139,7 +145,7 @@ const resolveRoutePhase = (
       subline: routeStillActive
         ? `Водитель продолжает маршрут${currentStop ? ` · сейчас ${currentStop.label}` : ""}`
         : "Заказы получены",
-      steps,
+      collectionStepIndex: 4,
       currentLocationLabel: routeStillActive ? currentStop?.label : undefined,
     }
   }
@@ -149,7 +155,7 @@ const resolveRoutePhase = (
       phaseId: "procurement",
       headline: "Закупка",
       subline: `Водитель закупает товары · сейчас ${currentStop.label}`,
-      steps,
+      collectionStepIndex: 2,
       currentLocationLabel: currentStop.label,
     }
   }
@@ -159,7 +165,7 @@ const resolveRoutePhase = (
       phaseId: "in_transit",
       headline: `В пути в ${np}`,
       subline: `Сейчас: ${currentStop.label}`,
-      steps,
+      collectionStepIndex: 3,
       currentLocationLabel: currentStop.label,
     }
   }
@@ -169,7 +175,7 @@ const resolveRoutePhase = (
       phaseId: "in_transit",
       headline: "Доставка по маршруту",
       subline: `Сейчас: ${currentStop.label}`,
-      steps,
+      collectionStepIndex: 3,
       currentLocationLabel: currentStop.label,
     }
   }
@@ -178,7 +184,7 @@ const resolveRoutePhase = (
     phaseId: "in_transit",
     headline: `Ожидайте доставку в ${np}`,
     subline: currentStop ? `Маршрут: сейчас ${currentStop.label}` : undefined,
-    steps,
+    collectionStepIndex: paymentDone ? 3 : 2,
     currentLocationLabel: currentStop?.label,
   }
 }
@@ -194,31 +200,33 @@ export const getResidentProcurementPhase = ({
   const active = activeOrders(orders)
   const primary = active[0] ?? orders[0]
   const progress = routeProgress ?? procurement?.routeProgress
+  const paymentDone = isPaymentDone(orders)
 
   if (progress && progress.length > 0) {
-    const routeView = resolveRoutePhase(progress, orders, np, userPickupPointId)
-    if (routeView) return routeView
+    const meta = resolveRoutePhaseMeta(progress, orders, np, userPickupPointId)
+    if (meta) {
+      const { collectionStepIndex, ...view } = meta
+      const allDelivered = orders.length > 0 && orders.every((o) => o.status === "delivered")
+      const routeStillActive = progress.some((s) => s.status !== "completed")
+      const steps = markCollectionSteps(collectionStepIndex, { paymentDone })
+      return {
+        ...view,
+        steps:
+          allDelivered && !routeStillActive
+            ? steps.map((s) => ({ ...s, status: "done" as const }))
+            : steps,
+      }
+    }
   }
-
-  const steps = COLLECTION_STEPS.map((s) => ({ ...s }))
 
   if (!procurement) {
     return {
       phaseId: "browse",
       headline: "Выберите сбор",
       subline: "Вступите в активный сбор вашего посёлка",
-      steps: steps.map((s, i) => ({
-        ...s,
-        status: (i === 0 ? "active" : "pending") as ResidentPhaseStep["status"],
-      })),
+      steps: markCollectionSteps(0),
     }
   }
-
-  const markStep = (index: number) =>
-    steps.map((s, i) => ({
-      ...s,
-      status: (i < index ? "done" : i === index ? "active" : "pending") as ResidentPhaseStep["status"],
-    }))
 
   if (orders.length > 0 && orders.every((o) => o.status === "delivered")) {
     const routeDone = procurement.status === "shipped"
@@ -227,8 +235,11 @@ export const getResidentProcurementPhase = ({
       headline: "Заказы получены",
       subline: routeDone ? undefined : "Водитель завершает доставку по маршруту",
       steps: routeDone
-        ? markStep(steps.length - 1).map((s) => ({ ...s, status: "done" as const }))
-        : markStep(4),
+        ? markCollectionSteps(4, { paymentDone }).map((s) => ({
+            ...s,
+            status: "done" as const,
+          }))
+        : markCollectionSteps(4, { paymentDone }),
     }
   }
 
@@ -241,7 +252,7 @@ export const getResidentProcurementPhase = ({
         toConfirm.length > 1
           ? `${toConfirm.length} заказа — подтвердите одной кнопкой`
           : "Водитель вручил заказ",
-      steps: markStep(4),
+      steps: markCollectionSteps(4, { paymentDone }),
     }
   }
 
@@ -250,7 +261,7 @@ export const getResidentProcurementPhase = ({
       phaseId: "in_transit",
       headline: `В пути в ${np}`,
       subline: "Водитель везёт заказ по маршруту",
-      steps: markStep(3),
+      steps: markCollectionSteps(3, { paymentDone }),
     }
   }
 
@@ -259,7 +270,7 @@ export const getResidentProcurementPhase = ({
       phaseId: "soon_delivery",
       headline: "Скоро выдача",
       subline: `Водитель в ${np}`,
-      steps: markStep(4),
+      steps: markCollectionSteps(4, { paymentDone }),
     }
   }
 
@@ -274,7 +285,7 @@ export const getResidentProcurementPhase = ({
         phaseId: "procurement",
         headline: "Закупка",
         subline: "Водитель закупает товары для вашего заказа",
-        steps: markStep(2),
+        steps: markCollectionSteps(2, { paymentDone }),
       }
     }
     return {
@@ -283,7 +294,12 @@ export const getResidentProcurementPhase = ({
       subline: closed
         ? "Водитель готовится к закупке"
         : "Примут в рейс после закрытия сбора",
-      steps: markStep(closed ? 2 : 1),
+      steps: markCollectionSteps(2, {
+        paymentDone: true,
+        stepOverrides: closed
+          ? undefined
+          : { 2: { label: "Ожидание", shortLabel: "Ожидание" } },
+      }),
     }
   }
 
@@ -292,7 +308,7 @@ export const getResidentProcurementPhase = ({
       phaseId: "pay_order",
       headline: "Оплатите заказ",
       subline: active.length > 1 ? `${active.length} неоплаченных заказа` : undefined,
-      steps: markStep(1),
+      steps: markCollectionSteps(1),
     }
   }
 
@@ -301,7 +317,7 @@ export const getResidentProcurementPhase = ({
       phaseId: "collection_closing",
       headline: "Сбор закрывается",
       subline: "Успейте оформить и оплатить заказ",
-      steps: markStep(0),
+      steps: markCollectionSteps(0),
     }
   }
 
@@ -310,7 +326,7 @@ export const getResidentProcurementPhase = ({
       phaseId: "collection_open",
       headline: "Сбор открыт",
       subline: "Выберите товары в каталоге",
-      steps: markStep(0),
+      steps: markCollectionSteps(0),
     }
   }
 
@@ -321,13 +337,13 @@ export const getResidentProcurementPhase = ({
       subline: orders.length
         ? "Водитель закупает и везёт по маршруту"
         : "Вы не оформили заказ в этом сборе",
-      steps: markStep(orders.length ? 2 : 0),
+      steps: markCollectionSteps(orders.length ? 2 : 0, { paymentDone }),
     }
   }
 
   return {
     phaseId: "collection_open",
     headline: procurement.title,
-    steps: markStep(0),
+    steps: markCollectionSteps(0),
   }
 }
