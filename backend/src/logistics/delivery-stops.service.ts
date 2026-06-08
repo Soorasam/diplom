@@ -17,29 +17,10 @@ import { PrismaService } from '../prisma/prisma.service';
 export class DeliveryStopsService {
   constructor(private prisma: PrismaService) {}
 
+  /** Подготавливает точки маршрута при закрытии сбора. Статус заказов не меняет — принятие в рейс только вручную водителем. */
   async dispatchRound(roundId: string) {
     await this.syncStopsForRound(roundId);
-
-    await this.prisma.order.updateMany({
-      where: { roundId, status: OrderStatus.submitted },
-      data: {
-        status: OrderStatus.confirmed,
-        statusNote: ORDER_STATUS_LABELS.confirmed,
-      },
-    });
-
-    const { count } = await this.prisma.order.updateMany({
-      where: {
-        roundId,
-        status: OrderStatus.submitted,
-      },
-      data: {
-        status: OrderStatus.confirmed,
-        statusNote: ORDER_STATUS_LABELS.confirmed,
-      },
-    });
-
-    return { ordersDispatched: count, awaitingProcurement: true };
+    return { awaitingProcurement: true };
   }
 
   async releaseOrdersToTransit(roundId: string) {

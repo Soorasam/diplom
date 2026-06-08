@@ -14,6 +14,7 @@ import {
 } from '../common/order-mapper';
 import { ORDER_STATUS_LABELS } from '../common/order-labels';
 import { DeliveryStopsService } from '../logistics/delivery-stops.service';
+import { ProcurementChecklistService } from '../logistics/procurement-checklist.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 
@@ -24,6 +25,7 @@ export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private deliveryStops: DeliveryStopsService,
+    private procurementChecklist: ProcurementChecklistService,
   ) {}
 
   private async findOrderOrThrow(id: string): Promise<OrderWithUser> {
@@ -157,6 +159,12 @@ export class OrdersService {
       order.pickupPointId,
       dto.status,
     );
+
+    if (dto.status === OrderStatus.confirmed && order.roundId) {
+      await this.procurementChecklist.initItemsForAcceptedOrders(order.roundId, [
+        orderId,
+      ]);
+    }
 
     return this.withCustomer(updated);
   }

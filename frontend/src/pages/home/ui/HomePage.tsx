@@ -4,10 +4,7 @@ import { ArrowRight, ShoppingBag, Truck } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { useSyncSelectedProcurement } from "@/features/procurement/hooks/useSyncSelectedProcurement"
-import {
-  useActiveProcurementsEnriched,
-  useProcurement,
-} from "@/entities/procurement/api/useProcurements"
+import { useProcurement } from "@/entities/procurement/api/useProcurements"
 import { useResidentJoinedProcurements } from "@/shared/hooks/useResidentJoinedProcurements"
 import { useOrders } from "@/entities/order/api/useOrders"
 import { useCategories, usePopularProducts } from "@/entities/product/api/useProducts"
@@ -16,9 +13,19 @@ import { useUserDeliverySettlement } from "@/shared/hooks/useUserDeliverySettlem
 import { cn } from "@/shared/lib/cn"
 import { Card } from "@/shared/ui/card/Card"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
-import { ProcurementCard } from "@/widgets/procurement-card/ui/ProcurementCard"
 import { ProductCard } from "@/widgets/product-card/ui/ProductCard"
 import { ResidentProcurementHero } from "@/widgets/resident-procurement-hero/ui/ResidentProcurementHero"
+import type { Order, Procurement } from "@/shared/api/api-types"
+
+const isProcurementActiveForHero = (procurement: Procurement, orders: Order[]) => {
+  if (procurement.status === "open" || procurement.status === "closing") {
+    return true
+  }
+  const relevant = orders.filter(
+    (o) => o.procurementId === procurement.id && o.status !== "cancelled",
+  )
+  return relevant.some((o) => o.status !== "delivered")
+}
 
 export const HomePage = () => {
   const user = useAuthStore((s) => s.user)
@@ -26,7 +33,6 @@ export const HomePage = () => {
   const { settlementName, locationId } = useUserDeliverySettlement()
   const userPickupPointId = user?.pickupPointId ?? locationId
   const { data: orders } = useOrders(user?.id)
-  const { data: openProcurementsNearby } = useActiveProcurementsEnriched()
   const { joinedProcurements, isLoading: loadingProcurements } =
     useResidentJoinedProcurements(user?.id, orders)
   const { data: popular, isLoading: loadingPopular } = usePopularProducts()
@@ -36,14 +42,19 @@ export const HomePage = () => {
     null,
   )
 
+  const activeJoinedProcurements = useMemo(
+    () => joinedProcurements.filter((p) => isProcurementActiveForHero(p, orders ?? [])),
+    [joinedProcurements, orders],
+  )
+
   useEffect(() => {
-    if (joinedProcurements.length === 0) {
+    if (activeJoinedProcurements.length === 0) {
       setSelectedProcurementId(null)
       return
     }
     if (
       selectedProcurementId &&
-      joinedProcurements.some((p) => p.id === selectedProcurementId)
+      activeJoinedProcurements.some((p) => p.id === selectedProcurementId)
     ) {
       return
     }
@@ -51,16 +62,16 @@ export const HomePage = () => {
       (o) => o.status !== "delivered" && o.status !== "cancelled",
     )
     const preferred = withActiveOrder
-      ? joinedProcurements.find((p) => p.id === withActiveOrder.procurementId)
-      : joinedProcurements[0]
-    setSelectedProcurementId(preferred?.id ?? joinedProcurements[0].id)
-  }, [joinedProcurements, orders, selectedProcurementId])
+      ? activeJoinedProcurements.find((p) => p.id === withActiveOrder.procurementId)
+      : activeJoinedProcurements[0]
+    setSelectedProcurementId(preferred?.id ?? activeJoinedProcurements[0].id)
+  }, [activeJoinedProcurements, orders, selectedProcurementId])
 
   const { data: procurementDetail } = useProcurement(selectedProcurementId ?? "")
 
   const selectedProcurement =
     procurementDetail ??
-    joinedProcurements.find((p) => p.id === selectedProcurementId)
+    activeJoinedProcurements.find((p) => p.id === selectedProcurementId)
 
   const procurementOrders = useMemo(
     () =>
@@ -94,9 +105,9 @@ export const HomePage = () => {
           </div>
         ) : showHero && selectedProcurement ? (
           <>
-            {joinedProcurements.length > 1 ? (
+            {activeJoinedProcurements.length > 1 ? (
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {joinedProcurements.map((p) => {
+                {activeJoinedProcurements.map((p) => {
                   const active = p.id === selectedProcurementId
                   const orderCount = (orders ?? []).filter(
                     (o) => o.procurementId === p.id && o.status !== "cancelled",
@@ -155,26 +166,6 @@ export const HomePage = () => {
             </Link>
           </Card>
         )}
-
-        {!showHero && joinedProcurements.length === 0 ? (
-          <section className="w-full">
-            <div className="mb-3 flex w-full items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Сборы рядом
-              </h2>
-              <Link to={routes.user.activeProcurements} className="ui-link text-sm">
-                Все
-              </Link>
-            </div>
-            <div className="flex w-full flex-col gap-2">
-              {openProcurementsNearby?.slice(0, 2).map((p) => (
-                <Link key={p.id} to={routes.user.procurement(p.id)} className="w-full">
-                  <ProcurementCard procurement={p} compact />
-                </Link>
-              ))}
-            </div>
-          </section>
-        ) : null}
 
         <section className="w-full">
           <div className="mb-3 flex w-full items-center justify-between gap-2">

@@ -105,26 +105,30 @@ export const buildDriverTripView = (input: {
     }
   }
 
-  if (!currentStop && hasOpenCollection) {
-    if (awaitingAcceptCount > 0) {
-      return {
-        contentPhase: "accept_orders",
-        hero: {
-          phase: "orders",
-          phaseLabel: "Приём в рейс",
-          title: `${awaitingAcceptCount} к принятию`,
-          subtitle: activeRound?.title,
-          stats: [
-            { label: "к принятию", value: String(awaitingAcceptCount) },
-            { label: "принято", value: String(countTripAccepted(orders)) },
-            { label: "всего", value: String(orders.filter((o) => o.status !== "cancelled").length) },
-          ],
-        },
-        roundId,
-        canCompleteStop: false,
-        pendingConfirm: false,
-      }
+  if (!currentStop && awaitingAcceptCount > 0) {
+    const roundOpen = hasOpenCollection
+    return {
+      contentPhase: "accept_orders",
+      hero: {
+        phase: "orders",
+        phaseLabel: "Приём в рейс",
+        title: `${awaitingAcceptCount} к принятию`,
+        subtitle: roundOpen
+          ? activeRound?.title
+          : (deliveryRound?.title ?? "Сбор закрыт — примите оплаченные заказы"),
+        stats: [
+          { label: "к принятию", value: String(awaitingAcceptCount) },
+          { label: "принято", value: String(countTripAccepted(orders)) },
+          { label: "всего", value: String(orders.filter((o) => o.status !== "cancelled").length) },
+        ],
+      },
+      roundId,
+      canCompleteStop: false,
+      pendingConfirm: false,
     }
+  }
+
+  if (!currentStop && hasOpenCollection) {
     return {
       contentPhase: "waiting_close",
       hero: {

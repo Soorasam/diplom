@@ -29,12 +29,27 @@ export class ProcurementChecklistService {
   ) {}
 
   async initForRound(roundId: string) {
+    await this.initItemsForAcceptedOrders(roundId);
+  }
+
+  /** Позиции закупки только для заказов, принятых водителем в рейс */
+  async initItemsForAcceptedOrders(roundId: string, orderIds?: string[]) {
     const round = await this.prisma.round.findUnique({
       where: { id: roundId },
       include: {
         waypoints: { orderBy: { sortOrder: 'asc' } },
         orders: {
-          where: { status: { not: OrderStatus.cancelled } },
+          where: {
+            status: {
+              in: [
+                OrderStatus.confirmed,
+                OrderStatus.in_transit,
+                OrderStatus.at_pickup,
+                OrderStatus.delivered,
+              ],
+            },
+            ...(orderIds?.length ? { id: { in: orderIds } } : {}),
+          },
           include: { items: true },
         },
       },
@@ -144,7 +159,14 @@ export class ProcurementChecklistService {
         procurementStatus: OrderItemProcurementStatus.pending,
         order: {
           roundId,
-          status: { not: OrderStatus.cancelled },
+          status: {
+            in: [
+              OrderStatus.confirmed,
+              OrderStatus.in_transit,
+              OrderStatus.at_pickup,
+              OrderStatus.delivered,
+            ],
+          },
         },
       },
       include: {
