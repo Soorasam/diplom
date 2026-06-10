@@ -5,6 +5,7 @@ import {
   useAdminDriverApplications,
   useSetDriverApplicationStatus,
 } from "@/features/driver-application/api/useDriverApplications"
+import { DriverDocumentsGallery } from "@/features/driver-application/ui/DriverDocumentsGallery"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
@@ -24,14 +25,6 @@ const statusVariant = {
   rejected: "danger" as const,
 }
 
-const docTypeLabel: Record<string, string> = {
-  passport: "Паспорт",
-  license: "Водительские права",
-  sts: "СТС",
-  vehicle: "Фото авто",
-  selfie: "Селфи",
-}
-
 export const AdminDriverApplicationsPage = () => {
   const { data } = useAdminDriverApplications()
   const setStatus = useSetDriverApplicationStatus()
@@ -39,8 +32,6 @@ export const AdminDriverApplicationsPage = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [filter, setFilter] = useState("")
   const [rejectionReason, setRejectionReason] = useState("")
-  const [openedDoc, setOpenedDoc] = useState<{ url: string; title: string } | null>(null)
-
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase()
     const withUser = (data ?? []).map((x) => ({ a: x, user: x.user }))
@@ -228,37 +219,12 @@ export const AdminDriverApplicationsPage = () => {
 
                 <div className="border-t border-slate-100 pt-6">
                   <p className="text-sm font-semibold text-slate-900">Документы</p>
-                  {(selected.a.documents ?? []).length > 0 ? (
-                    <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      {selected.a.documents!.map((doc) => (
-                        <button
-                          type="button"
-                          key={doc.id}
-                          onClick={() =>
-                            setOpenedDoc({
-                              url: doc.url,
-                              title: `${docTypeLabel[doc.type] ?? doc.type}${doc.fileName ? ` · ${doc.fileName}` : ""}`,
-                            })
-                          }
-                          className="block overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
-                        >
-                          <img
-                            src={doc.url}
-                            alt={docTypeLabel[doc.type] ?? doc.type}
-                            className="aspect-4/3 w-full object-contain"
-                          />
-                          <p className="border-t border-slate-100 px-3 py-2 text-xs font-medium text-slate-700">
-                            {docTypeLabel[doc.type] ?? doc.type}
-                            {doc.fileName ? ` · ${doc.fileName}` : ""}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="mt-2 text-sm text-amber-700">
-                      Документы не загружены (заявка подана до включения загрузки в MinIO).
-                    </p>
-                  )}
+                  <div className="mt-4">
+                    <DriverDocumentsGallery
+                      documents={selected.a.documents ?? []}
+                      emptyMessage="Документы не загружены (заявка подана до включения загрузки в MinIO)."
+                    />
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -266,25 +232,6 @@ export const AdminDriverApplicationsPage = () => {
         </div>
       )}
 
-      {openedDoc ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/65 p-4"
-          onClick={() => setOpenedDoc(null)}
-        >
-          <div
-            className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-              <p className="text-sm font-semibold text-slate-900">{openedDoc.title}</p>
-              <Button type="button" variant="ghost" onClick={() => setOpenedDoc(null)}>
-                Закрыть
-              </Button>
-            </div>
-            <img src={openedDoc.url} alt={openedDoc.title} className="max-h-[75vh] w-full object-contain" />
-          </div>
-        </div>
-      ) : null}
     </div>
   )
 }

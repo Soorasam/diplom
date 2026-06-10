@@ -1,7 +1,8 @@
 import { Link, useParams } from "react-router-dom"
-import { ExternalLink, Truck } from "lucide-react"
+import { Truck } from "lucide-react"
 
 import { useAdminDriver } from "@/entities/admin/api/useAdmin"
+import { DriverDocumentsGallery } from "@/features/driver-application/ui/DriverDocumentsGallery"
 import { routes } from "@/shared/config/routes"
 import { formatShortDate } from "@/shared/lib/format"
 import { Badge } from "@/shared/ui/badge/Badge"
@@ -9,14 +10,6 @@ import { Card } from "@/shared/ui/card/Card"
 import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
-
-const docTypeLabel: Record<string, string> = {
-  passport: "Паспорт",
-  license: "Водительские права",
-  sts: "СТС",
-  vehicle: "Фото авто",
-  selfie: "Селфи",
-}
 
 const appStatusLabel: Record<string, string> = {
   draft: "Черновик",
@@ -98,21 +91,10 @@ export const AdminDriverDetailPage = () => {
             <p className="mt-2 text-sm text-red-700">{app.rejectionReason}</p>
           ) : null}
           {app.documents.length > 0 ? (
-            <ul className="mt-4 flex flex-col gap-2">
-              {app.documents.map((doc) => (
-                <li key={doc.id}>
-                  <a
-                    href={doc.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="ui-link inline-flex items-center gap-2 text-sm font-medium"
-                  >
-                    {docTypeLabel[doc.type] ?? doc.type}
-                    <ExternalLink size={14} />
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <div className="mt-4">
+              <p className="mb-3 text-sm font-semibold text-slate-900">Документы</p>
+              <DriverDocumentsGallery documents={app.documents} />
+            </div>
           ) : null}
           <Link
             to={routes.admin.driverApplications}

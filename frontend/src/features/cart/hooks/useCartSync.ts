@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 
 import { useAuthStore } from "@/app/model/auth-store"
-import { getAccessToken } from "@/shared/api/auth-storage"
+import { getAccessToken, getRefreshToken } from "@/shared/api/auth-storage"
 import { cartApi } from "@/entities/cart/api/cartApi"
 import { useProducts } from "@/entities/product/api/useProducts"
 import { mapBackendCartItems } from "@/features/cart/lib/map-backend-cart"
@@ -20,7 +20,7 @@ export const useCartSync = () => {
 
   const { data: products } = useProducts()
 
-  const hasToken = Boolean(getAccessToken())
+  const hasToken = Boolean(getAccessToken() || getRefreshToken())
   const shouldFetchCart = authHydrated && isAuthenticated && hasToken
 
   const { data: serverCart, isSuccess: cartLoaded } = useQuery({

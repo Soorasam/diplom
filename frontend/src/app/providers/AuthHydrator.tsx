@@ -1,7 +1,8 @@
 import { useEffect } from "react"
 
 import { useAuthStore } from "@/app/model/auth-store"
-import { ensureValidAccessToken } from "@/shared/api/client"
+import { getRefreshToken } from "@/shared/api/auth-storage"
+import { ApiError, waitForAuthReady } from "@/shared/api/client"
 
 
 export const AuthHydrator = () => {
@@ -12,15 +13,19 @@ export const AuthHydrator = () => {
   useEffect(() => {
     if (!hasHydrated || !isAuthenticated) return
     void (async () => {
-      const ok = await ensureValidAccessToken()
+      const ok = await waitForAuthReady()
       if (!ok) {
-        useAuthStore.getState().logout()
+        if (!getRefreshToken()) {
+          useAuthStore.getState().logout()
+        }
         return
       }
       try {
         await refreshUser()
-      } catch {
-        useAuthStore.getState().logout()
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 401) {
+          useAuthStore.getState().logout()
+        }
       }
     })()
   }, [hasHydrated, isAuthenticated, refreshUser])

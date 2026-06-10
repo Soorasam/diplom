@@ -24,6 +24,29 @@ async function parseErrorMessage(res: Response): Promise<string> {
 }
 
 let refreshPromise: Promise<string | null> | null = null
+let authBootstrap: Promise<boolean> | null = null
+
+function decodeJwtExp(token: string): number | null {
+  try {
+    const payload = JSON.parse(
+      atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")),
+    ) as { exp?: number }
+    return typeof payload.exp === "number" ? payload.exp : null
+  } catch {
+    return null
+  }
+}
+
+function isAccessTokenExpired(token: string, skewSeconds = 30): boolean {
+  const exp = decodeJwtExp(token)
+  if (!exp) return true
+  return exp * 1000 <= Date.now() + skewSeconds * 1000
+}
+
+export function resetAuthSession() {
+  refreshPromise = null
+  authBootstrap = null
+}
 
 async function refreshAccessToken(): Promise<string | null> {
   const refresh = getRefreshToken()
@@ -36,8 +59,12 @@ async function refreshAccessToken(): Promise<string | null> {
       body: JSON.stringify({ refreshToken: refresh }),
     })
       .then(async (res) => {
-        if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
           clearTokens()
+          resetAuthSession()
+          return null
+        }
+        if (!res.ok) {
           return null
         }
         const data = (await res.json()) as AuthResponse
@@ -54,9 +81,21 @@ async function refreshAccessToken(): Promise<string | null> {
 }
 
 export async function ensureValidAccessToken(): Promise<boolean> {
-  if (getAccessToken()) return true
+  const access = getAccessToken()
+  if (access && !isAccessTokenExpired(access)) return true
   const token = await refreshAccessToken()
   return Boolean(token)
+}
+
+export async function waitForAuthReady(): Promise<boolean> {
+  if (!getAccessToken() && !getRefreshToken()) return false
+  if (!authBootstrap) {
+    authBootstrap = ensureValidAccessToken().then((ok) => {
+      if (!ok) authBootstrap = null
+      return ok
+    })
+  }
+  return authBootstrap
 }
 
 type RequestOptions = RequestInit & { auth?: boolean; _retried?: boolean }
@@ -69,6 +108,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     headers.set("Content-Type", "application/json")
   }
   if (auth) {
+    await waitForAuthReady()
     const token = getAccessToken()
     if (token) headers.set("Authorization", `Bearer ${token}`)
   }
@@ -81,6 +121,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       return request<T>(path, { ...options, _retried: true })
     }
     clearTokens()
+    resetAuthSession()
+    throw new ApiError(401, "Сессия истекла")
   }
 
   if (!res.ok) {
@@ -138,4 +180,7 @@ export const http = {
   },
 }
 
-export const clearApiSession = () => clearTokens()
+export const clearApiSession = () => {
+  clearTokens()
+  resetAuthSession()
+}

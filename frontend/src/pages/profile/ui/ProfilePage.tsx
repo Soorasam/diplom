@@ -98,21 +98,14 @@ export const ProfilePage = () => {
     }
   }, [isDriverApproved, refreshUser])
 
-  const workspaceLink = isAdmin
-    ? isAdminWorkspace
+  const workspaceLink =
+    isAdmin && !isAdminWorkspace && isUserWorkspace
       ? {
-          to: routes.user.root,
-          label: "Интерфейс жителя",
+          to: routes.admin.root,
+          label: "Панель администратора",
           icon: LayoutDashboard,
         }
-      : isUserWorkspace
-        ? {
-            to: routes.admin.root,
-            label: "Панель администратора",
-            icon: LayoutDashboard,
-          }
-        : null
-    : null
+      : null
 
   return (
     <PageShell>

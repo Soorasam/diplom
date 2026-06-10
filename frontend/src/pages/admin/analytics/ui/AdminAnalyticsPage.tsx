@@ -71,7 +71,7 @@ export const AdminAnalyticsPage = () => {
       icon: Package,
     },
     {
-      title: "Водители в рейсе",
+      title: "Водители в сервисе",
       value: String(stats.driversActive),
       change: "+1",
       positive: true,

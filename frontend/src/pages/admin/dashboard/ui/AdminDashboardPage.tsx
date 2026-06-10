@@ -19,7 +19,7 @@ const statCards = [
   { key: "participants", label: "Участники", icon: Users, format: "number" },
   { key: "ordersToday", label: "Заказов сегодня", icon: Package, format: "number" },
   { key: "revenueMonth", label: "Выручка за месяц", icon: TrendingUp, format: "price" },
-  { key: "driversActive", label: "Водителей в рейсе", icon: Truck, format: "number" },
+  { key: "driversActive", label: "Водителей в сервисе", icon: Truck, format: "number" },
 ] as const
 
 export const AdminDashboardPage = () => {

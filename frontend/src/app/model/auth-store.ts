@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware"
 
 import type { AuthResponse, BackendUser } from "@/shared/api/backend-types"
 import type { User } from "@/shared/api/api-types"
-import { clearApiSession, http } from "@/shared/api/client"
+import { clearApiSession, http, resetAuthSession } from "@/shared/api/client"
 import { clearTokens, saveTokens } from "@/shared/api/auth-storage"
 import { mapUser } from "@/shared/api/mappers"
 import { routes } from "@/shared/config/routes"
@@ -55,6 +55,7 @@ export const useAuthStore = create<AuthState>()(
           password,
         })
         saveTokens(res.access_token, res.refresh_token)
+        resetAuthSession()
         const user = mapUser(res.user)
         const prevUserId = get().user?.id
         if (prevUserId && prevUserId !== user.id) {
@@ -75,6 +76,7 @@ export const useAuthStore = create<AuthState>()(
           ...(payload.pickupPointId ? { pickupPointId: payload.pickupPointId } : {}),
         })
         saveTokens(res.access_token, res.refresh_token)
+        resetAuthSession()
         const user = mapUser(res.user)
         const prevUserId = get().user?.id
         if (prevUserId && prevUserId !== user.id) {

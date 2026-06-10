@@ -25,3 +25,14 @@ export const driverDocumentMeta: Record<
 }
 
 export const driverDocumentKeys = Object.keys(driverDocumentMeta) as DriverDocumentKey[]
+
+export const driverDocumentTypeLabel: Record<string, string> = {
+  passport: "Паспорт",
+  license: "Водительские права",
+  sts: "СТС",
+  vehicle: "Фото авто",
+  selfie: "Селфи",
+}
+
+export const getDriverDocumentLabel = (type: string) =>
+  driverDocumentTypeLabel[type] ?? type
