@@ -9,6 +9,7 @@ import {
   MobileBottomNav,
   type MobileNavTab,
 } from "@/widgets/mobile-bottom-nav/ui/MobileBottomNav"
+import { ProcurementLiveSync } from "@/widgets/procurement-live-sync/ui/ProcurementLiveSync"
 
 export const DriverLayout = () => {
   const { ordersBadgeCount } = useDriverWorkbench()
@@ -47,6 +48,7 @@ export const DriverLayout = () => {
 
   return (
     <MobilePageLayout>
+      <ProcurementLiveSync />
       <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col">
         <Outlet />
       </main>

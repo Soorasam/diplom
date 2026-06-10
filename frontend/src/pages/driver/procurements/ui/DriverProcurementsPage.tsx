@@ -58,6 +58,8 @@ import { Input } from "@/shared/ui/input/Input"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { PageShell } from "@/shared/ui/page-shell/PageShell"
 import { Spinner } from "@/shared/ui/spinner/Spinner"
+import { getRemainingMs } from "@/shared/lib/countdown"
+import { getProcurementCloseDeadline } from "@/shared/lib/procurement-poll-interval"
 import { ProcurementClosingCountdown } from "@/widgets/procurement-closing-countdown/ui/ProcurementClosingCountdown"
 import { useAuthStore } from "@/app/model/auth-store"
 
@@ -127,6 +129,13 @@ export const DriverProcurementsPage = () => {
     driverOrders,
   )
   const canCreateNewRound = !hasActiveRound && !hasDeliveryInProgress
+  const closeDeadline = activeRound ? getProcurementCloseDeadline(activeRound) : null
+  const closeCountdownMs = closeDeadline ? getRemainingMs(closeDeadline) : null
+  const showCloseCountdown =
+    closeDeadline != null &&
+    closeCountdownMs != null &&
+    closeCountdownMs > 0 &&
+    (Boolean(activeRound?.emergencyCloseAt) || closeCountdownMs <= 60 * 60 * 1000)
 
   const deleteTemplate = useMutation({
     mutationFn: (id: string) => driverRoutesApi.deleteTemplate(id),
@@ -274,15 +283,17 @@ export const DriverProcurementsPage = () => {
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Закрытие: {formatShortDateTime(activeRound.closesAt)}
               </p>
-              {activeRound.emergencyCloseAt ? (
+              {showCloseCountdown && closeDeadline ? (
                 <div className="mt-3">
-                  <ProcurementClosingCountdown emergencyCloseAt={activeRound.emergencyCloseAt} />
-                  <p className="mt-2 text-xs text-amber-800">
-                    Приём заказов завершится автоматически по таймеру.
+                  <ProcurementClosingCountdown deadlineAt={closeDeadline} />
+                  <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">
+                    {activeRound.emergencyCloseAt
+                      ? "Приём заказов завершится автоматически по таймеру."
+                      : "Сбор закроется автоматически в указанное время."}
                   </p>
                 </div>
               ) : (
-                <p className="mt-2 text-xs text-slate-600">
+                <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
                   Одновременно может быть только один активный сбор.
                 </p>
               )}

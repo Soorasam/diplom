@@ -4,6 +4,7 @@ import { useProcurementLocationSync } from "@/features/procurement/hooks/useProc
 import { SwipeableOutlet } from "@/features/swipe-tabs/ui/SwipeableOutlet"
 import { MobilePageLayout } from "@/shared/ui/mobile-page-layout/MobilePageLayout"
 import { BottomNav } from "@/widgets/bottom-nav/ui/BottomNav"
+import { ProcurementLiveSync } from "@/widgets/procurement-live-sync/ui/ProcurementLiveSync"
 
 export const AppLayout = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
@@ -16,6 +17,7 @@ export const AppLayout = () => {
 
   return (
     <MobilePageLayout>
+      <ProcurementLiveSync />
       <SwipeableOutlet />
       <BottomNav />
     </MobilePageLayout>

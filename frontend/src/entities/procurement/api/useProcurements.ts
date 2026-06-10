@@ -5,6 +5,10 @@ import { useAuthStore } from "@/app/model/auth-store"
 import { queryKeys } from "@/shared/config/query-keys"
 import { refetchProcurementState } from "@/shared/lib/invalidate-procurement-state"
 import { invalidateResidentWorkbench } from "@/shared/lib/invalidate-resident-workbench"
+import {
+  activeProcurementsRefetchIntervalMs,
+  procurementRefetchIntervalMs,
+} from "@/shared/lib/procurement-poll-interval"
 import type { UserRole } from "@/shared/types"
 
 import { procurementsApi } from "./procurementsApi"
@@ -14,19 +18,13 @@ const procurementActorIds = (user: ReturnType<typeof useAuthStore.getState>["use
   userId: user?.id,
 })
 
-export const useActiveProcurements = () =>
+export const useActiveProcurements = (options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: queryKeys.procurements.active,
     queryFn: () => procurementsApi.getActive(),
-    refetchInterval: (query) => {
-      const list = query.state.data
-      if (
-        list?.some((p) => p.emergencyCloseAt || p.status === "closing")
-      ) {
-        return 3000
-      }
-      return false
-    },
+    enabled: options?.enabled ?? true,
+    refetchInterval: (query) =>
+      activeProcurementsRefetchIntervalMs(query.state.data),
   })
 
 /** Подгружает waypoints из деталки, если в списке их нет */
@@ -72,11 +70,7 @@ export const useDriverActiveProcurement = (userId?: string) =>
     queryKey: ["driver", "active-procurement", userId ?? "anon"],
     queryFn: () => procurementsApi.getDriverActive(),
     enabled: Boolean(userId),
-    refetchInterval: (query) => {
-      const p = query.state.data
-      if (p?.emergencyCloseAt || p?.status === "closing") return 3000
-      return false
-    },
+    refetchInterval: (query) => procurementRefetchIntervalMs(query.state.data),
   })
 
 export const useDriverDeliveryProcurement = (userId?: string) =>
@@ -92,6 +86,7 @@ export const useProcurement = (id: string) =>
     queryKey: [...queryKeys.procurements.all, id],
     queryFn: () => procurementsApi.getById(id),
     enabled: Boolean(id),
+    refetchInterval: (query) => procurementRefetchIntervalMs(query.state.data),
   })
 
 export const useAllProcurements = () =>

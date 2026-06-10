@@ -7,20 +7,21 @@ import { formatCountdownMs } from "@/shared/lib/countdown"
 import { cn } from "@/shared/lib/cn"
 
 type Props = {
-  emergencyCloseAt: string
+  /** Дедлайн закрытия: экстренный таймер или плановое closesAt */
+  deadlineAt: string
   compact?: boolean
   className?: string
   onExpired?: () => void
 }
 
 export const ProcurementClosingCountdown = ({
-  emergencyCloseAt,
+  deadlineAt,
   compact,
   className,
   onExpired,
 }: Props) => {
   const refreshAfterClose = useProcurementCloseRefresh()
-  const { remainingMs, isActive, isExpired } = useCountdownTo(emergencyCloseAt)
+  const { remainingMs, isActive, isExpired } = useCountdownTo(deadlineAt)
   const expiredHandled = useRef(false)
 
   useEffect(() => {

@@ -4,6 +4,7 @@ import type { Procurement } from "@/shared/api/api-types"
 import { formatShortDate } from "@/shared/lib/format"
 import { Badge } from "@/shared/ui/badge/Badge"
 import { Card } from "@/shared/ui/card/Card"
+import { getProcurementCloseDeadline } from "@/shared/lib/procurement-poll-interval"
 import { ProcurementClosingCountdown } from "@/widgets/procurement-closing-countdown/ui/ProcurementClosingCountdown"
 import { ProcurementProgress } from "@/widgets/procurement-progress/ui/ProcurementProgress"
 import type { DeliveryMode } from "@/shared/types"
@@ -47,13 +48,15 @@ export const ProcurementCard = ({
             <Calendar size={12} className="inline" />
             {formatShortDate(procurement.closesAt)}
           </p>
-          {procurement.emergencyCloseAt ? (
+          {procurement.status === "closing" || procurement.emergencyCloseAt ? (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <Badge variant="warning">Закрывается</Badge>
-              <ProcurementClosingCountdown
-                emergencyCloseAt={procurement.emergencyCloseAt}
-                compact
-              />
+              {getProcurementCloseDeadline(procurement) ? (
+                <ProcurementClosingCountdown
+                  deadlineAt={getProcurementCloseDeadline(procurement)!}
+                  compact
+                />
+              ) : null}
             </div>
           ) : null}
         </div>

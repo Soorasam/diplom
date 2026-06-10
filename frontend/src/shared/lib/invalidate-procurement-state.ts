@@ -34,6 +34,7 @@ export const refetchProcurementState = async (
   invalidateProcurementState(qc, opts)
   await Promise.all([
     qc.refetchQueries({ queryKey: queryKeys.procurements.active }),
+    qc.refetchQueries({ queryKey: queryKeys.procurements.all }),
     qc.refetchQueries({ queryKey: ["driver", "active-procurement"] }),
     qc.refetchQueries({ queryKey: ["driver", "delivery-procurement"] }),
     opts?.driverId
