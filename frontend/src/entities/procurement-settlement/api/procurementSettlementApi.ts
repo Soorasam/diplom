@@ -49,6 +49,9 @@ export const procurementSettlementApi = {
       true,
     ),
 
+  receiptFilePath: (roundId: string, receiptId: string) =>
+    `${base(roundId)}/receipts/${receiptId}/file`,
+
   getSettlement: (roundId: string) =>
     http.get<PurchaseSettlement>(`${base(roundId)}/settlement`, true),
 

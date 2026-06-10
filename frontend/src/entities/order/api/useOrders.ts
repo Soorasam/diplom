@@ -101,6 +101,9 @@ export const useUpdateOrderStatus = () => {
       void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
       void qc.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) })
       invalidateDriverWorkbench(qc, driverId)
+      if (order.status === "at_pickup") {
+        invalidateResidentWorkbench(qc)
+      }
     },
   })
 }

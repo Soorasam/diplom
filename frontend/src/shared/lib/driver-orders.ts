@@ -49,9 +49,10 @@ export const groupOrdersByResident = (orders: Order[]): Order[][] => {
 
 export const residentGroupDeliveryLabel = (orders: Order[]) => {
   if (orders.every(isDelivered)) return "Получено"
-  if (orders.some((o) => o.status === "in_transit" || o.status === "at_pickup")) {
+  if (orders.some((o) => o.status === "at_pickup")) {
     return "Ждёт подтверждения в приложении"
   }
+  if (orders.some((o) => o.status === "in_transit")) return "В пути"
   if (orders.every((o) => o.status === "confirmed")) return "В рейсе"
   if (orders.some(isAwaitingTripAccept)) return "Оплачен, ждёт принятия в рейс"
   return "Ожидает оплаты"
@@ -59,9 +60,8 @@ export const residentGroupDeliveryLabel = (orders: Order[]) => {
 
 export const residentGroupDeliveryShortLabel = (orders: Order[]) => {
   if (orders.every(isDelivered)) return "Получен"
-  if (orders.some((o) => o.status === "in_transit" || o.status === "at_pickup")) {
-    return "Ждёт"
-  }
+  if (orders.some((o) => o.status === "at_pickup")) return "Ждёт"
+  if (orders.some((o) => o.status === "in_transit")) return "В пути"
   if (orders.every((o) => o.status === "confirmed")) return "В рейсе"
   if (orders.some(isAwaitingTripAccept)) return "К приёму"
   return "Не оплачен"
@@ -69,9 +69,10 @@ export const residentGroupDeliveryShortLabel = (orders: Order[]) => {
 
 export const residentDeliveryLabel = (order: Order) => {
   if (order.status === "delivered") return "Получено"
-  if (order.status === "in_transit" || order.status === "at_pickup") {
+  if (order.status === "at_pickup") {
     return "Ждёт подтверждения в приложении"
   }
+  if (order.status === "in_transit") return "В пути"
   if (order.status === "confirmed") return "В рейсе"
   if (isAwaitingTripAccept(order)) return "Оплачен, ждёт принятия в рейс"
   return "Ожидает оплаты"
@@ -80,7 +81,8 @@ export const residentDeliveryLabel = (order: Order) => {
 /** Короткая подпись для бейджа в углу карточки */
 export const residentDeliveryShortLabel = (order: Order) => {
   if (order.status === "delivered") return "Получен"
-  if (order.status === "in_transit" || order.status === "at_pickup") return "Ждёт"
+  if (order.status === "at_pickup") return "Ждёт"
+  if (order.status === "in_transit") return "В пути"
   if (order.status === "confirmed") return "В рейсе"
   if (isAwaitingTripAccept(order)) return "К приёму"
   return "Не оплачен"

@@ -123,7 +123,12 @@ export class CoordinatorService {
             roundOrders,
             s.pickupPointId,
           );
-          const derivedStatus = this.deriveStopUiStatus(s, counts);
+          const derivedStatus = this.deriveStopUiStatus(
+            s,
+            counts,
+            stopIndex,
+            firstOpenStopIndex,
+          );
           const expectsOrders = counts.total > 0;
           const isCurrentStop = stopIndex === firstOpenStopIndex;
           const driverCanComplete =
@@ -435,12 +440,18 @@ export class CoordinatorService {
       procurementCompletedAt: Date | null;
     },
     counts: { total: number; received: number; inTransit: number },
+    stopIndex: number,
+    firstOpenStopIndex: number,
   ): 'pending' | 'in_progress' | 'completed' {
-    if (stop.isProcurementStop && !stop.procurementCompletedAt) {
+    if (stop.status === DeliveryStopStatus.completed) return 'completed';
+
+    if (firstOpenStopIndex >= 0 && stopIndex > firstOpenStopIndex) {
       return 'pending';
     }
 
-    if (stop.status === DeliveryStopStatus.completed) return 'completed';
+    if (stop.isProcurementStop && !stop.procurementCompletedAt) {
+      return stopIndex === firstOpenStopIndex ? 'in_progress' : 'pending';
+    }
 
     if (counts.total > 0) {
       if (counts.received === counts.total) {

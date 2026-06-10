@@ -5,10 +5,12 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { User, UserRole } from '@prisma/client';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -43,6 +45,19 @@ export class ProcurementController {
     @Param('roundId', ParseUUIDPipe) roundId: string,
   ) {
     return this.settlement.listReceipts(user, roundId);
+  }
+
+  @Get(':roundId/procurement/receipts/:receiptId/file')
+  async receiptFile(
+    @CurrentUser() user: User,
+    @Param('roundId', ParseUUIDPipe) roundId: string,
+    @Param('receiptId', ParseUUIDPipe) receiptId: string,
+    @Res() res: Response,
+  ) {
+    const file = await this.settlement.getReceiptFile(user, roundId, receiptId);
+    res.setHeader('Content-Type', file.contentType);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.send(file.buffer);
   }
 
   @Get(':roundId/procurement/:pickupPointId/receipts')

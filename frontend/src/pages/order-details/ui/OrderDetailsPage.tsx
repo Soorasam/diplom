@@ -61,7 +61,7 @@ export const OrderDetailsPage = () => {
   const canPay =
     order.paymentStatus === "pending" && order.status !== "cancelled"
   const canConfirmReceipt =
-    order.status === "in_transit" && order.paymentStatus === "held"
+    order.status === "at_pickup" && order.paymentStatus === "held"
   const canDispute = order.status !== "cancelled" && order.status !== "draft"
 
   const paymentLabel =
@@ -205,7 +205,7 @@ export const OrderDetailsPage = () => {
           {canConfirmReceipt ? (
             <>
               <p className="text-xs text-slate-500">
-                Проверьте товар у водителя и подтвердите только после получения.
+                Водитель вручит заказ на вашей точке — тогда появится кнопка подтверждения.
               </p>
               <Button
                 fullWidth

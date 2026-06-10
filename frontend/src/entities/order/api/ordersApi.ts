@@ -72,7 +72,7 @@ export const ordersApi = {
     return mapOrder(order)
   },
 
-  /** Житель подтверждает получение: in_transit → delivered, held → released */
+  /** Житель подтверждает получение: at_pickup → delivered, held → released */
   confirmReceipt: async (orderId: string) => {
     const order = await http.post<BackendOrderPayload>(
       `/orders/${orderId}/confirm-receipt`,

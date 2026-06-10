@@ -132,6 +132,21 @@ export class OrdersService {
     this.assertStaffCanUpdateStatus(user, order);
     assertOrderStatusTransition(user.role, order.status, dto.status);
 
+    if (dto.status === OrderStatus.at_pickup) {
+      if (!order.roundId || !order.pickupPointId) {
+        throw new BadRequestException('Заказ не привязан к рейсу и точке выдачи');
+      }
+      if (order.status !== OrderStatus.in_transit) {
+        throw new BadRequestException(
+          'Отметить выдачу можно только для заказа «в пути»',
+        );
+      }
+      await this.deliveryStops.assertDriverCanHandOutAtStop(
+        order.roundId,
+        order.pickupPointId,
+      );
+    }
+
     if (
       dto.status === OrderStatus.confirmed &&
       user.role !== UserRole.admin &&
@@ -181,9 +196,22 @@ export class OrdersService {
 
     assertOrderStatusTransition(user.role, order.status, OrderStatus.delivered);
 
+    if (order.status !== OrderStatus.at_pickup) {
+      throw new BadRequestException(
+        'Подтвердить можно только после того, как водитель вручит заказ на вашей точке',
+      );
+    }
+
     if (order.paymentStatus !== PaymentStatus.held) {
       throw new BadRequestException(
         'Средства по заказу не зарезервированы — сначала оплатите в приложении',
+      );
+    }
+
+    if (order.roundId && order.pickupPointId) {
+      await this.deliveryStops.assertResidentCanConfirmReceipt(
+        order.roundId,
+        order.pickupPointId,
       );
     }
 

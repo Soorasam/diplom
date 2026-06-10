@@ -6,7 +6,6 @@ import {
   usePurchaseSettlement,
   useSettlePurchase,
 } from "@/entities/procurement-settlement/api/useProcurementSettlement"
-import { ProcurementReceiptsGallery } from "@/features/procurement-receipts/ui/ProcurementReceiptsGallery"
 import { formatPrice } from "@/shared/lib/format"
 import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
 import { Button } from "@/shared/ui/button/Button"
@@ -99,8 +98,6 @@ export const ProcurementSettlementCard = ({
           </p>
         </div>
       </div>
-
-      <ProcurementReceiptsGallery receipts={receipts} />
 
       {!isSettled ? (
         <>

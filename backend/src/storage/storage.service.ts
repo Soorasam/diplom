@@ -1,11 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
   CreateBucketCommand,
+  GetObjectCommand,
   HeadBucketCommand,
   PutBucketPolicyCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class StorageService {
@@ -116,5 +118,30 @@ export class StorageService {
 
   receiptsBucket() {
     return process.env.MINIO_RECEIPTS_BUCKET ?? 'coop-receipts';
+  }
+
+  async getObject(bucket: string, key: string) {
+    try {
+      const res = await this.client().send(
+        new GetObjectCommand({ Bucket: bucket, Key: key }),
+      );
+      const bytes = await res.Body?.transformToByteArray();
+      if (!bytes?.length) {
+        throw new NotFoundException('Файл не найден');
+      }
+      return {
+        buffer: Buffer.from(bytes),
+        contentType: res.ContentType ?? 'application/octet-stream',
+      };
+    } catch (err: unknown) {
+      const code =
+        err && typeof err === 'object' && 'name' in err
+          ? String((err as { name?: string }).name)
+          : '';
+      if (code === 'NoSuchKey' || code === 'NotFound') {
+        throw new NotFoundException('Файл не найден');
+      }
+      throw err;
+    }
   }
 }

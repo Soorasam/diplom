@@ -53,14 +53,19 @@ export const ProcurementStopReceiptsCard = ({
 
       {receipts.length > 0 ? (
         <div className="mt-3">
-          <ProcurementReceiptsGallery receipts={receipts} title="" compact />
+          <ProcurementReceiptsGallery
+            roundId={roundId}
+            receipts={receipts}
+            title=""
+            compact
+          />
         </div>
       ) : null}
 
       <input
         ref={fileRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/heic"
+        accept="image/jpeg,image/png,image/webp"
         className="hidden"
         onChange={(e) => void handleFile(e.target.files?.[0])}
       />

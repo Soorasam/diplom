@@ -40,9 +40,7 @@ export const ResidentProcurementHero = ({
   const activeOrders = orders.filter(
     (o) => o.status !== "delivered" && o.status !== "cancelled",
   )
-  const confirmable = orders.filter(
-    (o) => o.status === "in_transit" || o.status === "at_pickup",
-  )
+  const confirmable = orders.filter((o) => o.status === "at_pickup")
   const unpaid = activeOrders.filter((o) => o.paymentStatus === "pending")
 
   const combinedTotal = activeOrders.reduce((sum, o) => sum + o.total, 0)

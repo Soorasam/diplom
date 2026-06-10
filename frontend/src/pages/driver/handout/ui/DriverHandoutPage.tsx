@@ -185,10 +185,23 @@ export const DriverHandoutPage = () => {
                   <li key={order.id}>
                     {renderOrderCard(
                       order,
-                      <p className="text-xs leading-relaxed text-slate-500">
-                        Вручите товар на общей точке. Житель подтверждает получение в
-                        приложении — выплата поступит после подтверждения.
-                      </p>,
+                      <Button
+                        fullWidth
+                        size="sm"
+                        className="ui-cta-primary"
+                        loading={
+                          updateStatus.isPending &&
+                          updateStatus.variables?.orderId === order.id
+                        }
+                        onClick={() =>
+                          updateStatus.mutate({
+                            orderId: order.id,
+                            status: "at_pickup",
+                          })
+                        }
+                      >
+                        Вручил товар — ждёт подтверждения
+                      </Button>,
                     )}
                   </li>
                 ))}

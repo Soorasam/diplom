@@ -47,7 +47,7 @@ const activeOrders = (orders: Order[]) =>
   orders.filter((o) => o.status !== "delivered" && o.status !== "cancelled")
 
 const confirmableOrders = (orders: Order[]) =>
-  orders.filter((o) => o.status === "in_transit" || o.status === "at_pickup")
+  orders.filter((o) => o.status === "at_pickup")
 
 const isPaymentDone = (orders: Order[]) =>
   orders.some(

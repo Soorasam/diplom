@@ -471,7 +471,7 @@ export class ProcurementChecklistService {
       data: { procurementCompletedAt: new Date() },
     });
 
-    await this.deliveryStops.completeProcurementStopIfNoOrders(roundId, pickupPointId);
+    await this.deliveryStops.markStopInProgress(roundId, pickupPointId);
 
     const openProc = await this.prisma.roundDeliveryStop.count({
       where: {
@@ -481,7 +481,10 @@ export class ProcurementChecklistService {
       },
     });
 
-    const result = await this.deliveryStops.releaseReadyOrdersToTransit(roundId);
+    const result = await this.deliveryStops.releaseReadyOrdersToTransit(
+      roundId,
+      stop.sortOrder,
+    );
     const ordersSentToTransit = result.ordersDispatched;
 
     return {

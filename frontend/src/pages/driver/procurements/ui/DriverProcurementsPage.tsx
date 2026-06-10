@@ -82,6 +82,7 @@ export const DriverProcurementsPage = () => {
     useState<CreateRoutePlanPayload["transportType"]>(initialTransportType)
   const [rows, setRows] = useState<RouteBuilderRow[]>(createInitialRows)
   const [formError, setFormError] = useState<string | null>(null)
+  const [routeTouched, setRouteTouched] = useState(false)
   const [emergencyModalOpen, setEmergencyModalOpen] = useState(false)
 
   const minClosesAt = useMemo(() => getClosesAtDatetimeMin(), [])
@@ -182,6 +183,7 @@ export const DriverProcurementsPage = () => {
     setTransportType(initialTransportType)
     setRows(createInitialRows())
     setFormError(null)
+    setRouteTouched(false)
   }
 
   const fillTitleFromRoute = () => {
@@ -193,6 +195,7 @@ export const DriverProcurementsPage = () => {
     setFormError(null)
     const routeErr = validateRouteRows(rows)
     if (routeErr) {
+      setRouteTouched(true)
       setFormError(routeErr)
       return
     }
@@ -225,6 +228,7 @@ export const DriverProcurementsPage = () => {
     setFormError(null)
     const routeErr = validateRouteRows(rows)
     if (routeErr) {
+      setRouteTouched(true)
       setFormError(routeErr)
       return
     }
@@ -343,7 +347,17 @@ export const DriverProcurementsPage = () => {
 
           {canCreateNewRound ? (
             <>
-          <RouteBuilder settlements={settlements} rows={rows} onChange={setRows} />
+          <RouteBuilder
+            settlements={settlements}
+            rows={rows}
+            onChange={(next) => {
+              setRows(next)
+              if (routeTouched && validateRouteRows(next) === null) {
+                setRouteTouched(false)
+              }
+            }}
+            showErrors={routeTouched}
+          />
 
           <Card className="border-slate-200">
             <div className="space-y-3">

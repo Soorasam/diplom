@@ -17,6 +17,8 @@ type Props = {
   settlements: LocationCatalogItem[]
   rows: RouteBuilderRow[]
   onChange: (rows: RouteBuilderRow[]) => void
+  /** Подсветить незаполненные пункты (после попытки создать сбор) */
+  showErrors?: boolean
 }
 
 const selectClass =
@@ -28,7 +30,7 @@ export const createEmptyRouteRow = (isFirst: boolean): RouteBuilderRow => ({
   isProcurementPoint: isFirst,
 })
 
-export const RouteBuilder = ({ settlements, rows, onChange }: Props) => {
+export const RouteBuilder = ({ settlements, rows, onChange, showErrors }: Props) => {
   const [settlementPreviewId, setSettlementPreviewId] = useState<string | null>(null)
 
   const usedIds = useMemo(
@@ -75,7 +77,13 @@ export const RouteBuilder = ({ settlements, rows, onChange }: Props) => {
                   onChange={(e) =>
                     updateRow(row.key, { settlementId: e.target.value })
                   }
-                  className={selectClass}
+                  className={cn(
+                    selectClass,
+                    showErrors &&
+                      !row.settlementId &&
+                      "border-amber-400 ring-2 ring-amber-400/25",
+                  )}
+                  aria-invalid={showErrors && !row.settlementId}
                 >
                   <option value="">Выберите населённый пункт</option>
                   {settlements.map((s) => {
@@ -176,13 +184,11 @@ export const RouteBuilder = ({ settlements, rows, onChange }: Props) => {
 }
 
 export const rowsToWaypoints = (rows: RouteBuilderRow[]) =>
-  rows
-    .filter((r) => r.settlementId)
-    .map((r, index) => ({
-      pickupPointId: r.settlementId,
-      sortOrder: index,
-      isProcurementPoint: index === 0 ? true : r.isProcurementPoint,
-    }))
+  rows.map((r, index) => ({
+    pickupPointId: r.settlementId,
+    sortOrder: index,
+    isProcurementPoint: index === 0 ? true : r.isProcurementPoint,
+  }))
 
 export const getRouteTitleFromRows = (
   rows: RouteBuilderRow[],
@@ -195,10 +201,12 @@ export const getRouteTitleFromRows = (
     .join(" → ")
 
 export const validateRouteRows = (rows: RouteBuilderRow[]): string | null => {
-  const filled = rows.filter((r) => r.settlementId)
-  if (filled.length < 1) return "Выберите начальную точку"
-  if (filled.length < 2) return "Добавьте хотя бы ещё один населённый пункт"
-  const ids = filled.map((r) => r.settlementId)
+  if (rows.length < 1) return "Добавьте хотя бы одну точку маршрута"
+  if (rows.some((r) => !r.settlementId.trim())) {
+    return "Выберите населённый пункт для каждого пункта маршрута"
+  }
+  if (rows.length < 2) return "Добавьте хотя бы ещё один населённый пункт"
+  const ids = rows.map((r) => r.settlementId)
   if (new Set(ids).size !== ids.length) return "Пункты маршрута не должны повторяться"
   return null
 }

@@ -72,9 +72,6 @@ export const DriverRoutePage = () => {
   const currentIndex = pickCurrentDriverStopIndex(deliveryStops)
   const currentStop = pickCurrentDriverStop(deliveryStops)
   const nextStop = currentIndex >= 0 ? deliveryStops[currentIndex + 1] : undefined
-  const openProcurementStop = deliveryStops.find(
-    (s) => s.isProcurementStop && !s.procurementCompleted,
-  )
   const allStopsCompleted = areAllDriverStopsCompleted(deliveryStops)
   const tripCompleted =
     allStopsCompleted ||
@@ -87,9 +84,7 @@ export const DriverRoutePage = () => {
     : []
   const pendingConfirm = Boolean(
     currentStop?.expectsOrders &&
-      currentResidents.some(
-        (o) => o.status === "in_transit" || o.status === "at_pickup",
-      ),
+      currentResidents.some((o) => o.status === "at_pickup"),
   )
 
   const trip = buildDriverTripView({
@@ -245,7 +240,7 @@ export const DriverRoutePage = () => {
           </Card>
         ) : null}
 
-        {workRoundId && openProcurementStop ? (
+        {workRoundId && trip.contentPhase === "procurement" ? (
           <ProcurementChecklistCard
             roundId={workRoundId}
             compact
@@ -279,8 +274,16 @@ export const DriverRoutePage = () => {
               <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
                 <AlertTriangle size={16} className="mt-0.5 shrink-0" />
                 <span>
-                  Вручите заказ лично. Житель подтверждает в приложении — без этого
-                  нельзя уезжать.
+                  Житель подтверждает в приложении после того, как вы нажмёте «Вручил
+                  товар».
+                </span>
+              </div>
+            ) : currentResidents.some((o) => o.status === "in_transit") ? (
+              <div className="mt-3 flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5 text-xs text-sky-950 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-200">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <span>
+                  Сначала вручите товар каждому жителю — кнопка «Вручил товар» в карточке
+                  адреса.
                 </span>
               </div>
             ) : null}

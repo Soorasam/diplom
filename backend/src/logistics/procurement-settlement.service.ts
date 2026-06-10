@@ -57,14 +57,10 @@ export class ProcurementSettlementService {
     return stop;
   }
 
-  private mapReceiptUrl(objectKey: string, storedUrl: string) {
+  private mapReceiptUrl(objectKey: string) {
     const bucket = this.storage.receiptsBucket();
-    const fromKey = this.storage.publicUrl(bucket, objectKey);
-    const trimmed = storedUrl?.trim() ?? '';
-    if (!trimmed || trimmed.includes('minio:') || !trimmed.includes(`/${bucket}/`)) {
-      return fromKey;
-    }
-    return trimmed;
+    const key = objectKey.replace(/^\//, '');
+    return `/${bucket}/${key}`;
   }
 
   async listReceipts(user: User, roundId: string, pickupPointId?: string) {
@@ -89,8 +85,20 @@ export class ProcurementSettlementService {
     });
     return rows.map((row) => ({
       ...row,
-      url: this.mapReceiptUrl(row.objectKey, row.url),
+      url: this.mapReceiptUrl(row.objectKey),
     }));
+  }
+
+  async getReceiptFile(user: User, roundId: string, receiptId: string) {
+    await this.assertRoundAccess(user, roundId);
+    const receipt = await this.prisma.roundProcurementReceipt.findFirst({
+      where: { id: receiptId, roundId },
+    });
+    if (!receipt) {
+      throw new NotFoundException('Чек не найден');
+    }
+    const bucket = this.storage.receiptsBucket();
+    return this.storage.getObject(bucket, receipt.objectKey);
   }
 
   async uploadReceipt(
@@ -107,6 +115,15 @@ export class ProcurementSettlementService {
     }
     if (!file.mimetype.startsWith('image/')) {
       throw new BadRequestException('Допустимы только изображения (фото чека)');
+    }
+    if (
+      file.mimetype === 'image/heic' ||
+      file.mimetype === 'image/heif' ||
+      file.originalname.toLowerCase().endsWith('.heic')
+    ) {
+      throw new BadRequestException(
+        'Сохраните фото как JPEG или PNG — HEIC в браузере не отображается',
+      );
     }
 
     const bucket = this.storage.receiptsBucket();
@@ -136,7 +153,7 @@ export class ProcurementSettlementService {
     });
     return {
       ...created,
-      url: this.mapReceiptUrl(created.objectKey, created.url),
+      url: this.mapReceiptUrl(created.objectKey),
     };
   }
 

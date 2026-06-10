@@ -36,7 +36,11 @@ export const AdminProcurementReceiptsPanel = ({ roundId }: Props) => {
 
   return (
     <Card className="border-slate-200">
-      <ProcurementReceiptsGallery receipts={receipts ?? []} title="Чеки закупа сбора" />
+      <ProcurementReceiptsGallery
+        roundId={roundId}
+        receipts={receipts ?? []}
+        title="Чеки закупа сбора"
+      />
       {settlement?.purchaseSettledAt ? (
         <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-sm">
           <div>

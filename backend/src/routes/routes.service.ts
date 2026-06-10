@@ -32,6 +32,12 @@ export class RoutesService {
       throw new BadRequestException('Начальная точка должна быть точкой закупа');
     }
 
+    if (sorted.some((w) => !w.pickupPointId?.trim())) {
+      throw new BadRequestException(
+        'Укажите населённый пункт для каждой точки маршрута',
+      );
+    }
+
     const ids = sorted.map((w) => w.pickupPointId);
     if (new Set(ids).size !== ids.length) {
       throw new BadRequestException('Точку нельзя повторять в маршруте');

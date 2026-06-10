@@ -33,3 +33,14 @@ export function resolveReceiptImageUrl(
   }
   return normalized
 }
+
+export function toAbsoluteMediaUrl(
+  url: string | null | undefined,
+  objectKey?: string | null,
+): string {
+  const path = resolveReceiptImageUrl(url, objectKey)
+  if (!path) return ""
+  if (/^https?:\/\//i.test(path)) return path
+  if (typeof window === "undefined") return path
+  return `${window.location.origin}${path.startsWith("/") ? path : `/${path}`}`
+}

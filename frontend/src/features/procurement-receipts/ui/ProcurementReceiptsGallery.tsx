@@ -1,10 +1,15 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { ImageOff } from "lucide-react"
 
+import { procurementSettlementApi } from "@/entities/procurement-settlement/api/procurementSettlementApi"
 import type { ProcurementReceipt } from "@/entities/procurement-settlement/api/procurementSettlementApi"
-import { resolveReceiptImageUrl } from "@/shared/lib/normalize-media-url"
+import { http } from "@/shared/api/client"
+import { toAbsoluteMediaUrl } from "@/shared/lib/normalize-media-url"
 import { Button } from "@/shared/ui/button/Button"
+import { Spinner } from "@/shared/ui/spinner/Spinner"
 
 type Props = {
+  roundId: string
   receipts: ProcurementReceipt[]
   title?: string
   compact?: boolean
@@ -18,7 +23,106 @@ type OpenedReceipt = {
 const receiptTitle = (r: ProcurementReceipt) =>
   `${r.pickupPoint?.name ? `${r.pickupPoint.name} · ` : ""}${r.fileName}`
 
+const ReceiptPreview = ({
+  roundId,
+  receipt,
+  compact,
+  onOpen,
+}: {
+  roundId: string
+  receipt: ProcurementReceipt
+  compact?: boolean
+  onOpen: (src: string, title: string) => void
+}) => {
+  const [src, setSrc] = useState<string | null>(null)
+  const [failed, setFailed] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const label = receiptTitle(receipt)
+
+  useEffect(() => {
+    let blobUrl: string | null = null
+    let cancelled = false
+
+    const load = async () => {
+      setLoading(true)
+      setFailed(false)
+      try {
+        const blob = await http.fetchBlob(
+          procurementSettlementApi.receiptFilePath(roundId, receipt.id),
+          true,
+        )
+        if (cancelled) return
+        blobUrl = URL.createObjectURL(blob)
+        setSrc(blobUrl)
+      } catch {
+        const fallback = toAbsoluteMediaUrl(receipt.url, receipt.objectKey)
+        if (fallback) {
+          setSrc(fallback)
+        } else {
+          setFailed(true)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
+    void load()
+
+    return () => {
+      cancelled = true
+      if (blobUrl) URL.revokeObjectURL(blobUrl)
+    }
+  }, [roundId, receipt.id, receipt.url, receipt.objectKey])
+
+  if (loading) {
+    return (
+      <div
+        className={
+          compact
+            ? "flex h-20 w-28 items-center justify-center rounded-xl border border-slate-200 bg-slate-50"
+            : "flex aspect-[3/4] w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-50"
+        }
+      >
+        <Spinner className="h-5 w-5" />
+      </div>
+    )
+  }
+
+  if (failed || !src) {
+    return (
+      <div
+        className={
+          compact
+            ? "flex h-20 w-28 flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-1 text-center"
+            : "flex aspect-[3/4] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 text-center"
+        }
+      >
+        <ImageOff size={compact ? 16 : 24} className="text-slate-400" />
+        <span className="text-[10px] text-slate-500">Не удалось загрузить</span>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(src, label)}
+      className="block w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 text-left transition hover:border-emerald-300 hover:shadow-sm"
+    >
+      <img
+        src={src}
+        alt={label}
+        className={
+          compact ? "h-20 w-28 object-cover" : "aspect-[3/4] w-full object-cover"
+        }
+      />
+      <p className="truncate px-2 py-1 text-[10px] text-slate-500">{label}</p>
+    </button>
+  )
+}
+
 export const ProcurementReceiptsGallery = ({
+  roundId,
   receipts,
   title = "Чеки закупа",
   compact = false,
@@ -38,32 +142,16 @@ export const ProcurementReceiptsGallery = ({
               : "mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3"
           }
         >
-          {receipts.map((r) => {
-            const src = resolveReceiptImageUrl(r.url, r.objectKey)
-            const label = receiptTitle(r)
-
-            return (
-              <li key={r.id}>
-                <button
-                  type="button"
-                  onClick={() => setOpened({ src, title: label })}
-                  className="block w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 text-left transition hover:border-emerald-300 hover:shadow-sm"
-                >
-                  <img
-                    src={src}
-                    alt={label}
-                    className={
-                      compact
-                        ? "h-20 w-28 object-cover"
-                        : "aspect-[3/4] w-full object-cover"
-                    }
-                    loading="lazy"
-                  />
-                  <p className="truncate px-2 py-1 text-[10px] text-slate-500">{label}</p>
-                </button>
-              </li>
-            )
-          })}
+          {receipts.map((r) => (
+            <li key={r.id}>
+              <ReceiptPreview
+                roundId={roundId}
+                receipt={r}
+                compact={compact}
+                onOpen={(src, openTitle) => setOpened({ src, title: openTitle })}
+              />
+            </li>
+          ))}
         </ul>
       </div>
 

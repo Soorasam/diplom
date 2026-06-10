@@ -160,6 +160,21 @@ export const http = {
 
   delete: <T>(path: string, auth = false) => request<T>(path, { method: "DELETE", auth }),
 
+  fetchBlob: async (path: string, auth = true) => {
+    await waitForAuthReady()
+    const headers = new Headers()
+    if (auth) {
+      const token = getAccessToken()
+      if (token) headers.set("Authorization", `Bearer ${token}`)
+    }
+    const res = await fetch(`${API_URL}${path}`, { headers, cache: "no-store" })
+    if (!res.ok) {
+      const message = await parseErrorMessage(res)
+      throw new ApiError(res.status, message)
+    }
+    return res.blob()
+  },
+
   upload: <T>(path: string, file: File, auth = true) => {
     const form = new FormData()
     form.append("file", file)
