@@ -14,6 +14,7 @@
     "prisma:seed": "prisma db seed",
     "prisma:reset:accounts": "npm run build:scripts && node dist/scripts/prisma/reset-accounts-only.js",
     "prisma:reset:deploy": "npm run build:scripts && node dist/scripts/prisma/reset-for-deploy.js",
+    "prisma:reset:rounds-orders": "npm run build:scripts && node dist/scripts/prisma/reset-rounds-orders.js",
     "prisma:seed:catalog": "npm run build:scripts && node dist/scripts/prisma/seed-catalog-only.js",
     "prisma:studio": "prisma studio",
     "storage:seed": "npm run build:scripts && node dist/scripts/scripts/seed-product-images.js"
