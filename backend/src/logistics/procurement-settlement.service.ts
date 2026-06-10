@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  OrderItemProcurementStatus,
   OrderStatus,
   PaymentStatus,
   RoundStatus,
@@ -163,12 +164,31 @@ export class ProcurementSettlementService {
     });
   }
 
-  private async assertAllProcurementStopsHaveReceipts(roundId: string) {
+  private settlementOrdersWhere(roundId: string) {
+    return {
+      roundId,
+      status: { not: OrderStatus.cancelled },
+      paymentStatus: {
+        in: [PaymentStatus.held, PaymentStatus.released],
+      },
+    };
+  }
+
+  private async assertProcurementReceiptsForSettlement(roundId: string) {
     const stops = await this.prisma.roundDeliveryStop.findMany({
       where: { roundId, isProcurementStop: true },
       select: { pickupPointId: true, pickupPoint: { select: { name: true } } },
     });
     for (const stop of stops) {
+      const purchasedAtStop = await this.prisma.orderItem.count({
+        where: {
+          procurementPickupPointId: stop.pickupPointId,
+          procurementStatus: OrderItemProcurementStatus.purchased,
+          order: { roundId, status: { not: OrderStatus.cancelled } },
+        },
+      });
+      if (purchasedAtStop === 0) continue;
+
       const count = await this.countReceiptsForStop(roundId, stop.pickupPointId);
       if (count === 0) {
         throw new BadRequestException(
@@ -178,21 +198,23 @@ export class ProcurementSettlementService {
     }
   }
 
+  private async assertAllProcurementStopsHaveReceipts(roundId: string) {
+    await this.assertProcurementReceiptsForSettlement(roundId);
+  }
+
   async getSettlement(user: User, roundId: string) {
     const round = await this.assertRoundAccess(user, roundId);
     const [receiptCount, orders] = await Promise.all([
       this.prisma.roundProcurementReceipt.count({ where: { roundId } }),
       this.prisma.order.findMany({
-        where: {
-          roundId,
-          status: { not: OrderStatus.cancelled },
-          paymentStatus: PaymentStatus.held,
-        },
+        where: this.settlementOrdersWhere(roundId),
+        orderBy: { createdAt: 'asc' },
         select: {
           id: true,
           publicNumber: true,
           totalEstimate: true,
           refundAmount: true,
+          paymentStatus: true,
         },
       }),
     ]);
@@ -235,11 +257,7 @@ export class ProcurementSettlementService {
     await this.assertAllProcurementStopsHaveReceipts(roundId);
 
     const orders = await this.prisma.order.findMany({
-      where: {
-        roundId,
-        status: { not: OrderStatus.cancelled },
-        paymentStatus: PaymentStatus.held,
-      },
+      where: this.settlementOrdersWhere(roundId),
       orderBy: { createdAt: 'asc' },
     });
 

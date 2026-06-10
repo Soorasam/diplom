@@ -27,6 +27,7 @@ export type ProcurementChecklist = {
   hasNextProcurementPoint: boolean
   nextProcurementName: string | null
   procurementCompleted: boolean
+  requiresReceiptAtStop: boolean
   items: ProcurementChecklistLine[]
 }
 

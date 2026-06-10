@@ -328,10 +328,11 @@ export const ProcurementChecklistCard = ({
 
   const allMarked = totalPositions > 0 && markedCount === totalPositions
   const checklistDone = checklistSaved || totalPositions === 0
+  const needsReceipt = checklist?.requiresReceiptAtStop ?? false
   const canDepart =
     Boolean(checklist) &&
     checklistDone &&
-    hasReceipt &&
+    (hasReceipt || !needsReceipt) &&
     (!requiresSettlement || settlementDone)
 
   if (isLoading) {
@@ -451,7 +452,7 @@ export const ProcurementChecklistCard = ({
         </ul>
       )}
 
-      {checklistDone ? (
+      {checklistDone && needsReceipt ? (
         <ProcurementStopReceiptsCard
           roundId={roundId}
           pickupPointId={checklist.pickupPointId}
@@ -488,7 +489,7 @@ export const ProcurementChecklistCard = ({
           <Truck size={16} className="mr-2" />
           {depart.isPending ? "…" : "Поехали"}
         </Button>
-        {checklistDone && !hasReceipt ? (
+        {checklistDone && needsReceipt && !hasReceipt ? (
           <p className="text-center text-xs text-amber-700 dark:text-amber-300">
             Прикрепите фото чека с этой точки закупки
           </p>

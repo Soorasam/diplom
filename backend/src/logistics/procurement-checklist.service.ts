@@ -209,6 +209,14 @@ export class ProcurementChecklistService {
       },
     });
 
+    const purchasedAtStop = await this.prisma.orderItem.count({
+      where: {
+        procurementPickupPointId: pickupPointId,
+        procurementStatus: OrderItemProcurementStatus.purchased,
+        order: { roundId, status: { not: OrderStatus.cancelled } },
+      },
+    });
+
     return {
       active: true as const,
       roundId,
@@ -218,6 +226,7 @@ export class ProcurementChecklistService {
       hasNextProcurementPoint: Boolean(nextId),
       nextProcurementName: nextWp?.pickupPoint.name ?? null,
       procurementCompleted: Boolean(stop?.procurementCompletedAt),
+      requiresReceiptAtStop: purchasedAtStop > 0,
       items: lines.map((line) => ({
         orderItemId: line.id,
         orderId: line.orderId,
@@ -448,7 +457,15 @@ export class ProcurementChecklistService {
     const receiptCount = await this.prisma.roundProcurementReceipt.count({
       where: { roundId, pickupPointId },
     });
-    if (receiptCount === 0) {
+
+    const purchasedAtStop = await this.prisma.orderItem.count({
+      where: {
+        procurementPickupPointId: pickupPointId,
+        procurementStatus: OrderItemProcurementStatus.purchased,
+        order: { roundId, status: { not: OrderStatus.cancelled } },
+      },
+    });
+    if (purchasedAtStop > 0 && receiptCount === 0) {
       throw new BadRequestException('Прикрепите фото чека перед выездом');
     }
 

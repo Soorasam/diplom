@@ -6,6 +6,7 @@ import {
   usePurchaseSettlement,
   useSettlePurchase,
 } from "@/entities/procurement-settlement/api/useProcurementSettlement"
+import { ProcurementReceiptsGallery } from "@/features/procurement-receipts/ui/ProcurementReceiptsGallery"
 import { formatPrice } from "@/shared/lib/format"
 import { AlertBanner } from "@/shared/ui/alert-banner/AlertBanner"
 import { Button } from "@/shared/ui/button/Button"
@@ -99,6 +100,16 @@ export const ProcurementSettlementCard = ({
         </div>
       </div>
 
+      {receipts.length > 0 ? (
+        <div className="mt-4 border-t border-emerald-100 pt-4 dark:border-emerald-900/40">
+          <ProcurementReceiptsGallery
+            roundId={roundId}
+            receipts={receipts}
+            title="Фото чеков по точкам закупки"
+          />
+        </div>
+      ) : null}
+
       {!isSettled ? (
         <>
           <div className="mt-4 space-y-3 border-t border-emerald-100 pt-4">
@@ -114,9 +125,12 @@ export const ProcurementSettlementCard = ({
             />
             <p className="text-xs text-slate-500">
               Зарезервировано жителями: {formatPrice(reservedTotal)}
+              {settlement.orders.length > 0
+                ? ` · заказов: ${settlement.orders.length}`
+                : ""}
               {receipts.length === 0
                 ? " · прикрепите чеки на каждой точке закупки"
-                : ` · чеков по точкам: ${receipts.length}`}
+                : ` · фото чеков: ${receipts.length}`}
             </p>
             <Button
               type="button"
