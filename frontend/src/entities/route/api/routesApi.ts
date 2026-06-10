@@ -40,6 +40,13 @@ export const routesApi = {
       true,
     ),
 
+  beginSettlementHandout: (roundId: string, pickupPointId: string) =>
+    http.post<{ ordersReadyForConfirm: number }>(
+      `/coordinator/rounds/${roundId}/stops/${pickupPointId}/begin-handout`,
+      {},
+      true,
+    ),
+
   getDriverOrders: async (_driverId: string): Promise<Order[]> => {
     const list = await http.get<
       Parameters<typeof mapBackendOrder>[0][]

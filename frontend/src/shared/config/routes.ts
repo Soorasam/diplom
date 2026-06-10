@@ -32,7 +32,6 @@ export const routes = {
     procurements: "/driver/procurements",
     orders: "/driver/orders",
     route: "/driver/route",
-    handout: "/driver/handout",
     map: "/driver/map",
     profile: "/driver/profile",
     profileEdit: "/driver/profile/edit",

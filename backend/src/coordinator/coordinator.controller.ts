@@ -32,6 +32,15 @@ export class CoordinatorController {
     return this.coordinator.startDelivery(user, roundId);
   }
 
+  @Post('rounds/:roundId/stops/:pickupPointId/begin-handout')
+  beginHandout(
+    @CurrentUser() user: User,
+    @Param('roundId', ParseUUIDPipe) roundId: string,
+    @Param('pickupPointId', ParseUUIDPipe) pickupPointId: string,
+  ) {
+    return this.coordinator.beginSettlementHandout(user, roundId, pickupPointId);
+  }
+
   @Post('rounds/:roundId/stops/:pickupPointId/complete')
   completeStop(
     @CurrentUser() user: User,

@@ -133,7 +133,9 @@ export const DriverSettlementResidents = ({
           .filter((c): c is string => Boolean(c))
         const toAccept = group.filter(isAwaitingTripAccept)
         const canAccept = showAcceptActions && toAccept.length > 0
-        const toHandOut = group.filter((o) => o.status === "in_transit")
+        const toHandOut = group.filter(
+          (o) => o.status === "in_transit" || o.status === "confirmed",
+        )
         const awaitingConfirm = group.some((o) => o.status === "at_pickup")
         const activeForDelivery = group.some(isActiveForDelivery)
 

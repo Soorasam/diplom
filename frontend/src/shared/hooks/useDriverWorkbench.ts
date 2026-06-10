@@ -12,7 +12,6 @@ import { routesApi } from "@/entities/route/api/routesApi"
 import { queryKeys } from "@/shared/config/query-keys"
 import { PWA_DRIVER_POLL_MS } from "@/shared/config/live-sync"
 import { liveQueryOptions } from "@/shared/lib/query-live-options"
-import { buildSettlementBlocks } from "@/shared/lib/driver-settlement-order"
 import {
   groupOrdersByResident,
   groupOrdersBySettlement,
@@ -73,10 +72,6 @@ export const useDriverWorkbench = () => {
     () => groupOrdersByResident(awaitingAccept).length,
     [awaitingAccept],
   )
-  const settlementBlocks = useMemo(
-    () => buildSettlementBlocks(activeRoute?.deliveryStops, ordersBySettlement),
-    [activeRoute?.deliveryStops, ordersBySettlement],
-  )
 
   const routeStops = useMemo(
     () => filterDriverRouteStops(activeRoute?.deliveryStops ?? [], driverPickupPointId),
@@ -87,7 +82,7 @@ export const useDriverWorkbench = () => {
     ? ordersBySettlement.get(currentStop.pickupPointId) ?? []
     : []
   const pendingConfirmCount = currentStopOrders.filter(
-    (o) => o.status === "in_transit" || o.status === "at_pickup",
+    (o) => o.status === "at_pickup",
   ).length
 
   const workRoundId = activeRoute?.activeRoundId ?? deliveryRound?.id ?? activeRound?.id
@@ -105,7 +100,6 @@ export const useDriverWorkbench = () => {
     ordersBySettlement,
     awaitingAccept,
     awaitingAcceptCount,
-    settlementBlocks,
     currentStop,
     currentStopOrders,
     pendingConfirmCount,

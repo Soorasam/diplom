@@ -8,7 +8,6 @@ import { clearTokens, saveTokens } from "@/shared/api/auth-storage"
 import { mapUser } from "@/shared/api/mappers"
 import { routes } from "@/shared/config/routes"
 import { useCartStore } from "@/features/cart/model/cart-store"
-import { useOfflineQueueStore } from "@/features/offline/model/offline-queue-store"
 import { useDriverApplicationDraftStore } from "@/features/driver-application/model/driver-application-draft-store"
 import type { UserRole } from "@/shared/types"
 
@@ -60,7 +59,6 @@ export const useAuthStore = create<AuthState>()(
         const prevUserId = get().user?.id
         if (prevUserId && prevUserId !== user.id) {
           useCartStore.getState().reset()
-          useOfflineQueueStore.getState().reset()
           useDriverApplicationDraftStore.getState().clear()
         }
         set({ user, isAuthenticated: true })
@@ -81,7 +79,6 @@ export const useAuthStore = create<AuthState>()(
         const prevUserId = get().user?.id
         if (prevUserId && prevUserId !== user.id) {
           useCartStore.getState().reset()
-          useOfflineQueueStore.getState().reset()
           useDriverApplicationDraftStore.getState().clear()
         }
         set({ user, isAuthenticated: true })
@@ -93,7 +90,6 @@ export const useAuthStore = create<AuthState>()(
         const prevUserId = get().user?.id
         if (prevUserId && prevUserId !== user.id) {
           useCartStore.getState().reset()
-          useOfflineQueueStore.getState().reset()
           useDriverApplicationDraftStore.getState().clear()
         }
         set({ user, isAuthenticated: true })
@@ -110,7 +106,6 @@ export const useAuthStore = create<AuthState>()(
         clearTokens()
         clearApiSession()
         useCartStore.getState().reset()
-        useOfflineQueueStore.getState().reset()
         useDriverApplicationDraftStore.getState().clear()
         set({ user: null, isAuthenticated: false })
       },

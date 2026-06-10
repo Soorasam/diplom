@@ -7,7 +7,7 @@ import { buildVehicleSummary } from "@/features/driver-application/lib/build-veh
 import { isVehicleValid } from "@/features/driver-application/lib/vehicle-validation"
 import { driverDocumentKeys } from "@/features/driver-application/model/doc-meta"
 import { useDriverApplicationDraftStore } from "@/features/driver-application/model/driver-application-draft-store"
-import { useNetworkStore } from "@/features/offline/model/network-store"
+import { useNetworkOnlineEffect, useNetworkStore } from "@/shared/model/network-store"
 import type { DriverApplication } from "@/shared/api/api-types"
 import { routes } from "@/shared/config/routes"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
@@ -33,6 +33,7 @@ type Props = {
 
 export const DriverApplyWizard = ({ myApp }: Props) => {
   const navigate = useNavigate()
+  useNetworkOnlineEffect()
   const isOnline = useNetworkStore((s) => s.isOnline)
   const user = useAuthStore((s) => s.user)
   const draft = useDriverApplicationDraftStore((s) => s.draft)

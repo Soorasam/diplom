@@ -57,7 +57,20 @@ export const DriverRoutePage = () => {
       pickupPointId: string
     }) => routesApi.completeRouteStop(roundId, pickupPointId),
     onSuccess: () => {
-      void refetchProcurementState(qc, { driverId })
+      void refetchProcurementState(qc, { driverId, userId: user?.id })
+    },
+  })
+
+  const beginHandout = useMutation({
+    mutationFn: ({
+      roundId,
+      pickupPointId,
+    }: {
+      roundId: string
+      pickupPointId: string
+    }) => routesApi.beginSettlementHandout(roundId, pickupPointId),
+    onSuccess: () => {
+      void refetchProcurementState(qc, { driverId, userId: user?.id })
     },
   })
 
@@ -85,6 +98,9 @@ export const DriverRoutePage = () => {
   const pendingConfirm = Boolean(
     currentStop?.expectsOrders &&
       currentResidents.some((o) => o.status === "at_pickup"),
+  )
+  const needsHandoutStart = currentResidents.some(
+    (o) => o.status === "confirmed" || o.status === "in_transit",
   )
 
   const trip = buildDriverTripView({
@@ -137,9 +153,31 @@ export const DriverRoutePage = () => {
       )
     }
     if (
+      trip.contentPhase === "handout" &&
+      needsHandoutStart &&
+      trip.roundId &&
+      trip.currentStop
+    ) {
+      return (
+        <Button
+          fullWidth
+          size="lg"
+          className="ui-cta-primary"
+          loading={beginHandout.isPending}
+          onClick={() =>
+            beginHandout.mutate({
+              roundId: trip.roundId!,
+              pickupPointId: trip.currentStop!.pickupPointId,
+            })
+          }
+        >
+          Приехал в {trip.currentStop.label} — начать выдачу
+        </Button>
+      )
+    }
+    if (
       (trip.contentPhase === "handout" ||
-        trip.contentPhase === "close_settlement" ||
-        trip.contentPhase === "transit") &&
+        trip.contentPhase === "close_settlement") &&
       trip.canCompleteStop &&
       trip.roundId &&
       trip.currentStop
@@ -161,6 +199,31 @@ export const DriverRoutePage = () => {
           {isLast
             ? "Завершить рейс"
             : "Посёлок завершён — ехать дальше"}
+        </Button>
+      )
+    }
+    if (
+      trip.contentPhase === "transit" &&
+      trip.canCompleteStop &&
+      trip.roundId &&
+      trip.currentStop &&
+      !trip.currentStop.expectsOrders
+    ) {
+      const isLast = !trip.nextStop
+      return (
+        <Button
+          fullWidth
+          size="lg"
+          className="ui-cta-primary"
+          loading={completeStop.isPending}
+          onClick={() =>
+            completeStop.mutate({
+              roundId: trip.roundId!,
+              pickupPointId: trip.currentStop!.pickupPointId,
+            })
+          }
+        >
+          {isLast ? "Завершить рейс" : "Проехали — ехать дальше"}
         </Button>
       )
     }
@@ -278,12 +341,12 @@ export const DriverRoutePage = () => {
                   товар».
                 </span>
               </div>
-            ) : currentResidents.some((o) => o.status === "in_transit") ? (
+            ) : needsHandoutStart ? (
               <div className="mt-3 flex items-start gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2.5 text-xs text-sky-950 dark:border-sky-900/50 dark:bg-sky-950/30 dark:text-sky-200">
                 <AlertTriangle size={16} className="mt-0.5 shrink-0" />
                 <span>
-                  Сначала вручите товар каждому жителю — кнопка «Вручил товар» в карточке
-                  адреса.
+                  Нажмите «Приехал в посёлок — начать выдачу» внизу. После этого у
+                  жителя появится кнопка подтверждения в приложении.
                 </span>
               </div>
             ) : null}

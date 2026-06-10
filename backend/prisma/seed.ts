@@ -2,7 +2,7 @@ import { PrismaClient, UserRole } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 import { ensureSeedProducts, uploadSeedProductImages } from './lib/seed-catalog';
-import { KHANDYGA_LOCATION_INDEX, seedLocations } from './lib/seed-settlements-pvz';
+import { KHANDYGA_LOCATION_INDEX, seedLocations } from './lib/seed-settlements';
 
 const prisma = new PrismaClient();
 

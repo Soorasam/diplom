@@ -1,8 +1,17 @@
 import { useEffect } from "react"
+import { create } from "zustand"
 
-import { useNetworkStore } from "@/features/offline/model/network-store"
+interface NetworkState {
+  isOnline: boolean
+  setOnline: (isOnline: boolean) => void
+}
 
-export function useNetworkEffect() {
+export const useNetworkStore = create<NetworkState>()((set) => ({
+  isOnline: typeof navigator !== "undefined" ? navigator.onLine : true,
+  setOnline: (isOnline) => set({ isOnline }),
+}))
+
+export const useNetworkOnlineEffect = () => {
   const setOnline = useNetworkStore((s) => s.setOnline)
 
   useEffect(() => {
@@ -11,7 +20,6 @@ export function useNetworkEffect() {
 
     window.addEventListener("online", onOnline)
     window.addEventListener("offline", onOffline)
-
     setOnline(navigator.onLine)
 
     return () => {
@@ -20,4 +28,3 @@ export function useNetworkEffect() {
     }
   }, [setOnline])
 }
-

@@ -4,7 +4,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   submitted: 'Оформлен, ожидает подтверждения',
   confirmed: 'Принят в рейс',
   in_transit: 'В пути в ваш посёлок',
-  at_pickup: 'На пункте выдачи',
+  at_pickup: 'Ожидает подтверждения',
   delivered: 'Получен',
   cancelled: 'Отменён',
 };

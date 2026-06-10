@@ -136,9 +136,9 @@ export class OrdersService {
       if (!order.roundId || !order.pickupPointId) {
         throw new BadRequestException('Заказ не привязан к рейсу и точке выдачи');
       }
-      if (order.status !== OrderStatus.in_transit) {
+      if (order.status !== OrderStatus.in_transit && order.status !== OrderStatus.confirmed) {
         throw new BadRequestException(
-          'Отметить выдачу можно только для заказа «в пути»',
+          'Отметить выдачу можно только для заказа «в рейсе» или «в пути»',
         );
       }
       await this.deliveryStops.assertDriverCanHandOutAtStop(

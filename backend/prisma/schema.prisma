@@ -76,7 +76,7 @@ enum OrderItemProcurementStatus {
   refunded
 }
 
-/// Населённый пункт (точка раздачи в посёлке).
+/// Населённый пункт доставки на маршруте.
 model PickupPoint {
   id       String  @id @default(uuid()) @db.Uuid
   name     String

@@ -4,7 +4,7 @@ import { OrderStatus, UserRole } from '@prisma/client';
 /** Водитель не закрывает заказ — только житель после подтверждения в приложении. */
 const COORDINATOR_TRANSITIONS: Partial<Record<OrderStatus, OrderStatus[]>> = {
   [OrderStatus.submitted]: [OrderStatus.confirmed, OrderStatus.cancelled],
-  [OrderStatus.confirmed]: [OrderStatus.in_transit, OrderStatus.cancelled],
+  [OrderStatus.confirmed]: [OrderStatus.in_transit, OrderStatus.at_pickup, OrderStatus.cancelled],
   [OrderStatus.in_transit]: [OrderStatus.at_pickup],
 };
 

@@ -7,7 +7,7 @@ import {
   User,
   UserRole,
 } from '@prisma/client';
-import { calcRoundProgressPercent } from '../common/order-labels';
+import { calcRoundProgressPercent, ORDER_STATUS_LABELS } from '../common/order-labels';
 import { mapOrderDetail, orderInclude } from '../common/order-mapper';
 import {
   attachVirtualRoute,
@@ -318,6 +318,47 @@ export class CoordinatorService {
     }
 
     return result;
+  }
+
+  async beginSettlementHandout(user: User, roundId: string, pickupPointId: string) {
+    const round = await this.prisma.round.findUnique({ where: { id: roundId } });
+    if (!round) throw new NotFoundException('Сбор не найден');
+    if (
+      user.role === UserRole.coordinator &&
+      round.createdByUserId !== user.id
+    ) {
+      throw new BadRequestException('Нет доступа к этому сбору');
+    }
+
+    await this.deliveryStops.assertDriverCanHandOutAtStop(roundId, pickupPointId);
+
+    const orders = await this.prisma.order.findMany({
+      where: {
+        roundId,
+        pickupPointId,
+        status: { in: [OrderStatus.confirmed, OrderStatus.in_transit] },
+      },
+      select: { id: true },
+    });
+
+    if (orders.length === 0) {
+      throw new BadRequestException(
+        'Нет заказов для выдачи — возможно, жители уже могут подтверждать получение',
+      );
+    }
+
+    const { count } = await this.prisma.order.updateMany({
+      where: { id: { in: orders.map((o) => o.id) } },
+      data: {
+        status: OrderStatus.at_pickup,
+        statusNote: ORDER_STATUS_LABELS.at_pickup,
+      },
+    });
+
+    await this.deliveryStops.syncStopsForRound(roundId);
+    await this.deliveryStops.refreshStopCompletion(roundId, pickupPointId);
+
+    return { ordersReadyForConfirm: count };
   }
 
   async startDelivery(user: User, roundId: string) {
