@@ -9,7 +9,8 @@ import { useDriverWorkbench } from "@/shared/hooks/useDriverWorkbench"
 import {
   areAllDriverStopsCompleted,
   filterDriverRouteStops,
-  isDriverProcurementStop,
+  pickCurrentDriverStop,
+  pickCurrentDriverStopIndex,
   resolveDriverRouteChain,
 } from "@/shared/lib/driver-route-stops"
 import { buildDriverTripView } from "@/shared/lib/driver-trip-phase"
@@ -68,9 +69,12 @@ export const DriverRoutePage = () => {
     [routeStops, activeRoute?.deliveryStops, user?.pickupPointId],
   )
 
-  const currentIndex = deliveryStops.findIndex((s) => s.status !== "completed")
-  const currentStop = currentIndex >= 0 ? deliveryStops[currentIndex] : undefined
+  const currentIndex = pickCurrentDriverStopIndex(deliveryStops)
+  const currentStop = pickCurrentDriverStop(deliveryStops)
   const nextStop = currentIndex >= 0 ? deliveryStops[currentIndex + 1] : undefined
+  const openProcurementStop = deliveryStops.find(
+    (s) => s.isProcurementStop && !s.procurementCompleted,
+  )
   const allStopsCompleted = areAllDriverStopsCompleted(deliveryStops)
   const tripCompleted =
     allStopsCompleted ||
@@ -241,9 +245,7 @@ export const DriverRoutePage = () => {
           </Card>
         ) : null}
 
-        {trip.contentPhase === "procurement" &&
-        workRoundId &&
-        isDriverProcurementStop(currentStop) ? (
+        {workRoundId && openProcurementStop ? (
           <ProcurementChecklistCard
             roundId={workRoundId}
             compact

@@ -42,6 +42,17 @@ export class DeliveryStopsService {
 
   /** Отправляет в доставку заказы, по которым закупка уже завершена (нет pending позиций) */
   async releaseReadyOrdersToTransit(roundId: string) {
+    const openProcStops = await this.prisma.roundDeliveryStop.count({
+      where: {
+        roundId,
+        isProcurementStop: true,
+        procurementCompletedAt: null,
+      },
+    });
+    if (openProcStops > 0) {
+      return { ordersDispatched: 0 };
+    }
+
     const orders = await this.prisma.order.findMany({
       where: {
         roundId,
@@ -293,8 +304,7 @@ export class DeliveryStopsService {
       const routeProgressedPast = stops.some(
         (s) =>
           s.sortOrder > stop.sortOrder &&
-          (s.status !== DeliveryStopStatus.pending ||
-            (s.isProcurementStop && s.procurementCompletedAt != null)),
+          s.status === DeliveryStopStatus.completed,
       );
       if (!routeProgressedPast) continue;
 
@@ -508,7 +518,13 @@ export class DeliveryStopsService {
     const stop = await this.prisma.roundDeliveryStop.findUnique({
       where: { uq_round_delivery_stop: { roundId, pickupPointId } },
     });
-    if (!stop || stop.status === DeliveryStopStatus.completed) return;
+    if (
+      !stop ||
+      stop.status === DeliveryStopStatus.completed ||
+      !stop.procurementCompletedAt
+    ) {
+      return;
+    }
 
     await this.prisma.roundDeliveryStop.update({
       where: { uq_round_delivery_stop: { roundId, pickupPointId } },

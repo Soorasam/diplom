@@ -61,10 +61,7 @@ export class CoordinatorService {
       await Promise.all(
         rounds
           .filter((r) => r.status === RoundStatus.closed)
-          .map(async (r) => {
-            await this.deliveryStops.releaseReadyOrdersToTransit(r.id);
-            await this.deliveryStops.repairRoundIfWorkComplete(r.id);
-          }),
+          .map((r) => this.deliveryStops.repairRoundIfWorkComplete(r.id)),
       );
     }
 
@@ -119,9 +116,7 @@ export class CoordinatorService {
         const roundOrders = orders.filter((o) => o.round?.id === round.id);
         const stops = stopsByRound.get(round.id) ?? [];
 
-        const firstOpenStopIndex = stops.findIndex(
-          (s) => s.status !== DeliveryStopStatus.completed,
-        );
+        const firstOpenStopIndex = this.firstOpenStopIndex(stops);
 
         deliveryStops = stops.map((s, stopIndex) => {
           const counts = this.deliveryStops.orderCountsForStop(
@@ -427,6 +422,21 @@ export class CoordinatorService {
     });
   }
 
+  private firstOpenStopIndex(
+    stops: {
+      status: DeliveryStopStatus;
+      isProcurementStop: boolean;
+      procurementCompletedAt: Date | null;
+    }[],
+  ): number {
+    const openProcurement = stops.findIndex(
+      (s) => s.isProcurementStop && !s.procurementCompletedAt,
+    );
+    if (openProcurement >= 0) return openProcurement;
+
+    return stops.findIndex((s) => s.status !== DeliveryStopStatus.completed);
+  }
+
   private deriveStopUiStatus(
     stop: {
       status: DeliveryStopStatus;
@@ -435,6 +445,10 @@ export class CoordinatorService {
     },
     counts: { total: number; received: number; inTransit: number },
   ): 'pending' | 'in_progress' | 'completed' {
+    if (stop.isProcurementStop && !stop.procurementCompletedAt) {
+      return 'pending';
+    }
+
     if (stop.status === DeliveryStopStatus.completed) return 'completed';
 
     if (counts.total > 0) {
@@ -445,9 +459,6 @@ export class CoordinatorService {
       if (stop.status === DeliveryStopStatus.in_progress) return 'in_progress';
       return 'pending';
     }
-
-    if (stop.isProcurementStop && !stop.procurementCompletedAt) return 'pending';
-    if (stop.isProcurementStop && stop.procurementCompletedAt) return 'completed';
 
     if (stop.status === DeliveryStopStatus.in_progress) return 'in_progress';
     return 'pending';

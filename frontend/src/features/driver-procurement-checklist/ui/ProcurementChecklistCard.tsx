@@ -145,7 +145,7 @@ export const ProcurementChecklistCard = ({
     setUnavailableIds(new Set())
     setChecklistSaved(false)
     setSortMode("positions")
-  }, [checklist?.pickupPointId])
+  }, [checklist?.pickupPointId, roundId])
 
   const totalPositions = checklist?.items.length ?? 0
   const markedCount = purchasedIds.size + unavailableIds.size
@@ -253,7 +253,7 @@ export const ProcurementChecklistCard = ({
     )
   }
 
-  if (!checklist || (checklist.procurementCompleted && checklist.items.length === 0)) {
+  if (!checklist) {
     return null
   }
 
