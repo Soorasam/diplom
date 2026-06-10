@@ -115,14 +115,9 @@ export class ProcurementChecklistService {
     });
 
     const current = stops.find(
-      (s) =>
-        s.status !== DeliveryStopStatus.completed ||
-        (s.isProcurementStop && !s.procurementCompletedAt),
+      (s) => s.isProcurementStop && s.procurementCompletedAt == null,
     );
-    if (
-      !current?.isProcurementStop ||
-      current.procurementCompletedAt != null
-    ) {
+    if (!current) {
       return { active: false as const };
     }
 
@@ -387,6 +382,13 @@ export class ProcurementChecklistService {
       throw new BadRequestException('Сначала заполните чек-лист по всем позициям');
     }
 
+    const receiptCount = await this.prisma.roundProcurementReceipt.count({
+      where: { roundId, pickupPointId },
+    });
+    if (receiptCount === 0) {
+      throw new BadRequestException('Прикрепите фото чека перед выездом');
+    }
+
     const openProcStops = await this.prisma.roundDeliveryStop.count({
       where: {
         roundId,
@@ -395,13 +397,7 @@ export class ProcurementChecklistService {
       },
     });
     if (openProcStops === 1) {
-      const [round, receiptCount] = await Promise.all([
-        this.prisma.round.findUnique({ where: { id: roundId } }),
-        this.prisma.roundProcurementReceipt.count({ where: { roundId } }),
-      ]);
-      if (receiptCount === 0) {
-        throw new BadRequestException('Прикрепите фото чека перед выездом');
-      }
+      const round = await this.prisma.round.findUnique({ where: { id: roundId } });
       if (!round?.purchaseSettledAt) {
         throw new BadRequestException('Укажите сумму по чекам и проведите сверку');
       }
@@ -422,11 +418,8 @@ export class ProcurementChecklistService {
       },
     });
 
-    let ordersSentToTransit = 0;
-    if (openProc === 0) {
-      const result = await this.deliveryStops.releaseOrdersToTransit(roundId);
-      ordersSentToTransit = result.ordersDispatched;
-    }
+    const result = await this.deliveryStops.releaseReadyOrdersToTransit(roundId);
+    const ordersSentToTransit = result.ordersDispatched;
 
     return {
       ok: true,

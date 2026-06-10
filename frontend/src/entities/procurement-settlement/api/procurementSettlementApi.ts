@@ -2,10 +2,12 @@ import { http } from "@/shared/api/client"
 
 export type ProcurementReceipt = {
   id: string
+  pickupPointId?: string
   fileName: string
   mimeType: string
   url: string
   createdAt: string
+  pickupPoint?: { name: string }
 }
 
 export type PurchaseSettlementOrder = {
@@ -33,8 +35,18 @@ export const procurementSettlementApi = {
   listReceipts: (roundId: string) =>
     http.get<ProcurementReceipt[]>(`${base(roundId)}/receipts`, true),
 
-  uploadReceipt: (roundId: string, file: File) =>
-    http.upload<ProcurementReceipt>(`${base(roundId)}/receipts`, file, true),
+  listStopReceipts: (roundId: string, pickupPointId: string) =>
+    http.get<ProcurementReceipt[]>(
+      `${base(roundId)}/${pickupPointId}/receipts`,
+      true,
+    ),
+
+  uploadStopReceipt: (roundId: string, pickupPointId: string, file: File) =>
+    http.upload<ProcurementReceipt>(
+      `${base(roundId)}/${pickupPointId}/receipts`,
+      file,
+      true,
+    ),
 
   getSettlement: (roundId: string) =>
     http.get<PurchaseSettlement>(`${base(roundId)}/settlement`, true),

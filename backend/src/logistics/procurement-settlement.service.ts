@@ -43,24 +43,47 @@ export class ProcurementSettlementService {
     return round;
   }
 
-  async listReceipts(user: User, roundId: string) {
+  private async assertProcurementStop(roundId: string, pickupPointId: string) {
+    const stop = await this.prisma.roundDeliveryStop.findUnique({
+      where: {
+        uq_round_delivery_stop: { roundId, pickupPointId },
+      },
+    });
+    if (!stop?.isProcurementStop) {
+      throw new BadRequestException('Это не точка закупа');
+    }
+    return stop;
+  }
+
+  async listReceipts(user: User, roundId: string, pickupPointId?: string) {
     await this.assertRoundAccess(user, roundId);
     await this.storage.ensurePublicRead(this.storage.receiptsBucket());
     return this.prisma.roundProcurementReceipt.findMany({
-      where: { roundId },
+      where: {
+        roundId,
+        ...(pickupPointId ? { pickupPointId } : {}),
+      },
       orderBy: { createdAt: 'asc' },
       select: {
         id: true,
+        pickupPointId: true,
         fileName: true,
         mimeType: true,
         url: true,
         createdAt: true,
+        pickupPoint: { select: { name: true } },
       },
     });
   }
 
-  async uploadReceipt(user: User, roundId: string, file: UploadFile) {
+  async uploadReceipt(
+    user: User,
+    roundId: string,
+    pickupPointId: string,
+    file: UploadFile,
+  ) {
     await this.assertRoundAccess(user, roundId);
+    await this.assertProcurementStop(roundId, pickupPointId);
     if (!file?.buffer?.length) {
       throw new BadRequestException('Файл не передан');
     }
@@ -70,12 +93,13 @@ export class ProcurementSettlementService {
 
     const bucket = this.storage.receiptsBucket();
     await this.storage.ensurePublicRead(bucket);
-    const key = `rounds/${roundId}/${Date.now()}-${file.originalname.replace(/[^\w.\-]+/g, '_')}`;
+    const key = `rounds/${roundId}/stops/${pickupPointId}/${Date.now()}-${file.originalname.replace(/[^\w.\-]+/g, '_')}`;
     const url = await this.storage.upload(bucket, key, file.buffer, file.mimetype);
 
     return this.prisma.roundProcurementReceipt.create({
       data: {
         roundId,
+        pickupPointId,
         objectKey: key,
         fileName: file.originalname,
         mimeType: file.mimetype,
@@ -83,12 +107,35 @@ export class ProcurementSettlementService {
       },
       select: {
         id: true,
+        pickupPointId: true,
         fileName: true,
         mimeType: true,
         url: true,
         createdAt: true,
+        pickupPoint: { select: { name: true } },
       },
     });
+  }
+
+  async countReceiptsForStop(roundId: string, pickupPointId: string) {
+    return this.prisma.roundProcurementReceipt.count({
+      where: { roundId, pickupPointId },
+    });
+  }
+
+  private async assertAllProcurementStopsHaveReceipts(roundId: string) {
+    const stops = await this.prisma.roundDeliveryStop.findMany({
+      where: { roundId, isProcurementStop: true },
+      select: { pickupPointId: true, pickupPoint: { select: { name: true } } },
+    });
+    for (const stop of stops) {
+      const count = await this.countReceiptsForStop(roundId, stop.pickupPointId);
+      if (count === 0) {
+        throw new BadRequestException(
+          `Прикрепите фото чека для точки «${stop.pickupPoint.name}»`,
+        );
+      }
+    }
   }
 
   async getSettlement(user: User, roundId: string) {
@@ -145,12 +192,7 @@ export class ProcurementSettlementService {
       throw new BadRequestException('Сверка по этому сбору уже выполнена');
     }
 
-    const receiptCount = await this.prisma.roundProcurementReceipt.count({
-      where: { roundId },
-    });
-    if (receiptCount === 0) {
-      throw new BadRequestException('Прикрепите хотя бы одно фото чека');
-    }
+    await this.assertAllProcurementStopsHaveReceipts(roundId);
 
     const orders = await this.prisma.order.findMany({
       where: {

@@ -425,7 +425,7 @@ export const DriverProcurementsPage = () => {
             </>
           ) : null}
 
-          {templates.length > 0 ? (
+          {canCreateNewRound && templates.length > 0 ? (
             <Card className="border-slate-200">
               <p className="text-sm font-semibold text-slate-900">Сохранённые маршруты</p>
               <p className="mt-1 text-xs text-slate-500">

@@ -43,7 +43,10 @@ export const ProcurementReceiptsGallery = ({
                       : "aspect-[3/4] w-full object-cover"
                   }
                 />
-                <p className="truncate px-2 py-1 text-[10px] text-slate-500">{r.fileName}</p>
+                <p className="truncate px-2 py-1 text-[10px] text-slate-500">
+                  {r.pickupPoint?.name ? `${r.pickupPoint.name} · ` : ""}
+                  {r.fileName}
+                </p>
               </a>
             </li>
           )

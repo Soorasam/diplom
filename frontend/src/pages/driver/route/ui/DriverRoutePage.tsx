@@ -322,11 +322,13 @@ export const DriverRoutePage = () => {
                         {stop.label}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {stop.isProcurementStop
+                        {stop.isProcurementStop && !stop.procurementCompleted
                           ? "Закупка"
                           : stop.expectsOrders
                             ? `${stop.receivedOrders ?? 0}/${stop.totalOrders ?? 0} выдано`
-                            : "Проезд"}
+                            : stop.isProcurementStop
+                              ? "Закупка завершена"
+                              : "Проезд"}
                       </p>
                     </div>
                   </li>

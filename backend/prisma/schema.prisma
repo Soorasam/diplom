@@ -85,11 +85,12 @@ model PickupPoint {
   district String?
   ulus     String?
 
-  users          User[]
-  orders         Order[]
-  deliveryStops  RoundDeliveryStop[]
-  routeWaypoints RouteWaypoint[]
-  roundWaypoints RoundWaypoint[]
+  users               User[]
+  orders              Order[]
+  deliveryStops       RoundDeliveryStop[]
+  routeWaypoints      RouteWaypoint[]
+  roundWaypoints      RoundWaypoint[]
+  procurementReceipts RoundProcurementReceipt[]
 
   @@map("pickup_points")
 }
@@ -224,16 +225,19 @@ model RoundParticipant {
 }
 
 model RoundProcurementReceipt {
-  id        String   @id @default(uuid()) @db.Uuid
-  roundId   String   @map("round_id") @db.Uuid
-  objectKey String   @map("object_key")
-  fileName  String   @map("file_name")
-  mimeType  String   @map("mime_type")
-  url       String
-  createdAt DateTime @default(now()) @map("created_at")
+  id            String   @id @default(uuid()) @db.Uuid
+  roundId       String   @map("round_id") @db.Uuid
+  pickupPointId String   @map("pickup_point_id") @db.Uuid
+  objectKey     String   @map("object_key")
+  fileName      String   @map("file_name")
+  mimeType      String   @map("mime_type")
+  url           String
+  createdAt     DateTime @default(now()) @map("created_at")
 
-  round Round @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  round       Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  pickupPoint PickupPoint @relation(fields: [pickupPointId], references: [id])
 
+  @@index([roundId, pickupPointId])
   @@map("round_procurement_receipts")
 }
 

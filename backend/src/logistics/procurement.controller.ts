@@ -38,24 +38,34 @@ export class ProcurementController {
   }
 
   @Get(':roundId/procurement/receipts')
-  listReceipts(
+  listAllReceipts(
     @CurrentUser() user: User,
     @Param('roundId', ParseUUIDPipe) roundId: string,
   ) {
     return this.settlement.listReceipts(user, roundId);
   }
 
-  @Post(':roundId/procurement/receipts')
+  @Get(':roundId/procurement/:pickupPointId/receipts')
+  listStopReceipts(
+    @CurrentUser() user: User,
+    @Param('roundId', ParseUUIDPipe) roundId: string,
+    @Param('pickupPointId', ParseUUIDPipe) pickupPointId: string,
+  ) {
+    return this.settlement.listReceipts(user, roundId, pickupPointId);
+  }
+
+  @Post(':roundId/procurement/:pickupPointId/receipts')
   @UseInterceptors(
     FileInterceptor('file', { limits: { fileSize: 20 * 1024 * 1024 } }),
   )
   uploadReceipt(
     @CurrentUser() user: User,
     @Param('roundId', ParseUUIDPipe) roundId: string,
+    @Param('pickupPointId', ParseUUIDPipe) pickupPointId: string,
     @UploadedFile()
     file: { buffer: Buffer; mimetype: string; originalname: string },
   ) {
-    return this.settlement.uploadReceipt(user, roundId, file);
+    return this.settlement.uploadReceipt(user, roundId, pickupPointId, file);
   }
 
   @Post(':roundId/procurement/settle')

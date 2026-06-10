@@ -86,15 +86,21 @@ export const buildDriverDashboardHero = (input: {
   if (currentStop?.isProcurementStop && !currentStop.procurementCompleted) {
     const orderCount = countActiveOrders(orders)
     const itemTotal = checklistItemCount || countActiveLineItems(orders)
+    const stats: DriverPhaseHero["stats"] = [
+      { label: "заказов", value: String(orderCount) },
+      { label: "позиций", value: String(itemTotal) },
+    ]
+    if (checklistPurchasedCount > 0) {
+      stats.push({
+        label: "куплено",
+        value: `${checklistPurchasedCount}/${itemTotal}`,
+      })
+    }
     return {
       phase: "procurement",
       phaseLabel: "Закупка",
       title: currentStop.label,
-      stats: [
-        { label: "заказов", value: String(orderCount) },
-        { label: "позиций", value: String(itemTotal) },
-        { label: "куплено", value: `${checklistPurchasedCount}/${itemTotal}` },
-      ],
+      stats,
       nextLabel: nextStop ? `Далее ${nextStop.label}…` : undefined,
       ctaLabel: "Чек-лист",
       ctaTo: routes.driver.route,

@@ -41,7 +41,7 @@ export const useDriverPhaseHero = () => {
     checklistItemCount: checklist?.items.length ?? 0,
     checklistPurchasedCount: checklist?.procurementCompleted
       ? (checklist?.items.length ?? 0)
-      : 0,
+      : undefined,
   })
 
   const routeChain = resolveDriverRouteChain(activeRoute, user?.pickupPointId)

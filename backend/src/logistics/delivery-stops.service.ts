@@ -40,6 +40,42 @@ export class DeliveryStopsService {
     return { ordersDispatched: count };
   }
 
+  /** Отправляет в доставку заказы, по которым закупка уже завершена (нет pending позиций) */
+  async releaseReadyOrdersToTransit(roundId: string) {
+    const orders = await this.prisma.order.findMany({
+      where: {
+        roundId,
+        status: OrderStatus.confirmed,
+      },
+      include: { items: true },
+    });
+
+    const readyIds = orders
+      .filter(
+        (o) =>
+          !o.items.some(
+            (i) => i.procurementStatus === OrderItemProcurementStatus.pending,
+          ),
+      )
+      .map((o) => o.id);
+
+    if (readyIds.length === 0) {
+      return { ordersDispatched: 0 };
+    }
+
+    const { count } = await this.prisma.order.updateMany({
+      where: { id: { in: readyIds } },
+      data: {
+        status: OrderStatus.in_transit,
+        statusNote: ORDER_STATUS_LABELS.in_transit,
+      },
+    });
+
+    await this.markInTransitStopsInProgress(roundId);
+
+    return { ordersDispatched: count };
+  }
+
   async syncStopsForRound(roundId: string) {
     const round = await this.prisma.round.findUnique({
       where: { id: roundId },

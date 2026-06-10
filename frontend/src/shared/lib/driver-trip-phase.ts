@@ -253,6 +253,35 @@ export const buildDriverTripView = (input: {
     const stopOrders = ordersAtPickupPoint(orders, currentStop.pickupPointId)
     const { total: residents, delivered } = residentDeliveryStats(stopOrders)
     const inSettlement = currentStop.status === "in_progress"
+    const awaitingTransit = stopOrders.some((o) => o.status === "confirmed")
+
+    if (
+      currentStop.isProcurementStop &&
+      currentStop.procurementCompleted &&
+      awaitingTransit &&
+      !inSettlement
+    ) {
+      return {
+        contentPhase: "handout",
+        hero: {
+          phase: "delivery_stop",
+          phaseLabel: "Выдача",
+          title: currentStop.label,
+          subtitle: "Закупка завершена — обновите экран, если выдача не началась",
+          stats: [
+            { label: "адресов", value: String(residents) },
+            { label: "шаг", value: `${stepIndex}/${deliveryStops.length}` },
+          ],
+          nextLabel: nextStop ? `Далее ${nextStop.label}` : undefined,
+        },
+        roundId,
+        currentStop,
+        nextStop,
+        canCompleteStop: false,
+        pendingConfirm: false,
+      }
+    }
+
     const allConfirmed = residents > 0 && delivered >= residents && !pendingConfirm
 
     if (allConfirmed && inSettlement) {

@@ -1,11 +1,10 @@
-import { useRef, useState } from "react"
-import { Calculator, ImagePlus, Receipt } from "lucide-react"
+import { useState } from "react"
+import { Calculator, Receipt } from "lucide-react"
 
 import {
   useProcurementReceipts,
   usePurchaseSettlement,
   useSettlePurchase,
-  useUploadProcurementReceipt,
 } from "@/entities/procurement-settlement/api/useProcurementSettlement"
 import { ProcurementReceiptsGallery } from "@/features/procurement-receipts/ui/ProcurementReceiptsGallery"
 import { formatPrice } from "@/shared/lib/format"
@@ -24,29 +23,15 @@ export const ProcurementSettlementCard = ({
   roundId,
   embedded,
 }: Props) => {
-  const fileRef = useRef<HTMLInputElement>(null)
   const [actualTotal, setActualTotal] = useState("")
   const [error, setError] = useState<string | null>(null)
 
   const { data: settlement, isLoading, isError, error: loadError } = usePurchaseSettlement(roundId)
   const { data: receipts = [] } = useProcurementReceipts(roundId)
-  const upload = useUploadProcurementReceipt(roundId)
   const settle = useSettlePurchase(roundId)
 
   const isSettled = Boolean(settlement?.purchaseSettledAt)
   const reservedTotal = settlement?.reservedTotal ?? 0
-
-  const handleFile = async (file: File | undefined) => {
-    if (!file) return
-    setError(null)
-    try {
-      await upload.mutateAsync(file)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось загрузить фото")
-    } finally {
-      if (fileRef.current) fileRef.current.value = ""
-    }
-  }
 
   const handleSettle = async () => {
     const value = parseFloat(actualTotal.replace(",", "."))
@@ -109,7 +94,7 @@ export const ProcurementSettlementCard = ({
           </p>
           <p className="text-sm text-slate-700 dark:text-slate-300">
             {embedded
-              ? "Прикрепите чек и укажите фактическую сумму — без этого нельзя выехать."
+              ? "Укажите итоговую сумму по всем чекам маршрута — без сверки нельзя завершить последнюю закупку."
               : "Цена в каталоге — ориентир. После закупа по чекам возможен возврат переплаты жителям."}
           </p>
         </div>
@@ -119,24 +104,6 @@ export const ProcurementSettlementCard = ({
 
       {!isSettled ? (
         <>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic"
-            className="hidden"
-            onChange={(e) => void handleFile(e.target.files?.[0])}
-          />
-          <Button
-            type="button"
-            variant="secondary"
-            className="mt-3"
-            leftIcon={<ImagePlus size={18} />}
-            loading={upload.isPending}
-            onClick={() => fileRef.current?.click()}
-          >
-            Добавить фото чека
-          </Button>
-
           <div className="mt-4 space-y-3 border-t border-emerald-100 pt-4">
             <Input
               label="Итого по чекам, ₽"
@@ -150,7 +117,9 @@ export const ProcurementSettlementCard = ({
             />
             <p className="text-xs text-slate-500">
               Зарезервировано жителями: {formatPrice(reservedTotal)}
-              {receipts.length === 0 ? " · загрузите хотя бы один чек" : null}
+              {receipts.length === 0
+                ? " · прикрепите чеки на каждой точке закупки"
+                : ` · чеков по точкам: ${receipts.length}`}
             </p>
             <Button
               type="button"

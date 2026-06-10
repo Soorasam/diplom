@@ -5,6 +5,8 @@ import { procurementSettlementApi } from "./procurementSettlementApi"
 export const procurementSettlementKeys = {
   settlement: (roundId: string) => ["procurement-settlement", roundId] as const,
   receipts: (roundId: string) => ["procurement-receipts", roundId] as const,
+  stopReceipts: (roundId: string, pickupPointId: string) =>
+    ["procurement-receipts", roundId, pickupPointId] as const,
 }
 
 export const usePurchaseSettlement = (roundId?: string) =>
@@ -21,11 +23,29 @@ export const useProcurementReceipts = (roundId?: string) =>
     enabled: Boolean(roundId),
   })
 
-export const useUploadProcurementReceipt = (roundId: string) => {
+export const useProcurementStopReceipts = (
+  roundId?: string,
+  pickupPointId?: string,
+) =>
+  useQuery({
+    queryKey: procurementSettlementKeys.stopReceipts(roundId ?? "", pickupPointId ?? ""),
+    queryFn: () =>
+      procurementSettlementApi.listStopReceipts(roundId!, pickupPointId!),
+    enabled: Boolean(roundId && pickupPointId),
+  })
+
+export const useUploadProcurementStopReceipt = (
+  roundId: string,
+  pickupPointId: string,
+) => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (file: File) => procurementSettlementApi.uploadReceipt(roundId, file),
+    mutationFn: (file: File) =>
+      procurementSettlementApi.uploadStopReceipt(roundId, pickupPointId, file),
     onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: procurementSettlementKeys.stopReceipts(roundId, pickupPointId),
+      })
       void qc.invalidateQueries({ queryKey: procurementSettlementKeys.receipts(roundId) })
       void qc.invalidateQueries({ queryKey: procurementSettlementKeys.settlement(roundId) })
     },

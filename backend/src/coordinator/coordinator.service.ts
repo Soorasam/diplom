@@ -61,7 +61,10 @@ export class CoordinatorService {
       await Promise.all(
         rounds
           .filter((r) => r.status === RoundStatus.closed)
-          .map((r) => this.deliveryStops.repairRoundIfWorkComplete(r.id)),
+          .map(async (r) => {
+            await this.deliveryStops.releaseReadyOrdersToTransit(r.id);
+            await this.deliveryStops.repairRoundIfWorkComplete(r.id);
+          }),
       );
     }
 
@@ -341,10 +344,7 @@ export class CoordinatorService {
       },
     });
 
-    const result =
-      openProc === 0
-        ? await this.deliveryStops.releaseOrdersToTransit(roundId)
-        : { ordersDispatched: 0 };
+    const result = await this.deliveryStops.releaseReadyOrdersToTransit(roundId);
 
     return {
       roundId,

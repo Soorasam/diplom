@@ -10,6 +10,8 @@ import {
 } from "@/entities/driver-procurement/api/procurementChecklistApi"
 import { usePurchaseSettlement } from "@/entities/procurement-settlement/api/useProcurementSettlement"
 import { ProcurementSettlementCard } from "@/features/driver-procurement-settlement/ui/ProcurementSettlementCard"
+import { ProcurementStopReceiptsCard } from "@/features/driver-procurement-settlement/ui/ProcurementStopReceiptsCard"
+import { useProcurementStopReceipts } from "@/entities/procurement-settlement/api/useProcurementSettlement"
 import { invalidateDriverWorkbench } from "@/shared/lib/invalidate-driver-workbench"
 import { cn } from "@/shared/lib/cn"
 import { Button } from "@/shared/ui/button/Button"
@@ -152,6 +154,12 @@ export const ProcurementChecklistCard = ({
   )
   const settlementDone = Boolean(settlement?.purchaseSettledAt)
 
+  const { data: stopReceipts = [] } = useProcurementStopReceipts(
+    roundId,
+    checklist?.pickupPointId,
+  )
+  const hasReceipt = stopReceipts.length > 0
+
   const residentGroups = useMemo(
     () => (checklist ? groupByResident(checklist.items) : []),
     [checklist],
@@ -230,7 +238,10 @@ export const ProcurementChecklistCard = ({
   const allMarked = totalPositions > 0 && markedCount === totalPositions
   const checklistDone = checklistSaved || totalPositions === 0
   const canDepart =
-    Boolean(checklist) && checklistDone && (!requiresSettlement || settlementDone)
+    Boolean(checklist) &&
+    checklistDone &&
+    hasReceipt &&
+    (!requiresSettlement || settlementDone)
 
   if (isLoading) {
     return (
@@ -343,7 +354,15 @@ export const ProcurementChecklistCard = ({
         </ul>
       )}
 
-      {requiresSettlement && checklistDone ? (
+      {checklistDone ? (
+        <ProcurementStopReceiptsCard
+          roundId={roundId}
+          pickupPointId={checklist.pickupPointId}
+          locationName={checklist.locationName}
+        />
+      ) : null}
+
+      {requiresSettlement && checklistDone && hasReceipt ? (
         <div className="mt-4">
           <ProcurementSettlementCard roundId={roundId} embedded />
         </div>
@@ -372,9 +391,14 @@ export const ProcurementChecklistCard = ({
           <Truck size={16} className="mr-2" />
           {depart.isPending ? "…" : "Поехали"}
         </Button>
-        {requiresSettlement && checklistDone && !settlementDone ? (
+        {checklistDone && !hasReceipt ? (
           <p className="text-center text-xs text-amber-700 dark:text-amber-300">
-            Прикрепите фото чека и укажите сумму оплаты
+            Прикрепите фото чека с этой точки закупки
+          </p>
+        ) : null}
+        {requiresSettlement && checklistDone && hasReceipt && !settlementDone ? (
+          <p className="text-center text-xs text-amber-700 dark:text-amber-300">
+            Укажите итоговую сумму по всем чекам и проведите сверку
           </p>
         ) : null}
       </div>
