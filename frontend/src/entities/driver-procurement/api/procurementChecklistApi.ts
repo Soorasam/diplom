@@ -8,7 +8,9 @@ export type ProcurementChecklistLine = {
   orderNumber: string
   residentId: string
   residentName: string
+  deliveryPickupPointId: string | null
   deliverySettlementName: string
+  canDeferToNextProcurement: boolean
   productId: string
   productName: string
   quantity: number

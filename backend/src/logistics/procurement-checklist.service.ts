@@ -105,6 +105,28 @@ export class ProcurementChecklistService {
     return sorted[idx + 1].pickupPointId;
   }
 
+  private async routeStopSortMap(roundId: string) {
+    const stops = await this.prisma.roundDeliveryStop.findMany({
+      where: { roundId },
+      orderBy: { sortOrder: 'asc' },
+      select: { pickupPointId: true, sortOrder: true },
+    });
+    return new Map(stops.map((s) => [s.pickupPointId, s.sortOrder]));
+  }
+
+  /** Перенос возможен, если следующая закупка не позже посёлка доставки заказа */
+  private canDeferItemToNextProcurement(
+    routeSort: Map<string, number>,
+    nextProcPickupPointId: string,
+    deliveryPickupPointId: string | null,
+  ): boolean {
+    if (!deliveryPickupPointId) return false;
+    const nextSort = routeSort.get(nextProcPickupPointId);
+    const deliverySort = routeSort.get(deliveryPickupPointId);
+    if (nextSort === undefined || deliverySort === undefined) return false;
+    return nextSort <= deliverySort;
+  }
+
   async getActiveChecklist(user: User, roundId: string) {
     await this.assertDriverRound(user, roundId);
 
@@ -114,10 +136,11 @@ export class ProcurementChecklistService {
       include: { pickupPoint: true },
     });
 
-    const current = stops.find(
-      (s) => s.isProcurementStop && s.procurementCompletedAt == null,
-    );
-    if (!current) {
+    const current = stops.find((s) => s.status !== DeliveryStopStatus.completed);
+    if (
+      !current?.isProcurementStop ||
+      current.procurementCompletedAt != null
+    ) {
       return { active: false as const };
     }
 
@@ -147,6 +170,7 @@ export class ProcurementChecklistService {
     const nextWp = nextId
       ? waypoints.find((w) => w.pickupPointId === nextId)
       : null;
+    const routeSort = await this.routeStopSortMap(roundId);
 
     const lines = await this.prisma.orderItem.findMany({
       where: {
@@ -170,6 +194,7 @@ export class ProcurementChecklistService {
             id: true,
             publicNumber: true,
             userId: true,
+            pickupPointId: true,
             pickupPoint: { select: { name: true } },
             user: { select: { fullName: true, email: true } },
           },
@@ -199,7 +224,15 @@ export class ProcurementChecklistService {
         orderNumber: line.order.publicNumber,
         residentId: line.order.userId,
         residentName: line.order.user.fullName ?? line.order.user.email,
+        deliveryPickupPointId: line.order.pickupPointId,
         deliverySettlementName: line.order.pickupPoint?.name ?? '—',
+        canDeferToNextProcurement: nextId
+          ? this.canDeferItemToNextProcurement(
+              routeSort,
+              nextId,
+              line.order.pickupPointId,
+            )
+          : false,
         productId: line.productId,
         productName: line.productName,
         quantity: line.quantity,
@@ -216,6 +249,7 @@ export class ProcurementChecklistService {
     items: ProcurementChecklistItemDto[],
   ) {
     await this.assertDriverRound(user, roundId);
+    await this.deliveryStops.assertCurrentStopForDriver(roundId, pickupPointId);
 
     const stop = await this.prisma.roundDeliveryStop.findUnique({
       where: { uq_round_delivery_stop: { roundId, pickupPointId } },
@@ -229,6 +263,7 @@ export class ProcurementChecklistService {
 
     const waypoints = await this.procurementWaypoints(roundId);
     const nextProcId = this.nextProcurementPickupPointId(waypoints, pickupPointId);
+    const routeSort = await this.routeStopSortMap(roundId);
 
     const pending = await this.prisma.orderItem.findMany({
       where: {
@@ -237,7 +272,15 @@ export class ProcurementChecklistService {
         order: { roundId, status: { not: OrderStatus.cancelled } },
       },
       include: {
-        order: { select: { id: true, userId: true, publicNumber: true, totalEstimate: true } },
+        order: {
+          select: {
+            id: true,
+            userId: true,
+            publicNumber: true,
+            totalEstimate: true,
+            pickupPointId: true,
+          },
+        },
       },
     });
 
@@ -275,6 +318,17 @@ export class ProcurementChecklistService {
               'Нет следующей точки закупа — отметьте «Нет в наличии»',
             );
           }
+          if (
+            !this.canDeferItemToNextProcurement(
+              routeSort,
+              nextProcId,
+              line.order.pickupPointId,
+            )
+          ) {
+            throw new BadRequestException(
+              'Для этого заказа нельзя перенести закупку на следующую точку — отметьте «Нет в наличии»',
+            );
+          }
           await tx.orderItem.update({
             where: { id: line.id },
             data: {
@@ -285,7 +339,15 @@ export class ProcurementChecklistService {
           continue;
         }
 
-        if (entry.outcome === ProcurementItemOutcome.unavailable && nextProcId) {
+        if (
+          entry.outcome === ProcurementItemOutcome.unavailable &&
+          nextProcId &&
+          this.canDeferItemToNextProcurement(
+            routeSort,
+            nextProcId,
+            line.order.pickupPointId,
+          )
+        ) {
           throw new BadRequestException(
             'Есть следующая точка закупа — отметьте «Закуплю в следующей точке»',
           );
@@ -363,6 +425,7 @@ export class ProcurementChecklistService {
 
   async departProcurement(user: User, roundId: string, pickupPointId: string) {
     await this.assertDriverRound(user, roundId);
+    await this.deliveryStops.assertCurrentStopForDriver(roundId, pickupPointId);
 
     const stop = await this.prisma.roundDeliveryStop.findUnique({
       where: { uq_round_delivery_stop: { roundId, pickupPointId } },

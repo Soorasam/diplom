@@ -58,7 +58,6 @@ const ChecklistLineRow = ({
   bought,
   deferred,
   unavailable,
-  hasNextProcurementPoint,
   nextProcurementName,
   onTogglePurchased,
   onMarkDeferNext,
@@ -69,7 +68,6 @@ const ChecklistLineRow = ({
   bought: boolean
   deferred: boolean
   unavailable: boolean
-  hasNextProcurementPoint: boolean
   nextProcurementName?: string | null
   onTogglePurchased: (id: string) => void
   onMarkDeferNext: (id: string) => void
@@ -135,7 +133,7 @@ const ChecklistLineRow = ({
       </button>
       {!bought ? (
         <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
-          {hasNextProcurementPoint ? (
+          {line.canDeferToNextProcurement ? (
             <button
               type="button"
               className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400"
@@ -191,7 +189,6 @@ export const ProcurementChecklistCard = ({
   }, [checklist?.pickupPointId, roundId])
 
   const totalPositions = checklist?.items.length ?? 0
-  const hasNextProcurementPoint = Boolean(checklist?.hasNextProcurementPoint)
   const markedCount = purchasedIds.size + deferNextIds.size + unavailableIds.size
   const requiresSettlement = checklist ? !checklist.hasNextProcurementPoint : false
 
@@ -224,18 +221,25 @@ export const ProcurementChecklistCard = ({
   const submit = useMutation({
     mutationFn: () => {
       if (!checklist) throw new Error("no checklist")
-      if (hasNextProcurementPoint && unavailableIds.size > 0) {
-        throw new Error(
-          "На этой точке нельзя отметить «нет в наличии» — выберите «Закуплю в следующей точке»",
-        )
-      }
 
       const items = checklist.items.map((line) => {
         let outcome: ProcurementOutcome
         if (purchasedIds.has(line.orderItemId)) outcome = "purchased"
-        else if (deferNextIds.has(line.orderItemId)) outcome = "defer_next"
-        else if (unavailableIds.has(line.orderItemId)) outcome = "unavailable"
-        else {
+        else if (deferNextIds.has(line.orderItemId)) {
+          if (!line.canDeferToNextProcurement) {
+            throw new Error(
+              `«${line.productName}»: перенос на следующую точку закупа недоступен — отметьте «Нет в наличии»`,
+            )
+          }
+          outcome = "defer_next"
+        } else if (unavailableIds.has(line.orderItemId)) {
+          if (line.canDeferToNextProcurement) {
+            throw new Error(
+              `«${line.productName}»: выберите «Закуплю в следующей точке» или отметьте куплено`,
+            )
+          }
+          outcome = "unavailable"
+        } else {
           throw new Error("Отметьте каждую позицию: куплено, перенос или нет в наличии")
         }
         return { orderItemId: line.orderItemId, outcome }
@@ -404,7 +408,6 @@ export const ProcurementChecklistCard = ({
                 bought={purchasedIds.has(line.orderItemId)}
                 deferred={deferNextIds.has(line.orderItemId)}
                 unavailable={unavailableIds.has(line.orderItemId)}
-                hasNextProcurementPoint={hasNextProcurementPoint}
                 nextProcurementName={checklist.nextProcurementName}
                 onTogglePurchased={togglePurchased}
                 onMarkDeferNext={markDeferNext}
@@ -434,7 +437,6 @@ export const ProcurementChecklistCard = ({
                       bought={purchasedIds.has(line.orderItemId)}
                       deferred={deferNextIds.has(line.orderItemId)}
                       unavailable={unavailableIds.has(line.orderItemId)}
-                      hasNextProcurementPoint={hasNextProcurementPoint}
                       nextProcurementName={checklist.nextProcurementName}
                       onTogglePurchased={togglePurchased}
                       onMarkDeferNext={markDeferNext}

@@ -13,6 +13,7 @@ import {
 } from '@prisma/client';
 import { decimalToNumber } from '../common/order-labels';
 import { PrismaService } from '../prisma/prisma.service';
+import { DeliveryStopsService } from './delivery-stops.service';
 import { StorageService } from '../storage/storage.service';
 
 type UploadFile = {
@@ -26,6 +27,7 @@ export class ProcurementSettlementService {
   constructor(
     private prisma: PrismaService,
     private storage: StorageService,
+    private deliveryStops: DeliveryStopsService,
   ) {}
 
   private async assertRoundAccess(user: User, roundId: string) {
@@ -55,10 +57,20 @@ export class ProcurementSettlementService {
     return stop;
   }
 
+  private mapReceiptUrl(objectKey: string, storedUrl: string) {
+    const bucket = this.storage.receiptsBucket();
+    const fromKey = this.storage.publicUrl(bucket, objectKey);
+    const trimmed = storedUrl?.trim() ?? '';
+    if (!trimmed || trimmed.includes('minio:') || !trimmed.includes(`/${bucket}/`)) {
+      return fromKey;
+    }
+    return trimmed;
+  }
+
   async listReceipts(user: User, roundId: string, pickupPointId?: string) {
     await this.assertRoundAccess(user, roundId);
     await this.storage.ensurePublicRead(this.storage.receiptsBucket());
-    return this.prisma.roundProcurementReceipt.findMany({
+    const rows = await this.prisma.roundProcurementReceipt.findMany({
       where: {
         roundId,
         ...(pickupPointId ? { pickupPointId } : {}),
@@ -67,6 +79,7 @@ export class ProcurementSettlementService {
       select: {
         id: true,
         pickupPointId: true,
+        objectKey: true,
         fileName: true,
         mimeType: true,
         url: true,
@@ -74,6 +87,10 @@ export class ProcurementSettlementService {
         pickupPoint: { select: { name: true } },
       },
     });
+    return rows.map((row) => ({
+      ...row,
+      url: this.mapReceiptUrl(row.objectKey, row.url),
+    }));
   }
 
   async uploadReceipt(
@@ -84,6 +101,7 @@ export class ProcurementSettlementService {
   ) {
     await this.assertRoundAccess(user, roundId);
     await this.assertProcurementStop(roundId, pickupPointId);
+    await this.deliveryStops.assertCurrentStopForDriver(roundId, pickupPointId);
     if (!file?.buffer?.length) {
       throw new BadRequestException('Файл не передан');
     }
@@ -96,7 +114,7 @@ export class ProcurementSettlementService {
     const key = `rounds/${roundId}/stops/${pickupPointId}/${Date.now()}-${file.originalname.replace(/[^\w.\-]+/g, '_')}`;
     const url = await this.storage.upload(bucket, key, file.buffer, file.mimetype);
 
-    return this.prisma.roundProcurementReceipt.create({
+    const created = await this.prisma.roundProcurementReceipt.create({
       data: {
         roundId,
         pickupPointId,
@@ -108,6 +126,7 @@ export class ProcurementSettlementService {
       select: {
         id: true,
         pickupPointId: true,
+        objectKey: true,
         fileName: true,
         mimeType: true,
         url: true,
@@ -115,6 +134,10 @@ export class ProcurementSettlementService {
         pickupPoint: { select: { name: true } },
       },
     });
+    return {
+      ...created,
+      url: this.mapReceiptUrl(created.objectKey, created.url),
+    };
   }
 
   async countReceiptsForStop(roundId: string, pickupPointId: string) {

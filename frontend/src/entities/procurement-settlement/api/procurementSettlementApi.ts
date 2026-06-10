@@ -3,6 +3,7 @@ import { http } from "@/shared/api/client"
 export type ProcurementReceipt = {
   id: string
   pickupPointId?: string
+  objectKey?: string
   fileName: string
   mimeType: string
   url: string

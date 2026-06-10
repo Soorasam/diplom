@@ -182,7 +182,7 @@ export class DeliveryStopsService {
     });
   }
 
-  async completeStopByDriver(roundId: string, pickupPointId: string) {
+  async assertCurrentStopForDriver(roundId: string, pickupPointId: string) {
     const orderedStops = await this.prisma.roundDeliveryStop.findMany({
       where: { roundId },
       include: { pickupPoint: true },
@@ -196,6 +196,10 @@ export class DeliveryStopsService {
         `Сначала завершите «${firstIncomplete.pickupPoint.name}» — маршрут строго по порядку`,
       );
     }
+  }
+
+  async completeStopByDriver(roundId: string, pickupPointId: string) {
+    await this.assertCurrentStopForDriver(roundId, pickupPointId);
 
     const stop = await this.prisma.roundDeliveryStop.findUnique({
       where: { uq_round_delivery_stop: { roundId, pickupPointId } },

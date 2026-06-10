@@ -30,16 +30,10 @@ export const resolveDriverRouteChain = (
   return route.name?.trim() ?? ""
 }
 
-/** Открытая точка закупа блокирует переход к следующим НП до «Поехали» */
+/** Первая незавершённая точка маршрута — строго по порядку, без перескока через выдачу */
 export const pickCurrentDriverStop = (
   stops: RouteDeliveryStop[],
-): RouteDeliveryStop | undefined => {
-  const openProcurement = stops.find(
-    (s) => s.isProcurementStop && !s.procurementCompleted,
-  )
-  if (openProcurement) return openProcurement
-  return stops.find((s) => s.status !== "completed")
-}
+): RouteDeliveryStop | undefined => stops.find((s) => s.status !== "completed")
 
 export const pickCurrentDriverStopIndex = (stops: RouteDeliveryStop[]): number => {
   const current = pickCurrentDriverStop(stops)

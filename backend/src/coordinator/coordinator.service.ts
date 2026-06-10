@@ -423,17 +423,8 @@ export class CoordinatorService {
   }
 
   private firstOpenStopIndex(
-    stops: {
-      status: DeliveryStopStatus;
-      isProcurementStop: boolean;
-      procurementCompletedAt: Date | null;
-    }[],
+    stops: { status: DeliveryStopStatus }[],
   ): number {
-    const openProcurement = stops.findIndex(
-      (s) => s.isProcurementStop && !s.procurementCompletedAt,
-    );
-    if (openProcurement >= 0) return openProcurement;
-
     return stops.findIndex((s) => s.status !== DeliveryStopStatus.completed);
   }
 

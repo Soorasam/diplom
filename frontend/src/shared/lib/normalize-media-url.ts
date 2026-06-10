@@ -18,3 +18,18 @@ export function normalizeMediaUrl(url: string | null | undefined): string {
 export function normalizeProductImageUrl(url: string | null | undefined): string {
   return normalizeMediaUrl(url)
 }
+
+const RECEIPTS_BUCKET = "coop-receipts"
+
+export function resolveReceiptImageUrl(
+  url: string | null | undefined,
+  objectKey?: string | null,
+): string {
+  const normalized = normalizeMediaUrl(url)
+  if (normalized && COOP_MEDIA_PREFIX.test(normalized)) return normalized
+  if (objectKey?.trim()) {
+    const key = objectKey.trim().replace(/^\//, "")
+    return `/${RECEIPTS_BUCKET}/${key}`
+  }
+  return normalized
+}
