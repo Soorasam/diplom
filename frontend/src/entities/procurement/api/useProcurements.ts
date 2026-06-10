@@ -1,10 +1,18 @@
 import { useMemo } from "react"
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { useAuthStore } from "@/app/model/auth-store"
 import { queryKeys } from "@/shared/config/query-keys"
+import { refetchProcurementState } from "@/shared/lib/invalidate-procurement-state"
+import { invalidateResidentWorkbench } from "@/shared/lib/invalidate-resident-workbench"
 import type { UserRole } from "@/shared/types"
 
 import { procurementsApi } from "./procurementsApi"
+
+const procurementActorIds = (user: ReturnType<typeof useAuthStore.getState>["user"]) => ({
+  driverId: user?.role === "driver" ? user.id : undefined,
+  userId: user?.id,
+})
 
 export const useActiveProcurements = () =>
   useQuery({
@@ -12,7 +20,11 @@ export const useActiveProcurements = () =>
     queryFn: () => procurementsApi.getActive(),
     refetchInterval: (query) => {
       const list = query.state.data
-      if (list?.some((p) => p.emergencyCloseAt)) return 5000
+      if (
+        list?.some((p) => p.emergencyCloseAt || p.status === "closing")
+      ) {
+        return 3000
+      }
       return false
     },
   })
@@ -62,7 +74,7 @@ export const useDriverActiveProcurement = (userId?: string) =>
     enabled: Boolean(userId),
     refetchInterval: (query) => {
       const p = query.state.data
-      if (p?.emergencyCloseAt) return 5000
+      if (p?.emergencyCloseAt || p?.status === "closing") return 3000
       return false
     },
   })
@@ -90,42 +102,30 @@ export const useAllProcurements = () =>
 
 export const useCreateProcurement = () => {
   const qc = useQueryClient()
+  const user = useAuthStore((s) => s.user)
   return useMutation({
     mutationFn: procurementsApi.create,
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.all })
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
-      void qc.invalidateQueries({ queryKey: ["driver", "active-procurement"] })
-      void qc.invalidateQueries({ queryKey: ["driver", "delivery-procurement"] })
+      void refetchProcurementState(qc, procurementActorIds(user))
     },
   })
 }
 
 export const useScheduleEmergencyClose = () => {
   const qc = useQueryClient()
+  const user = useAuthStore((s) => s.user)
   return useMutation({
     mutationFn: (id: string) => procurementsApi.scheduleEmergencyClose(id),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.all })
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
-      void qc.invalidateQueries({ queryKey: ["driver", "active-procurement"] })
-      void qc.invalidateQueries({ queryKey: ["driver", "delivery-procurement"] })
-      void qc.invalidateQueries({ queryKey: ["routes", "driver"] })
-    },
+    onSuccess: () => refetchProcurementState(qc, procurementActorIds(user)),
   })
 }
 
 export const useCloseProcurement = (actorRole: UserRole) => {
   const qc = useQueryClient()
+  const user = useAuthStore((s) => s.user)
   return useMutation({
     mutationFn: (id: string) => procurementsApi.close(id, actorRole),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.all })
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
-      void qc.invalidateQueries({ queryKey: ["driver", "active-procurement"] })
-      void qc.invalidateQueries({ queryKey: ["driver", "delivery-procurement"] })
-      void qc.invalidateQueries({ queryKey: ["routes", "driver"] })
-    },
+    onSuccess: () => refetchProcurementState(qc, procurementActorIds(user)),
   })
 }
 
@@ -144,12 +144,7 @@ export const useJoinProcurement = (userId?: string) => {
       return procurementsApi.join(userId, procurementId)
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
-      if (userId) {
-        void qc.invalidateQueries({
-          queryKey: queryKeys.procurements.memberships(userId),
-        })
-      }
+      invalidateResidentWorkbench(qc, userId)
     },
   })
 }
@@ -162,13 +157,7 @@ export const useLeaveProcurement = (userId?: string) => {
       return procurementsApi.leave(userId, procurementId)
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
-      void qc.invalidateQueries({ queryKey: queryKeys.cart })
-      if (userId) {
-        void qc.invalidateQueries({
-          queryKey: queryKeys.procurements.memberships(userId),
-        })
-      }
+      invalidateResidentWorkbench(qc, userId)
     },
   })
 }
