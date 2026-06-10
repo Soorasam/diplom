@@ -391,13 +391,6 @@ export const ProcurementChecklistCard = ({
         </div>
       ) : null}
 
-      {hasNextProcurementPoint && checklist.nextProcurementName ? (
-        <p className="mb-3 text-xs text-amber-800 dark:text-amber-300">
-          Если товара нет — отметьте «Закуплю в {checklist.nextProcurementName}», а не
-          «нет в наличии».
-        </p>
-      ) : null}
-
       {checklist.items.length === 0 ? (
         <p className="text-sm text-slate-600 dark:text-slate-400">
           На этой точке нечего закупать.
