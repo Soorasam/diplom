@@ -5,5 +5,5 @@ type MobilePageLayoutProps = {
 }
 
 export const MobilePageLayout = ({ children }: MobilePageLayoutProps) => (
-  <div className="app-canvas font-sans">{children}</div>
+  <div className="app-canvas min-h-dvh font-sans">{children}</div>
 )

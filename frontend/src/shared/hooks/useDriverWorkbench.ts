@@ -6,10 +6,8 @@ import {
   filterDriverRouteStops,
   pickCurrentDriverStop,
 } from "@/shared/lib/driver-route-stops"
-import {
-  useDriverActiveProcurement,
-  useDriverDeliveryProcurement,
-} from "@/entities/procurement/api/useProcurements"
+import { useDriverDeliveryProcurement } from "@/entities/procurement/api/useProcurements"
+import { useDriverEffectiveActiveRound } from "@/shared/hooks/useDriverEffectiveActiveRound"
 import { routesApi } from "@/entities/route/api/routesApi"
 import { queryKeys } from "@/shared/config/query-keys"
 import { PWA_DRIVER_POLL_MS } from "@/shared/config/live-sync"
@@ -21,6 +19,7 @@ import {
   isAwaitingTripAccept,
 } from "@/shared/lib/driver-orders"
 import {
+  isDeliveryRoundInProgress,
   isOpenCollectionRound,
   resolveDriverActiveRoute,
 } from "@/shared/lib/driver-round-workload"
@@ -46,13 +45,23 @@ export const useDriverWorkbench = () => {
     refetchInterval: PWA_DRIVER_POLL_MS,
   })
 
-  const { data: activeRound } = useDriverActiveProcurement(user?.id)
-  const { data: deliveryRound } = useDriverDeliveryProcurement(user?.id)
+  const { data: activeRound } = useDriverEffectiveActiveRound(user?.id)
+  const { data: rawDeliveryRound } = useDriverDeliveryProcurement(user?.id)
 
   const activeRoute = useMemo(
-    () => resolveDriverActiveRoute(driverRoutes, deliveryRound, activeRound),
-    [driverRoutes, deliveryRound, activeRound],
+    () => resolveDriverActiveRoute(driverRoutes, rawDeliveryRound, activeRound),
+    [driverRoutes, rawDeliveryRound, activeRound],
   )
+
+  const deliveryRound = useMemo(() => {
+    if (!rawDeliveryRound) return undefined
+    if (
+      !isDeliveryRoundInProgress(rawDeliveryRound, activeRoute, driverOrders)
+    ) {
+      return undefined
+    }
+    return rawDeliveryRound
+  }, [rawDeliveryRound, activeRoute, driverOrders])
 
   const orders = driverOrders ?? []
   const ordersBySettlement = useMemo(

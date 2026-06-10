@@ -22,10 +22,10 @@ import {
 import {
   useCreateProcurement,
   useAllProcurements,
-  useDriverActiveProcurement,
   useDriverDeliveryProcurement,
   useScheduleEmergencyClose,
 } from "@/entities/procurement/api/useProcurements"
+import { useDriverEffectiveActiveRound } from "@/shared/hooks/useDriverEffectiveActiveRound"
 import { routes } from "@/shared/config/routes"
 import { randomId } from "@/shared/lib/random-id"
 import { EmergencyCloseModal } from "@/features/driver-procurement/ui/EmergencyCloseModal"
@@ -101,7 +101,7 @@ export const DriverProcurementsPage = () => {
   const scheduleEmergencyClose = useScheduleEmergencyClose()
   const driverId = user?.role === "driver" ? user.id : ""
 
-  const { data: activeRound } = useDriverActiveProcurement(user?.id)
+  const { data: activeRound } = useDriverEffectiveActiveRound(user?.id)
   const { data: deliveryRound } = useDriverDeliveryProcurement(user?.id)
   const { data: all = [] } = useAllProcurements()
 

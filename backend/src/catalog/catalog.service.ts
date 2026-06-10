@@ -479,6 +479,19 @@ export class CatalogService {
   async getDriverDeliveryRound(user: User) {
     await this.processDueEmergencyCloses();
     await this.deliveryStops.fulfillSupersededRounds(user.id);
+
+    const latestClosed = await this.prisma.round.findFirst({
+      where: {
+        createdByUserId: user.id,
+        status: RoundStatus.closed,
+      },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
+    });
+    if (latestClosed) {
+      await this.deliveryStops.repairRoundIfWorkComplete(latestClosed.id);
+    }
+
     const round = await this.prisma.round.findFirst({
       where: {
         createdByUserId: user.id,

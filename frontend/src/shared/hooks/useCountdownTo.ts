@@ -11,7 +11,14 @@ export const useCountdownTo = (targetIso: string | null | undefined) => {
     const tick = () => setRemainingMs(getRemainingMs(targetIso))
     tick()
     const id = window.setInterval(tick, 1000)
-    return () => window.clearInterval(id)
+    const onVisible = () => {
+      if (document.visibilityState === "visible") tick()
+    }
+    document.addEventListener("visibilitychange", onVisible)
+    return () => {
+      window.clearInterval(id)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
   }, [targetIso])
 
   return {

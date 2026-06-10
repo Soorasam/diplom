@@ -49,7 +49,7 @@ export const DriverLayout = () => {
   return (
     <MobilePageLayout>
       <ProcurementLiveSync />
-      <main className="app-scroll-area mx-auto flex w-full max-w-[480px] flex-col">
+      <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col">
         <Outlet />
       </main>
       <MobileBottomNav tabs={tabs} />

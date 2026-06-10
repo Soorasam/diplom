@@ -25,9 +25,7 @@ export const DriverApplyPage = () => {
 
   return (
     <MobilePageLayout>
-      <main className="app-scroll-area mx-auto flex w-full max-w-[480px] flex-col">
-        <PageShell className="!pb-8">{content}</PageShell>
-      </main>
+      <PageShell className="!pb-8">{content}</PageShell>
     </MobilePageLayout>
   )
 }

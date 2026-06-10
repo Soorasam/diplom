@@ -16,18 +16,24 @@ export const SwipeableOutlet = () => {
   })
 
   return (
-    <div ref={swipeRef} data-swipe-root className="flex min-h-0 flex-1 flex-col touch-pan-y">
-      <div
-        key={pathname}
-        className={cn(
-          "flex flex-col",
-          swipeDirection === "left" && "page-slide-from-right",
-          swipeDirection === "right" && "page-slide-from-left",
-        )}
-        onAnimationEnd={() => setSwipeDirection(null)}
-      >
-        <Outlet />
-      </div>
+    <div
+      ref={swipeRef}
+      data-swipe-root
+      className="app-canvas flex min-h-dvh w-full touch-pan-y"
+    >
+      <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col">
+        <div
+          key={pathname}
+          className={cn(
+            "flex min-h-full flex-1 flex-col",
+            swipeDirection === "left" && "page-slide-from-right",
+            swipeDirection === "right" && "page-slide-from-left",
+          )}
+          onAnimationEnd={() => setSwipeDirection(null)}
+        >
+          <Outlet />
+        </div>
+      </main>
     </div>
   )
 }

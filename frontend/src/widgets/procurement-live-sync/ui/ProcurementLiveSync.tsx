@@ -3,12 +3,20 @@ import { useEffect, useMemo, useRef } from "react"
 import { useAuthStore } from "@/app/model/auth-store"
 import {
   useActiveProcurements,
-  useDriverActiveProcurement,
+  useDriverDeliveryProcurement,
 } from "@/entities/procurement/api/useProcurements"
-import { PWA_DRIVER_POLL_MS, PWA_RESIDENT_POLL_MS } from "@/shared/config/live-sync"
+import {
+  PWA_DRIVER_BURST_MS,
+  PWA_DRIVER_POLL_MS,
+  PWA_RESIDENT_POLL_MS,
+} from "@/shared/config/live-sync"
 import { useCountdownTo } from "@/shared/hooks/useCountdownTo"
+import { useDriverEffectiveActiveRound } from "@/shared/hooks/useDriverEffectiveActiveRound"
+import { useDriverNavigationRefetch } from "@/shared/hooks/useDriverNavigationRefetch"
+import { useDriverPwaInteractRefetch } from "@/shared/hooks/useDriverPwaInteractRefetch"
 import { useProcurementCloseRefresh } from "@/shared/hooks/useProcurementCloseRefresh"
 import { usePwaResumeRefetch } from "@/shared/hooks/usePwaResumeRefetch"
+import { useRecurringTimeout } from "@/shared/hooks/useRecurringTimeout"
 import { isOpenCollectionRound } from "@/shared/lib/driver-round-workload"
 import {
   getProcurementCloseDeadline,
@@ -22,7 +30,10 @@ export const ProcurementLiveSync = () => {
   const isDriver = user?.role === "driver"
   const isResident = user?.role === "client"
 
-  const { data: driverActive } = useDriverActiveProcurement(
+  const { data: driverActive } = useDriverEffectiveActiveRound(
+    isDriver ? user?.id : undefined,
+  )
+  const { data: driverDelivery } = useDriverDeliveryProcurement(
     isDriver ? user?.id : undefined,
   )
   const { data: activeList } = useActiveProcurements({ enabled: isResident })
@@ -62,32 +73,26 @@ export const ProcurementLiveSync = () => {
     void refresh()
   }, [isExpired, nearestDeadline, refresh])
 
-  const stillOpen = isDriver
-    ? isOpenCollectionRound(driverActive)
-    : activeList?.some((p) => isOpenProcurementStatus(p.status))
+  const driverWorkflowActive = isDriver && Boolean(driverActive || driverDelivery)
 
-  useEffect(() => {
-    if (!isExpired || !stillOpen) return
-    const id = window.setInterval(() => void refresh(), 5000)
-    return () => window.clearInterval(id)
-  }, [isExpired, stillOpen, refresh])
+  useRecurringTimeout(
+    () => void refresh(),
+    PWA_DRIVER_BURST_MS,
+    isDriver && (isExpired || driverWorkflowActive),
+  )
 
-  useEffect(() => {
-    if (!user) return
-    const intervalMs = isDriver
-      ? PWA_DRIVER_POLL_MS
-      : isResident
-        ? PWA_RESIDENT_POLL_MS
-        : 0
-    if (!intervalMs) return
-
-    const id = window.setInterval(() => void refresh(), intervalMs)
-    return () => window.clearInterval(id)
-  }, [user, isDriver, isResident, refresh])
+  useRecurringTimeout(
+    () => void refresh(),
+    isDriver ? PWA_DRIVER_POLL_MS : isResident ? PWA_RESIDENT_POLL_MS : 0,
+    Boolean(user),
+  )
 
   usePwaResumeRefetch(() => {
     void refresh()
   })
+
+  useDriverPwaInteractRefetch()
+  useDriverNavigationRefetch()
 
   return null
 }
