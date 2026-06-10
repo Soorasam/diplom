@@ -15,8 +15,8 @@ export const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>("login")
 
   return (
-    <div className="auth-page flex min-h-screen flex-col px-4 py-8 font-sans text-white safe-top">
-      <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
+    <div className="auth-page flex flex-col px-4 py-8 font-sans text-white safe-top">
+      <div className="mx-auto flex w-full max-w-sm flex-col py-4">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10">
             <Snowflake size={28} className="text-sky-300" />
