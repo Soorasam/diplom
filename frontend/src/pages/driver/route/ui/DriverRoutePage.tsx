@@ -148,7 +148,7 @@ export const DriverRoutePage = () => {
         >
           {trip.nextStop
             ? `Поехали в ${trip.nextStop.label}`
-            : "Поехали дальше"}
+            : "Рейс завершён"}
         </Button>
       )
     }
