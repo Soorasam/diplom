@@ -9,12 +9,16 @@ const prisma = new PrismaClient();
 async function wipeAllData() {
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
+      "ticket_attachments",
+      "ticket_messages",
+      "tickets",
       "driver_application_documents",
       "driver_applications",
       "notifications",
       "order_items",
       "orders",
       "cart_items",
+      "round_procurement_receipts",
       "round_participants",
       "round_delivery_stops",
       "round_waypoints",
