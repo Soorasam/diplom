@@ -233,7 +233,7 @@ export const ProfilePage = () => {
                   ? myApp.status === "pending"
                     ? "Заявка на проверке"
                     : "Заявка отклонена — исправьте и отправьте заново"
-                  : "Заполните заявку и загрузите документы"}
+                  : "Согласие, документы и данные авто"}
               </p>
               {myApp?.status === "rejected" && myApp.rejectionReason ? (
                 <p className="mt-2 text-sm font-medium leading-normal text-amber-800 dark:text-amber-300">

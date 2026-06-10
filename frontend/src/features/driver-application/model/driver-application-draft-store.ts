@@ -17,12 +17,7 @@ export interface DriverDocumentDraft {
 }
 
 export interface DriverApplicationDraft {
-  personal: {
-    fullName: string
-    birthDate: string
-    phone: string
-    email: string
-  }
+  termsAccepted: boolean
   vehicle: {
     brand: string
     model: string
@@ -39,7 +34,7 @@ export interface DriverApplicationDraft {
 
 interface DraftState {
   draft: DriverApplicationDraft
-  setPersonal: (patch: Partial<DriverApplicationDraft["personal"]>) => void
+  setTermsAccepted: (accepted: boolean) => void
   setVehicle: (patch: Partial<DriverApplicationDraft["vehicle"]>) => void
   setDocument: (key: DriverDocumentKey, doc: DriverDocumentDraft | null) => void
   patchDocument: (key: DriverDocumentKey, patch: Partial<DriverDocumentDraft>) => void
@@ -50,7 +45,7 @@ interface DraftState {
 }
 
 const emptyDraft: DriverApplicationDraft = {
-  personal: { fullName: "", birthDate: "", phone: "", email: "" },
+  termsAccepted: false,
   vehicle: {
     brand: "",
     model: "",
@@ -66,9 +61,9 @@ export const useDriverApplicationDraftStore = create<DraftState>()(
   persist(
     (set) => ({
       draft: emptyDraft,
-      setPersonal: (patch) =>
+      setTermsAccepted: (accepted) =>
         set((s) => ({
-          draft: { ...s.draft, personal: { ...s.draft.personal, ...patch } },
+          draft: { ...s.draft, termsAccepted: accepted },
         })),
       setVehicle: (patch) =>
         set((s) => ({
@@ -107,14 +102,14 @@ export const useDriverApplicationDraftStore = create<DraftState>()(
     }),
     {
       name: "coop-driver-application-draft",
-      version: 2,
+      version: 3,
       migrate: (persisted, _version) => {
-        const state = persisted as { draft?: Partial<DriverApplicationDraft> }
+        const state = persisted as { draft?: Partial<DriverApplicationDraft> & { personal?: unknown } }
         const draft = state.draft ?? {}
         return {
           draft: {
             ...emptyDraft,
-            personal: { ...emptyDraft.personal, ...draft.personal },
+            termsAccepted: draft.termsAccepted ?? false,
             vehicle: { ...emptyDraft.vehicle, ...draft.vehicle },
             lastSavedAt: draft.lastSavedAt,
             documents: { passport: null, license: null, sts: null },
@@ -123,7 +118,7 @@ export const useDriverApplicationDraftStore = create<DraftState>()(
       },
       partialize: (state) => ({
         draft: {
-          personal: state.draft.personal,
+          termsAccepted: state.draft.termsAccepted,
           vehicle: state.draft.vehicle,
           lastSavedAt: state.draft.lastSavedAt,
           documents: { passport: null, license: null, sts: null },
@@ -132,4 +127,3 @@ export const useDriverApplicationDraftStore = create<DraftState>()(
     },
   ),
 )
-

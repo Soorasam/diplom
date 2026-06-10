@@ -4,6 +4,7 @@ import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
 
 type Props = {
+  applicantName?: string
   vehicleSummary: string
   isSubmitting: boolean
   onSubmit: () => void
@@ -11,6 +12,7 @@ type Props = {
 }
 
 export const ReviewStep = ({
+  applicantName,
   vehicleSummary,
   isSubmitting,
   onSubmit,
@@ -27,7 +29,12 @@ export const ReviewStep = ({
           Проверьте данные. После отправки статус станет{" "}
           <span className="font-semibold">pending</span>.
         </p>
-        <p className="mt-2 text-xs font-medium text-slate-700">
+        {applicantName ? (
+          <p className="mt-2 text-xs font-medium text-slate-700">
+            Заявитель: {applicantName}
+          </p>
+        ) : null}
+        <p className="mt-1 text-xs font-medium text-slate-700">
           Авто: {vehicleSummary || "—"}
         </p>
       </div>

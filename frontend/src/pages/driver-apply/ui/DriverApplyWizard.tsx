@@ -10,7 +10,6 @@ import { useDriverApplicationDraftStore } from "@/features/driver-application/mo
 import { useNetworkStore } from "@/features/offline/model/network-store"
 import type { DriverApplication } from "@/shared/api/api-types"
 import { routes } from "@/shared/config/routes"
-import { isValidFullName, normalizeRuPhone } from "@/shared/lib/validation"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 
 import {
@@ -20,8 +19,11 @@ import {
 import { DriverApplyOfflineBanner } from "./DriverApplyOfflineBanner"
 import { DriverApplyRejectedBanner } from "./DriverApplyRejectedBanner"
 import { DriverApplyStepNav } from "./DriverApplyStepNav"
+import {
+  ConsentStep,
+  isDriverApplyProfileComplete,
+} from "./steps/ConsentStep"
 import { DocumentsStep } from "./steps/DocumentsStep"
-import { PersonalStep } from "./steps/PersonalStep"
 import { ReviewStep } from "./steps/ReviewStep"
 import { VehicleStep } from "./steps/VehicleStep"
 
@@ -38,7 +40,7 @@ export const DriverApplyWizard = ({ myApp }: Props) => {
   const clearDraft = useDriverApplicationDraftStore((s) => s.clear)
   const submit = useSubmitDriverApplication()
 
-  const [step, setStep] = useState<DriverApplyStep>("personal")
+  const [step, setStep] = useState<DriverApplyStep>("consent")
 
   useEffect(() => {
     clearDocuments()
@@ -49,11 +51,8 @@ export const DriverApplyWizard = ({ myApp }: Props) => {
     [draft.vehicle],
   )
 
-  const canNextPersonal =
-    isValidFullName(draft.personal.fullName) &&
-    Boolean(draft.personal.birthDate) &&
-    Boolean(normalizeRuPhone(draft.personal.phone)) &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.personal.email.trim())
+  const profileComplete = isDriverApplyProfileComplete(user)
+  const canNextConsent = profileComplete && draft.termsAccepted
 
   const docsOk = driverDocumentKeys.every(
     (key) => draft.documents[key]?.status === "uploaded",
@@ -79,8 +78,8 @@ export const DriverApplyWizard = ({ myApp }: Props) => {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Стать водителем"
-        subtitle="Заявка с автосохранением и проверкой документов"
+        title="Стать координатором"
+        subtitle="Согласие → документы → данные авто → отправка"
         backTo={routes.user.profile}
       />
 
@@ -96,9 +95,10 @@ export const DriverApplyWizard = ({ myApp }: Props) => {
         onBack={goBack}
       />
 
-      {step === "personal" ? (
-        <PersonalStep
-          canContinue={canNextPersonal}
+      {step === "consent" ? (
+        <ConsentStep
+          canContinue={canNextConsent}
+          profileComplete={profileComplete}
           onContinue={() => setStep("documents")}
         />
       ) : null}
@@ -107,7 +107,7 @@ export const DriverApplyWizard = ({ myApp }: Props) => {
         <DocumentsStep
           canContinue={docsOk}
           onContinue={() => setStep("vehicle")}
-          onBack={() => setStep("personal")}
+          onBack={() => setStep("consent")}
         />
       ) : null}
 
@@ -121,6 +121,7 @@ export const DriverApplyWizard = ({ myApp }: Props) => {
 
       {step === "review" ? (
         <ReviewStep
+          applicantName={user?.name}
           vehicleSummary={vehicleSummary}
           isSubmitting={submit.isPending}
           onSubmit={() => void onSubmit()}
