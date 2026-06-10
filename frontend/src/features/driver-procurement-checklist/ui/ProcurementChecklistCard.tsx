@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Check, ShoppingCart, Truck, X } from "lucide-react"
+import { ArrowRight, Check, ShoppingCart, Truck, X } from "lucide-react"
 
 import { useAuthStore } from "@/app/model/auth-store"
 import {
@@ -56,68 +56,109 @@ const formatResidentSummary = (lines: ProcurementChecklistLine[]) => {
 const ChecklistLineRow = ({
   line,
   bought,
+  deferred,
   unavailable,
+  hasNextProcurementPoint,
+  nextProcurementName,
   onTogglePurchased,
+  onMarkDeferNext,
   onMarkUnavailable,
   groupedByResident,
 }: {
   line: ProcurementChecklistLine
   bought: boolean
+  deferred: boolean
   unavailable: boolean
+  hasNextProcurementPoint: boolean
+  nextProcurementName?: string | null
   onTogglePurchased: (id: string) => void
+  onMarkDeferNext: (id: string) => void
   onMarkUnavailable: (id: string) => void
   groupedByResident?: boolean
-}) => (
-  <div
-    className={cn(
-      "rounded-xl border p-3 transition-colors",
-      bought && "border-emerald-200 bg-emerald-50/80 dark:border-emerald-900/50 dark:bg-emerald-950/20",
-      unavailable && "border-red-200 bg-red-50/50 dark:border-red-900/40 dark:bg-red-950/20",
-      !bought && !unavailable && "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/40",
-    )}
-  >
-    <button
-      type="button"
-      className="flex w-full items-start gap-3 text-left"
-      onClick={() => onTogglePurchased(line.orderItemId)}
+}) => {
+  const deferLabel = nextProcurementName
+    ? `Закуплю в ${nextProcurementName}`
+    : "Закуплю в следующей точке"
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border p-3 transition-colors",
+        bought && "border-emerald-200 bg-emerald-50/80 dark:border-emerald-900/50 dark:bg-emerald-950/20",
+        deferred && "border-amber-200 bg-amber-50/80 dark:border-amber-900/50 dark:bg-amber-950/20",
+        unavailable && "border-red-200 bg-red-50/50 dark:border-red-900/40 dark:bg-red-950/20",
+        !bought &&
+          !deferred &&
+          !unavailable &&
+          "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/40",
+      )}
     >
-      <span
-        className={cn(
-          "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2",
-          bought
-            ? "border-emerald-600 bg-emerald-600 text-white"
-            : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900",
-        )}
-      >
-        {bought ? <Check size={14} strokeWidth={3} /> : null}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="font-medium text-slate-900 dark:text-slate-100">
-          {line.productName}
-          {line.quantity > 1 ? (
-            <span className="text-slate-500"> ×{line.quantity}</span>
-          ) : null}
-        </p>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          {line.unit}
-          {groupedByResident
-            ? ` · заказ ${line.orderNumber} → ${line.deliverySettlementName}`
-            : ` · ${line.residentName} → ${line.deliverySettlementName}`}
-        </p>
-      </div>
-    </button>
-    {!bought ? (
       <button
         type="button"
-        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400"
-        onClick={() => onMarkUnavailable(line.orderItemId)}
+        className="flex w-full items-start gap-3 text-left"
+        onClick={() => onTogglePurchased(line.orderItemId)}
       >
-        <X size={12} />
-        {unavailable ? "Отменить «нет в наличии»" : "Нет в наличии"}
+        <span
+          className={cn(
+            "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2",
+            bought && "border-emerald-600 bg-emerald-600 text-white",
+            deferred && "border-amber-500 bg-amber-500 text-white",
+            unavailable && "border-red-500 bg-red-500 text-white",
+            !bought &&
+              !deferred &&
+              !unavailable &&
+              "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900",
+          )}
+        >
+          {bought ? (
+            <Check size={14} strokeWidth={3} />
+          ) : deferred ? (
+            <ArrowRight size={14} strokeWidth={3} />
+          ) : unavailable ? (
+            <X size={14} strokeWidth={3} />
+          ) : null}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-slate-900 dark:text-slate-100">
+            {line.productName}
+            {line.quantity > 1 ? (
+              <span className="text-slate-500"> ×{line.quantity}</span>
+            ) : null}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {line.unit}
+            {groupedByResident
+              ? ` · заказ ${line.orderNumber} → ${line.deliverySettlementName}`
+              : ` · ${line.residentName} → ${line.deliverySettlementName}`}
+          </p>
+        </div>
       </button>
-    ) : null}
-  </div>
-)
+      {!bought ? (
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+          {hasNextProcurementPoint ? (
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 dark:text-amber-400"
+              onClick={() => onMarkDeferNext(line.orderItemId)}
+            >
+              <ArrowRight size={12} />
+              {deferred ? `Отменить «${deferLabel}»` : deferLabel}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="inline-flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400"
+              onClick={() => onMarkUnavailable(line.orderItemId)}
+            >
+              <X size={12} />
+              {unavailable ? "Отменить «нет в наличии»" : "Нет в наличии"}
+            </button>
+          )}
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 export const ProcurementChecklistCard = ({
   roundId,
@@ -128,6 +169,7 @@ export const ProcurementChecklistCard = ({
   const driverId = user?.role === "driver" ? user.id : ""
   const qc = useQueryClient()
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set())
+  const [deferNextIds, setDeferNextIds] = useState<Set<string>>(new Set())
   const [unavailableIds, setUnavailableIds] = useState<Set<string>>(new Set())
   const [checklistSaved, setChecklistSaved] = useState(false)
   const [sortMode, setSortMode] = useState<SortMode>("positions")
@@ -142,13 +184,15 @@ export const ProcurementChecklistCard = ({
 
   useEffect(() => {
     setPurchasedIds(new Set())
+    setDeferNextIds(new Set())
     setUnavailableIds(new Set())
     setChecklistSaved(false)
     setSortMode("positions")
   }, [checklist?.pickupPointId, roundId])
 
   const totalPositions = checklist?.items.length ?? 0
-  const markedCount = purchasedIds.size + unavailableIds.size
+  const hasNextProcurementPoint = Boolean(checklist?.hasNextProcurementPoint)
+  const markedCount = purchasedIds.size + deferNextIds.size + unavailableIds.size
   const requiresSettlement = checklist ? !checklist.hasNextProcurementPoint : false
 
   const { data: settlement } = usePurchaseSettlement(
@@ -168,8 +212,8 @@ export const ProcurementChecklistCard = ({
   )
 
   useEffect(() => {
-    onProgress?.(purchasedIds.size, totalPositions)
-  }, [purchasedIds.size, totalPositions, onProgress])
+    onProgress?.(markedCount, totalPositions)
+  }, [markedCount, totalPositions, onProgress])
 
   const syncWorkbench = () => {
     void refetchProcurementState(qc, { driverId })
@@ -180,10 +224,20 @@ export const ProcurementChecklistCard = ({
   const submit = useMutation({
     mutationFn: () => {
       if (!checklist) throw new Error("no checklist")
+      if (hasNextProcurementPoint && unavailableIds.size > 0) {
+        throw new Error(
+          "На этой точке нельзя отметить «нет в наличии» — выберите «Закуплю в следующей точке»",
+        )
+      }
+
       const items = checklist.items.map((line) => {
-        let outcome: ProcurementOutcome = "unavailable"
+        let outcome: ProcurementOutcome
         if (purchasedIds.has(line.orderItemId)) outcome = "purchased"
+        else if (deferNextIds.has(line.orderItemId)) outcome = "defer_next"
         else if (unavailableIds.has(line.orderItemId)) outcome = "unavailable"
+        else {
+          throw new Error("Отметьте каждую позицию: куплено, перенос или нет в наличии")
+        }
         return { orderItemId: line.orderItemId, outcome }
       })
       return procurementChecklistApi.submit(roundId, checklist.pickupPointId, items)
@@ -201,6 +255,7 @@ export const ProcurementChecklistCard = ({
     },
     onSuccess: () => {
       setPurchasedIds(new Set())
+      setDeferNextIds(new Set())
       setUnavailableIds(new Set())
       setChecklistSaved(false)
       syncWorkbench()
@@ -209,6 +264,11 @@ export const ProcurementChecklistCard = ({
 
   const togglePurchased = (orderItemId: string) => {
     setChecklistSaved(false)
+    setDeferNextIds((prev) => {
+      const next = new Set(prev)
+      next.delete(orderItemId)
+      return next
+    })
     setUnavailableIds((prev) => {
       const next = new Set(prev)
       next.delete(orderItemId)
@@ -222,9 +282,34 @@ export const ProcurementChecklistCard = ({
     })
   }
 
+  const markDeferNext = (orderItemId: string) => {
+    setChecklistSaved(false)
+    setPurchasedIds((prev) => {
+      const next = new Set(prev)
+      next.delete(orderItemId)
+      return next
+    })
+    setUnavailableIds((prev) => {
+      const next = new Set(prev)
+      next.delete(orderItemId)
+      return next
+    })
+    setDeferNextIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(orderItemId)) next.delete(orderItemId)
+      else next.add(orderItemId)
+      return next
+    })
+  }
+
   const markUnavailable = (orderItemId: string) => {
     setChecklistSaved(false)
     setPurchasedIds((prev) => {
+      const next = new Set(prev)
+      next.delete(orderItemId)
+      return next
+    })
+    setDeferNextIds((prev) => {
       const next = new Set(prev)
       next.delete(orderItemId)
       return next
@@ -306,6 +391,13 @@ export const ProcurementChecklistCard = ({
         </div>
       ) : null}
 
+      {hasNextProcurementPoint && checklist.nextProcurementName ? (
+        <p className="mb-3 text-xs text-amber-800 dark:text-amber-300">
+          Если товара нет — отметьте «Закуплю в {checklist.nextProcurementName}», а не
+          «нет в наличии».
+        </p>
+      ) : null}
+
       {checklist.items.length === 0 ? (
         <p className="text-sm text-slate-600 dark:text-slate-400">
           На этой точке нечего закупать.
@@ -317,8 +409,12 @@ export const ProcurementChecklistCard = ({
               <ChecklistLineRow
                 line={line}
                 bought={purchasedIds.has(line.orderItemId)}
+                deferred={deferNextIds.has(line.orderItemId)}
                 unavailable={unavailableIds.has(line.orderItemId)}
+                hasNextProcurementPoint={hasNextProcurementPoint}
+                nextProcurementName={checklist.nextProcurementName}
                 onTogglePurchased={togglePurchased}
+                onMarkDeferNext={markDeferNext}
                 onMarkUnavailable={markUnavailable}
               />
             </li>
@@ -343,8 +439,12 @@ export const ProcurementChecklistCard = ({
                     <ChecklistLineRow
                       line={line}
                       bought={purchasedIds.has(line.orderItemId)}
+                      deferred={deferNextIds.has(line.orderItemId)}
                       unavailable={unavailableIds.has(line.orderItemId)}
+                      hasNextProcurementPoint={hasNextProcurementPoint}
+                      nextProcurementName={checklist.nextProcurementName}
                       onTogglePurchased={togglePurchased}
+                      onMarkDeferNext={markDeferNext}
                       onMarkUnavailable={markUnavailable}
                       groupedByResident
                     />
