@@ -10,7 +10,7 @@ import {
 } from "@/entities/driver-procurement/api/procurementChecklistApi"
 import { usePurchaseSettlement } from "@/entities/procurement-settlement/api/useProcurementSettlement"
 import { ProcurementSettlementCard } from "@/features/driver-procurement-settlement/ui/ProcurementSettlementCard"
-import { invalidateDriverWorkbench } from "@/shared/lib/invalidate-driver-workbench"
+import { refetchProcurementState } from "@/shared/lib/invalidate-procurement-state"
 import { cn } from "@/shared/lib/cn"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
@@ -162,7 +162,7 @@ export const ProcurementChecklistCard = ({
   }, [purchasedIds.size, totalPositions, onProgress])
 
   const syncWorkbench = () => {
-    invalidateDriverWorkbench(qc, driverId)
+    void refetchProcurementState(qc, { driverId })
     void qc.invalidateQueries({ queryKey: ["procurement-settlement", roundId] })
     void refetch()
   }

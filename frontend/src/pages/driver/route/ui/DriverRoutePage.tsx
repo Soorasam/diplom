@@ -13,7 +13,7 @@ import {
   resolveDriverRouteChain,
 } from "@/shared/lib/driver-route-stops"
 import { buildDriverTripView } from "@/shared/lib/driver-trip-phase"
-import { invalidateDriverWorkbench } from "@/shared/lib/invalidate-driver-workbench"
+import { refetchProcurementState } from "@/shared/lib/invalidate-procurement-state"
 import { cn } from "@/shared/lib/cn"
 import { Button } from "@/shared/ui/button/Button"
 import { Card } from "@/shared/ui/card/Card"
@@ -55,7 +55,9 @@ export const DriverRoutePage = () => {
       roundId: string
       pickupPointId: string
     }) => routesApi.completeRouteStop(roundId, pickupPointId),
-    onSuccess: () => invalidateDriverWorkbench(qc, driverId),
+    onSuccess: () => {
+      void refetchProcurementState(qc, { driverId })
+    },
   })
 
   const deliveryStops = useMemo(

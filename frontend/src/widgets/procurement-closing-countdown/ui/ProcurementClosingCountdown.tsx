@@ -1,6 +1,8 @@
+import { useEffect, useRef } from "react"
 import { Clock } from "lucide-react"
 
 import { useCountdownTo } from "@/shared/hooks/useCountdownTo"
+import { useProcurementCloseRefresh } from "@/shared/hooks/useProcurementCloseRefresh"
 import { formatCountdownMs } from "@/shared/lib/countdown"
 import { cn } from "@/shared/lib/cn"
 
@@ -8,14 +10,24 @@ type Props = {
   emergencyCloseAt: string
   compact?: boolean
   className?: string
+  onExpired?: () => void
 }
 
 export const ProcurementClosingCountdown = ({
   emergencyCloseAt,
   compact,
   className,
+  onExpired,
 }: Props) => {
-  const { remainingMs, isActive } = useCountdownTo(emergencyCloseAt)
+  const refreshAfterClose = useProcurementCloseRefresh()
+  const { remainingMs, isActive, isExpired } = useCountdownTo(emergencyCloseAt)
+  const expiredHandled = useRef(false)
+
+  useEffect(() => {
+    if (!isExpired || expiredHandled.current) return
+    expiredHandled.current = true
+    void refreshAfterClose().then(() => onExpired?.())
+  }, [isExpired, refreshAfterClose, onExpired])
 
   if (!isActive || remainingMs == null) return null
 

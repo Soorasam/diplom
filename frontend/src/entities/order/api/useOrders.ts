@@ -4,6 +4,7 @@ import { useAuthStore } from "@/app/model/auth-store"
 import { useCartStore } from "@/features/cart/model/cart-store"
 import { queryKeys } from "@/shared/config/query-keys"
 import { invalidateDriverWorkbench } from "@/shared/lib/invalidate-driver-workbench"
+import { invalidateResidentWorkbench } from "@/shared/lib/invalidate-resident-workbench"
 import type { OrderStatus } from "@/shared/types"
 
 import { ordersApi } from "./ordersApi"
@@ -24,6 +25,7 @@ export const useOrder = (id: string) =>
 
 export const useCheckoutFromCart = () => {
   const qc = useQueryClient()
+  const user = useAuthStore((s) => s.user)
   return useMutation({
     mutationFn: ({
       procurementId,
@@ -37,38 +39,40 @@ export const useCheckoutFromCart = () => {
     onSuccess: (order) => {
       useCartStore.getState().reset()
       qc.setQueryData(queryKeys.orders.detail(order.id), order)
-      void qc.invalidateQueries({ queryKey: queryKeys.cart })
-      void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
+      invalidateResidentWorkbench(qc, user?.id)
     },
   })
 }
 
 export const useReservePayment = () => {
   const qc = useQueryClient()
+  const user = useAuthStore((s) => s.user)
   return useMutation({
     mutationFn: (orderId: string) => ordersApi.reservePayment(orderId),
     onSuccess: (order) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
-      void qc.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) })
-      void qc.invalidateQueries({ queryKey: queryKeys.procurements.active })
+      qc.setQueryData(queryKeys.orders.detail(order.id), order)
+      invalidateResidentWorkbench(qc, user?.id)
     },
   })
 }
 
 export const useConfirmReceipt = () => {
   const qc = useQueryClient()
+  const user = useAuthStore((s) => s.user)
+  const driverId = user?.role === "driver" ? user.id : undefined
   return useMutation({
     mutationFn: (orderId: string) => ordersApi.confirmReceipt(orderId),
     onSuccess: (order) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
-      void qc.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) })
+      qc.setQueryData(queryKeys.orders.detail(order.id), order)
+      invalidateResidentWorkbench(qc, user?.id, driverId)
+      invalidateDriverWorkbench(qc)
     },
   })
 }
 
 export const useConfirmAllReceipts = () => {
   const qc = useQueryClient()
+  const user = useAuthStore((s) => s.user)
   return useMutation({
     mutationFn: async (orderIds: string[]) => {
       const results = await Promise.all(
@@ -77,10 +81,11 @@ export const useConfirmAllReceipts = () => {
       return results
     },
     onSuccess: (orders) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.orders.all })
       for (const order of orders) {
-        void qc.invalidateQueries({ queryKey: queryKeys.orders.detail(order.id) })
+        qc.setQueryData(queryKeys.orders.detail(order.id), order)
       }
+      invalidateResidentWorkbench(qc, user?.id)
+      invalidateDriverWorkbench(qc)
     },
   })
 }

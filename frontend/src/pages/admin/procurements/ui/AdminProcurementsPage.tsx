@@ -10,6 +10,7 @@ import { EmptyState } from "@/shared/ui/empty-state/EmptyState"
 import { PageHeader } from "@/shared/ui/page-header/PageHeader"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/shared/config/query-keys"
+import { refetchProcurementState } from "@/shared/lib/invalidate-procurement-state"
 
 export const AdminProcurementsPage = () => {
   const { data: list = [], isLoading } = useAdminRounds()
@@ -19,6 +20,7 @@ export const AdminProcurementsPage = () => {
     mutationFn: (id: string) => adminApi.closeAndDispatchRound(id),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: [...queryKeys.admin.stats, "rounds"] })
+      void refetchProcurementState(qc)
     },
   })
 
