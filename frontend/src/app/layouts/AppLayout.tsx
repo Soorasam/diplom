@@ -18,7 +18,9 @@ export const AppLayout = () => {
   return (
     <MobilePageLayout>
       <ProcurementLiveSync />
-      <SwipeableOutlet />
+      <main className="app-scroll-area mx-auto flex w-full max-w-[480px] flex-col">
+        <SwipeableOutlet />
+      </main>
       <BottomNav />
     </MobilePageLayout>
   )

@@ -113,7 +113,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     if (token) headers.set("Authorization", `Bearer ${token}`)
   }
 
-  const res = await fetch(`${API_URL}${path}`, { ...init, headers })
+  const res = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers,
+    cache: "no-store",
+  })
 
   if (res.status === 401 && auth && !_retried) {
     const newToken = await refreshAccessToken()

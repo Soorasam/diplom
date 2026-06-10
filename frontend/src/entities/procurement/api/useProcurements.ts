@@ -3,12 +3,15 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 
 import { useAuthStore } from "@/app/model/auth-store"
 import { queryKeys } from "@/shared/config/query-keys"
+import { PWA_DRIVER_POLL_MS } from "@/shared/config/live-sync"
 import { refetchProcurementState } from "@/shared/lib/invalidate-procurement-state"
 import { invalidateResidentWorkbench } from "@/shared/lib/invalidate-resident-workbench"
 import {
-  activeProcurementsRefetchIntervalMs,
   procurementRefetchIntervalMs,
+  resolveDriverProcurementPollMs,
+  resolveResidentProcurementsPollMs,
 } from "@/shared/lib/procurement-poll-interval"
+import { liveQueryOptions } from "@/shared/lib/query-live-options"
 import type { UserRole } from "@/shared/types"
 
 import { procurementsApi } from "./procurementsApi"
@@ -23,8 +26,9 @@ export const useActiveProcurements = (options?: { enabled?: boolean }) =>
     queryKey: queryKeys.procurements.active,
     queryFn: () => procurementsApi.getActive(),
     enabled: options?.enabled ?? true,
+    ...liveQueryOptions,
     refetchInterval: (query) =>
-      activeProcurementsRefetchIntervalMs(query.state.data),
+      resolveResidentProcurementsPollMs(query.state.data),
   })
 
 /** Подгружает waypoints из деталки, если в списке их нет */
@@ -70,7 +74,8 @@ export const useDriverActiveProcurement = (userId?: string) =>
     queryKey: ["driver", "active-procurement", userId ?? "anon"],
     queryFn: () => procurementsApi.getDriverActive(),
     enabled: Boolean(userId),
-    refetchInterval: (query) => procurementRefetchIntervalMs(query.state.data),
+    ...liveQueryOptions,
+    refetchInterval: (query) => resolveDriverProcurementPollMs(query.state.data),
   })
 
 export const useDriverDeliveryProcurement = (userId?: string) =>
@@ -78,7 +83,8 @@ export const useDriverDeliveryProcurement = (userId?: string) =>
     queryKey: ["driver", "delivery-procurement", userId ?? "anon"],
     queryFn: () => procurementsApi.getDriverDelivery(),
     enabled: Boolean(userId),
-    refetchInterval: 10000,
+    ...liveQueryOptions,
+    refetchInterval: PWA_DRIVER_POLL_MS,
   })
 
 export const useProcurement = (id: string) =>
@@ -86,13 +92,20 @@ export const useProcurement = (id: string) =>
     queryKey: [...queryKeys.procurements.all, id],
     queryFn: () => procurementsApi.getById(id),
     enabled: Boolean(id),
-    refetchInterval: (query) => procurementRefetchIntervalMs(query.state.data),
+    ...liveQueryOptions,
+    refetchInterval: (query) => {
+      const fast = procurementRefetchIntervalMs(query.state.data)
+      return fast === false ? false : Math.min(fast, PWA_DRIVER_POLL_MS)
+    },
   })
 
-export const useAllProcurements = () =>
+export const useAllProcurements = (options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: queryKeys.procurements.all,
     queryFn: () => procurementsApi.getAll(),
+    enabled: options?.enabled ?? true,
+    ...liveQueryOptions,
+    refetchInterval: PWA_DRIVER_POLL_MS,
   })
 
 export const useCreateProcurement = () => {

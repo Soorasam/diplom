@@ -12,6 +12,8 @@ import {
 } from "@/entities/procurement/api/useProcurements"
 import { routesApi } from "@/entities/route/api/routesApi"
 import { queryKeys } from "@/shared/config/query-keys"
+import { PWA_DRIVER_POLL_MS } from "@/shared/config/live-sync"
+import { liveQueryOptions } from "@/shared/lib/query-live-options"
 import { buildSettlementBlocks } from "@/shared/lib/driver-settlement-order"
 import {
   groupOrdersByResident,
@@ -32,14 +34,16 @@ export const useDriverWorkbench = () => {
     queryKey: queryKeys.routes.driver(driverId),
     queryFn: () => routesApi.getByDriver(driverId),
     enabled: Boolean(driverId),
-    refetchInterval: 8000,
+    ...liveQueryOptions,
+    refetchInterval: PWA_DRIVER_POLL_MS,
   })
 
   const { data: driverOrders, isLoading: loadingOrders } = useQuery({
     queryKey: [...queryKeys.routes.driver(driverId), "orders"],
     queryFn: () => routesApi.getDriverOrders(driverId),
     enabled: Boolean(driverId),
-    refetchInterval: 8000,
+    ...liveQueryOptions,
+    refetchInterval: PWA_DRIVER_POLL_MS,
   })
 
   const { data: activeRound } = useDriverActiveProcurement(user?.id)

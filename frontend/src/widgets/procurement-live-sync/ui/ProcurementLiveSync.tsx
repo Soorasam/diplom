@@ -5,16 +5,17 @@ import {
   useActiveProcurements,
   useDriverActiveProcurement,
 } from "@/entities/procurement/api/useProcurements"
+import { PWA_DRIVER_POLL_MS, PWA_RESIDENT_POLL_MS } from "@/shared/config/live-sync"
 import { useCountdownTo } from "@/shared/hooks/useCountdownTo"
 import { useProcurementCloseRefresh } from "@/shared/hooks/useProcurementCloseRefresh"
-import { useRefetchOnVisible } from "@/shared/hooks/useRefetchOnVisible"
+import { usePwaResumeRefetch } from "@/shared/hooks/usePwaResumeRefetch"
 import { isOpenCollectionRound } from "@/shared/lib/driver-round-workload"
 import {
   getProcurementCloseDeadline,
   isOpenProcurementStatus,
 } from "@/shared/lib/procurement-poll-interval"
 
-/** Фоновая синхронизация при закрытии сбора по расписанию или таймеру (PWA) */
+/** Фоновая синхронизация при закрытии сбора и смене этапов рейса (PWA / iOS) */
 export const ProcurementLiveSync = () => {
   const user = useAuthStore((s) => s.user)
   const refresh = useProcurementCloseRefresh()
@@ -71,7 +72,20 @@ export const ProcurementLiveSync = () => {
     return () => window.clearInterval(id)
   }, [isExpired, stillOpen, refresh])
 
-  useRefetchOnVisible(() => {
+  useEffect(() => {
+    if (!user) return
+    const intervalMs = isDriver
+      ? PWA_DRIVER_POLL_MS
+      : isResident
+        ? PWA_RESIDENT_POLL_MS
+        : 0
+    if (!intervalMs) return
+
+    const id = window.setInterval(() => void refresh(), intervalMs)
+    return () => window.clearInterval(id)
+  }, [user, isDriver, isResident, refresh])
+
+  usePwaResumeRefetch(() => {
     void refresh()
   })
 

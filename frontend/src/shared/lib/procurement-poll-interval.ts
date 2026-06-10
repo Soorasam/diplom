@@ -1,4 +1,5 @@
 import type { Procurement } from "@/shared/api/api-types"
+import { PWA_DRIVER_POLL_MS, PWA_RESIDENT_POLL_MS } from "@/shared/config/live-sync"
 
 const MS_MINUTE = 60_000
 
@@ -51,4 +52,21 @@ export const activeProcurementsRefetchIntervalMs = (
     .filter((v): v is number => v !== false)
 
   return intervals.length ? Math.min(...intervals) : false
+}
+
+/** Не реже базового интервала PWA, чаще — при закрытии/дедлайне */
+export const resolveDriverProcurementPollMs = (
+  procurement: DeadlineProcurement | null | undefined,
+): number => {
+  const fast = procurementRefetchIntervalMs(procurement)
+  if (fast === false) return PWA_DRIVER_POLL_MS
+  return Math.min(fast, PWA_DRIVER_POLL_MS)
+}
+
+export const resolveResidentProcurementsPollMs = (
+  list: DeadlineProcurement[] | undefined,
+): number => {
+  const fast = activeProcurementsRefetchIntervalMs(list)
+  if (fast === false) return PWA_RESIDENT_POLL_MS
+  return Math.min(fast, PWA_RESIDENT_POLL_MS)
 }

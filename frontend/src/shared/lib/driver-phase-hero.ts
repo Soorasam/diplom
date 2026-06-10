@@ -252,8 +252,12 @@ export const buildProcurementsPageHero = (
   activeRound: Procurement | undefined,
   deliveryRound: Procurement | undefined,
   orderCount: number,
+  hasOpenCollection = Boolean(
+    activeRound &&
+      (activeRound.status === "open" || activeRound.status === "closing"),
+  ),
 ): DriverPhaseHero => {
-  if (activeRound) {
+  if (hasOpenCollection && activeRound) {
     const closing = activeRound.status === "closing"
     return {
       phase: closing ? "collection_closing" : "collection_open",
