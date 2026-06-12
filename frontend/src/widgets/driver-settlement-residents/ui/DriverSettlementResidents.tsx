@@ -133,9 +133,6 @@ export const DriverSettlementResidents = ({
           .filter((c): c is string => Boolean(c))
         const toAccept = group.filter(isAwaitingTripAccept)
         const canAccept = showAcceptActions && toAccept.length > 0
-        const toHandOut = group.filter(
-          (o) => o.status === "in_transit" || o.status === "confirmed",
-        )
         const awaitingConfirm = group.some((o) => o.status === "at_pickup")
         const activeForDelivery = group.some(isActiveForDelivery)
 
@@ -229,31 +226,6 @@ export const DriverSettlementResidents = ({
                     {toAccept.length > 1
                       ? `Принять в рейс (${toAccept.length})`
                       : "Принять в рейс"}
-                  </Button>
-                </div>
-              ) : null}
-
-              {!showAcceptActions && toHandOut.length > 0 ? (
-                <div className="border-t border-slate-100 px-3 py-2.5 dark:border-slate-700/80">
-                  <Button
-                    fullWidth
-                    size="sm"
-                    className="ui-cta-primary"
-                    loading={updateStatus.isPending}
-                    onClick={() => {
-                      void Promise.all(
-                        toHandOut.map((order) =>
-                          updateStatus.mutateAsync({
-                            orderId: order.id,
-                            status: "at_pickup",
-                          }),
-                        ),
-                      )
-                    }}
-                  >
-                    {toHandOut.length > 1
-                      ? `Вручил товар (${toHandOut.length}) — ждёт подтверждения`
-                      : "Вручил товар — ждёт подтверждения"}
                   </Button>
                 </div>
               ) : null}
