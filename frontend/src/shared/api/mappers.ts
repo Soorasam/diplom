@@ -178,6 +178,7 @@ export const mapProduct = (p: BackendProduct): Product => ({
   imageUrl: normalizeProductImageUrl(p.imageUrl),
   weightKg: parseApiNumber(p.weightKg ?? 0),
   unit: p.unit,
+  isActive: p.isActive,
 })
 
 const mapTransport = (t: BackendRound["route"]["transportType"]): DeliveryMode => {

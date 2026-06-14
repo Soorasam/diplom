@@ -74,6 +74,7 @@ export interface Product {
   weightKg: number
   unit: string
   popular?: boolean
+  isActive?: boolean
 }
 
 export interface ProcurementRouteProgressStop {

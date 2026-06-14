@@ -1,16 +1,25 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserRole } from '@prisma/client';
+import { CreateProductDto } from './dto/create-product.dto';
 import { CreateSettlementDto } from './dto/create-settlement.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 import { CatalogService } from '../catalog/catalog.service';
 import { calcRoundProgressPercent, decimalToNumber } from '../common/order-labels';
 import { mapOrderDetail, orderDetailInclude } from '../common/order-mapper';
 import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class AdminService {
   constructor(
     private prisma: PrismaService,
     private catalog: CatalogService,
+    private storage: StorageService,
   ) {}
 
   async getStats() {
@@ -79,10 +88,141 @@ export class AdminService {
 
   async listProducts() {
     const items = await this.prisma.product.findMany({
-      where: { isActive: true },
-      orderBy: { name: 'asc' },
+      orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
     });
     return items.map((p) => this.catalog.mapProduct(p));
+  }
+
+  async createProduct(dto: CreateProductDto) {
+    const category = await this.prisma.category.findUnique({
+      where: { id: dto.categoryId },
+    });
+    if (!category) {
+      throw new NotFoundException('Категория не найдена');
+    }
+
+    const name = dto.name.trim();
+    const duplicate = await this.prisma.product.findFirst({
+      where: { name: { equals: name, mode: 'insensitive' }, isActive: true },
+    });
+    if (duplicate) {
+      throw new ConflictException('Активный товар с таким названием уже есть');
+    }
+
+    const product = await this.prisma.product.create({
+      data: {
+        categoryId: dto.categoryId,
+        name,
+        description: dto.description?.trim() || null,
+        unit: dto.unit?.trim() || 'шт',
+        priceEstimate: dto.priceEstimate,
+        weightKg: dto.weightKg ?? 1,
+        requiresPrescription: dto.requiresPrescription ?? false,
+        imageUrl: dto.imageUrl?.trim() || null,
+        isActive: true,
+      },
+    });
+    return this.catalog.mapProduct(product);
+  }
+
+  async updateProduct(id: string, dto: UpdateProductDto) {
+    const existing = await this.prisma.product.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Товар не найден');
+    }
+
+    if (dto.categoryId) {
+      const category = await this.prisma.category.findUnique({
+        where: { id: dto.categoryId },
+      });
+      if (!category) {
+        throw new NotFoundException('Категория не найдена');
+      }
+    }
+
+    if (dto.name?.trim()) {
+      const duplicate = await this.prisma.product.findFirst({
+        where: {
+          id: { not: id },
+          name: { equals: dto.name.trim(), mode: 'insensitive' },
+          isActive: true,
+        },
+      });
+      if (duplicate) {
+        throw new ConflictException('Активный товар с таким названием уже есть');
+      }
+    }
+
+    const product = await this.prisma.product.update({
+      where: { id },
+      data: {
+        ...(dto.categoryId !== undefined ? { categoryId: dto.categoryId } : {}),
+        ...(dto.name !== undefined ? { name: dto.name.trim() } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description?.trim() || null }
+          : {}),
+        ...(dto.unit !== undefined ? { unit: dto.unit.trim() || 'шт' } : {}),
+        ...(dto.priceEstimate !== undefined
+          ? { priceEstimate: dto.priceEstimate }
+          : {}),
+        ...(dto.weightKg !== undefined ? { weightKg: dto.weightKg } : {}),
+        ...(dto.requiresPrescription !== undefined
+          ? { requiresPrescription: dto.requiresPrescription }
+          : {}),
+        ...(dto.imageUrl !== undefined
+          ? { imageUrl: dto.imageUrl?.trim() || null }
+          : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      },
+    });
+    return this.catalog.mapProduct(product);
+  }
+
+  async deleteProduct(id: string) {
+    const existing = await this.prisma.product.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Товар не найден');
+    }
+
+    const product = await this.prisma.product.update({
+      where: { id },
+      data: { isActive: false },
+    });
+    return this.catalog.mapProduct(product);
+  }
+
+  async uploadProductImage(
+    id: string,
+    file: { buffer: Buffer; mimetype: string; originalname: string },
+  ) {
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('Выберите файл изображения');
+    }
+    if (!file.mimetype.startsWith('image/')) {
+      throw new BadRequestException('Допустимы только изображения');
+    }
+
+    const existing = await this.prisma.product.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('Товар не найден');
+    }
+
+    const ext =
+      file.originalname.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') ||
+      'jpg';
+    const key = `products/${id}/${Date.now()}.${ext}`;
+    const url = await this.storage.upload(
+      this.storage.productsBucket(),
+      key,
+      file.buffer,
+      file.mimetype,
+    );
+
+    const product = await this.prisma.product.update({
+      where: { id },
+      data: { imageUrl: url },
+    });
+    return this.catalog.mapProduct(product);
   }
 
   listRoutes() {

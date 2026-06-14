@@ -86,6 +86,48 @@ export const adminApi = {
     return list.map(mapProduct) as Product[]
   },
 
+  createProduct: async (payload: {
+    name: string
+    categoryId: string
+    description?: string
+    unit?: string
+    priceEstimate: number
+    weightKg?: number
+    requiresPrescription?: boolean
+    imageUrl?: string
+  }) => {
+    const item = await http.post<BackendProduct>("/admin/products", payload, true)
+    return mapProduct(item)
+  },
+
+  updateProduct: async (
+    id: string,
+    payload: {
+      name?: string
+      categoryId?: string
+      description?: string
+      unit?: string
+      priceEstimate?: number
+      weightKg?: number
+      requiresPrescription?: boolean
+      imageUrl?: string
+      isActive?: boolean
+    },
+  ) => {
+    const item = await http.patch<BackendProduct>(`/admin/products/${id}`, payload, true)
+    return mapProduct(item)
+  },
+
+  deleteProduct: async (id: string) => {
+    const item = await http.delete<BackendProduct>(`/admin/products/${id}`, true)
+    return mapProduct(item)
+  },
+
+  uploadProductImage: async (id: string, file: File) => {
+    const item = await http.upload<BackendProduct>(`/admin/products/${id}/image`, file, true)
+    return mapProduct(item)
+  },
+
   updateOrderStatus: (orderId: string, status: OrderStatus) =>
     http.patch(
       `/admin/orders/${orderId}/status`,

@@ -35,6 +35,7 @@ export interface BackendProduct {
   weightKg?: number
   imageUrl: string | null
   requiresPrescription: boolean
+  isActive?: boolean
 }
 
 export interface BackendRoute {

@@ -29,6 +29,50 @@ export const useAdminProducts = () =>
     queryFn: () => adminApi.getProducts(),
   })
 
+const invalidateProducts = (qc: ReturnType<typeof useQueryClient>) => {
+  void qc.invalidateQueries({ queryKey: [...queryKeys.admin.stats, "products"] })
+  void qc.invalidateQueries({ queryKey: queryKeys.products.all })
+}
+
+export const useCreateProduct = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: adminApi.createProduct,
+    onSuccess: () => invalidateProducts(qc),
+  })
+}
+
+export const useUpdateProduct = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string
+      payload: Parameters<typeof adminApi.updateProduct>[1]
+    }) => adminApi.updateProduct(id, payload),
+    onSuccess: () => invalidateProducts(qc),
+  })
+}
+
+export const useDeleteProduct = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: adminApi.deleteProduct,
+    onSuccess: () => invalidateProducts(qc),
+  })
+}
+
+export const useUploadProductImage = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) =>
+      adminApi.uploadProductImage(id, file),
+    onSuccess: () => invalidateProducts(qc),
+  })
+}
+
 export const useAdminSettlements = () =>
   useQuery({
     queryKey: [...queryKeys.admin.stats, "settlements"],
